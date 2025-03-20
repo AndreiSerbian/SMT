@@ -5,24 +5,43 @@ const SwiperService = {
   
   // Инициализация всех слайдеров
   initSwipers() {
+    // Сначала уничтожаем существующие слайдеры, чтобы избежать дублирования
+    Object.keys(this.swipersById).forEach(id => {
+      if (this.swipersById[id] && typeof this.swipersById[id].destroy === 'function') {
+        this.swipersById[id].destroy(true, true);
+      }
+    });
+    this.swipersById = {};
+    
+    // Находим все контейнеры слайдеров
     const allSwiperContainers = document.querySelectorAll('.swiper');
+    
+    // Инициализируем каждый слайдер
     allSwiperContainers.forEach(swiperEl => {
+      if (!swiperEl) return;
+      
       const productId = swiperEl.id.replace('product-slider-', '');
       
-      const swiperInstance = new Swiper(swiperEl, {
-        loop: true,
-        pagination: {
-          el: swiperEl.querySelector('.swiper-pagination'),
-          clickable: true,
-        },
-        navigation: {
-          nextEl: swiperEl.querySelector('.swiper-button-next'),
-          prevEl: swiperEl.querySelector('.swiper-button-prev'),
-        },
-      });
-      
-      this.swipersById[productId] = swiperInstance;
+      try {
+        const swiperInstance = new Swiper(swiperEl, {
+          loop: true,
+          pagination: {
+            el: swiperEl.querySelector('.swiper-pagination'),
+            clickable: true,
+          },
+          navigation: {
+            nextEl: swiperEl.querySelector('.swiper-button-next'),
+            prevEl: swiperEl.querySelector('.swiper-button-prev'),
+          },
+        });
+        
+        this.swipersById[productId] = swiperInstance;
+      } catch (error) {
+        console.error('Ошибка при инициализации слайдера:', error);
+      }
     });
+    
+    return this.swipersById;
   },
   
   // Обновление фото в слайдере
