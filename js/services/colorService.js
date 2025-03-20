@@ -6,13 +6,6 @@ import { eventBus } from '../utils/eventBus.js';
 export const ColorService = {
   // Render color buttons for product card
   renderColorButtons(product) {
-    // Subscribe to color change events
-    eventBus.subscribe('color-changed', (data) => {
-      if (data.productId === product.id) {
-        this.handleColorChange(data);
-      }
-    });
-    
     return Object.entries(colorMap)
       .filter(([color]) =>
         products.some(p =>
@@ -29,6 +22,8 @@ export const ColorService = {
           p.color === color
         );
         
+        if (!matchingProduct) return '';
+        
         return `
           <button
             class="color-button w-6 h-6 rounded-full border-2 ${isActive ? 'border-blue-500' : 'border-transparent'}"
@@ -37,6 +32,7 @@ export const ColorService = {
             data-base-name="${product.name}"
             data-base-size="${product.sizeType}"
             data-color="${color}"
+            onclick="ColorService.handleColorButtonClick(event, '${product.id}', '${product.name}', '${product.sizeType}', '${color}')"
           ></button>
         `;
       }).join('');
@@ -44,9 +40,6 @@ export const ColorService = {
   
   // Update color button states
   updateButtonColor(productId, color) {
-    const product = products.find(p => p.id === productId);
-    if (!product) return;
-    
     const colorButtons = document.querySelectorAll(`.color-button[data-product-id="${productId}"]`);
     colorButtons.forEach(button => {
       const isActive = button.dataset.color === color;
@@ -55,30 +48,9 @@ export const ColorService = {
     });
   },
   
-  // Update hrefs for color buttons
-  updateHrefs(productId) {
-    let product = products.find(p => p.id === productId);
-    if (!product) return;
-    
-    const colorButtons = document.querySelectorAll(`.color-button[data-product-id="${productId}"]`);
-    colorButtons.forEach(button => {
-      const matchingProduct = products.find(p =>
-        p.name === product.name &&
-        p.sizeType === product.sizeType &&
-        p.color === button.dataset.color
-      );
-      
-      if (matchingProduct) {
-        button.addEventListener('click', () => {
-          window.location.href = `#product/${matchingProduct.id}`;
-        });
-      }
-    });
-  },
-  
-  // Handle color change event
-  handleColorChange(data) {
-    const { productId, baseName, baseSize, chosenColor } = data;
+  // Handle color button click
+  handleColorButtonClick(event, productId, baseName, baseSize, chosenColor) {
+    event.preventDefault();
     
     // Find the matching product
     const matchingProduct = products.find(p =>
@@ -89,13 +61,24 @@ export const ColorService = {
     
     if (!matchingProduct) return;
     
-    // Update slider photos
-    SwiperService.updateSliderPhotos(productId, matchingProduct.photo);
-    
     // Update button colors
     this.updateButtonColor(productId, chosenColor);
     
-    // Update hrefs
-    this.updateHrefs(productId);
+    // Update slider photos
+    setTimeout(() => {
+      try {
+        SwiperService.updateSliderPhotos(productId, matchingProduct.photo);
+      } catch (error) {
+        console.error('Ошибка при обновлении фото слайдера:', error);
+      }
+    }, 50);
+  },
+  
+  // Expose to window for onclick handlers
+  init() {
+    window.ColorService = this;
   }
 };
+
+// Initialize ColorService globally
+ColorService.init();
