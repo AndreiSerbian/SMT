@@ -50,7 +50,7 @@ export const cartService = {
     }, 0);
 
     return `
-      <div class="fixed bottom-4 right-4 z-50">
+      <div class="fixed bottom-4 right-4 z-50" id="cart-button-container">
         <button 
           onclick="toggleCart()"
           class="bg-blue-200 text-gray-800 p-4 rounded-full shadow-lg hover:bg-blue-300 transition duration-300"
@@ -78,7 +78,7 @@ export const cartService = {
       <div id="cartModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-40">
         <div
           class="fixed right-0 top-0 bottom-0 w-full max-w-md
-                 bg-white shadow-lg p-6 transform transition-transform duration-300"
+                 bg-white shadow-lg p-6 transform transition-transform duration-300 translate-x-full"
         >
           <div class="flex justify-between items-center mb-6">
             <h2 class="text-2xl font-bold text-gray-800">Shopping Cart</h2>

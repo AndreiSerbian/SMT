@@ -5,8 +5,6 @@ import SwiperService from '../services/swiperService.js';
 import { ColorService } from '../services/colorService.js';
 
 const HomeComponent = {
-  swipersById: {},
-  
   // Получение уникальных категорий
   getCategories() {
     const categories = new Set();
@@ -54,7 +52,7 @@ const HomeComponent = {
                   <h2 class="text-xl font-semibold text-gray-800 mb-2">${category}</h2>
                   <div class="mb-6">
                     <h2 class="font-semibold text-gray-800 mb-2">Цвета в наличии:</h2>
-                    <div class="flex flex-wrap gap-2 mb-4">
+                    <div class="flex flex-wrap gap-2 mb-4" id="color-buttons-${product.id}">
                     ${ColorService.renderColorButtons(product)}
                     </div>
 
@@ -74,8 +72,11 @@ const HomeComponent = {
       ${cartService.renderCart()}
     `;
     
-    // Инициализируем все слайдеры
-    SwiperService.initSwipers();
+    // Инициализируем слайдеры после отрисовки DOM
+    // Используем setTimeout для уверенности, что DOM полностью загружен
+    setTimeout(() => {
+      SwiperService.initSwipers();
+    }, 100);
   }
 };
 
