@@ -101,7 +101,7 @@ const OrderComponent = {
         </div>
 
         <div>
-          <label class="block font-semibold mb-1" for="yandexAddress">Адрес ПВЗ Яндекс</label>
+          <label class="block font-semibold mb-1" for="yandexAddress">Ближайший к Вам адрес ПВЗ Яндекс</label>
           <input type="text" id="yandexAddress" name="yandexAddress"
             class="w-full border border-gray-300 px-3 py-2 rounded focus:outline-none focus:ring"
             placeholder="Например, ул. Ленина, д. 10">
@@ -128,17 +128,23 @@ const OrderComponent = {
           </label>
         </div>
 
-        <!-- Доставка / Самовывоз -->
+        <!-- Доставка / Самовывоз - обновленная секция -->
         <div>
           <span class="block font-semibold mb-1">Доставка / Самовывоз</span>
-          <label class="inline-flex items-center mr-4">
-            <input type="radio" name="delivery" value="delivery" style="accent-color: #00008b;" class="mr-2" checked>
-            <span>Доставка</span>
-          </label>
-          <label class="inline-flex items-center">
-            <input type="radio" name="delivery" value="pickup" style="accent-color: #00008b;" class="mr-2">
-            <span>Самовывоз</span>
-          </label>
+          <div class="space-y-2">
+            <label class="flex items-center">
+              <input type="radio" name="delivery" value="delivery" style="accent-color: #00008b;" class="mr-2" checked>
+              <span>Доставка</span>
+            </label>
+            <label class="flex items-center">
+              <input type="radio" name="delivery" value="pickup_moscow" style="accent-color: #00008b;" class="mr-2">
+              <span>Самовывоз – Москва, Производственная 12, к.2, подъезд 11</span>
+            </label>
+            <label class="flex items-center">
+              <input type="radio" name="delivery" value="pickup_ershovo" style="accent-color: #00008b;" class="mr-2">
+              <span>Самовывоз – Московская область, Одинцовский район, д. Ершово, "Парк-отель Ершово"</span>
+            </label>
+          </div>
         </div>
 
         <!-- Кнопка -->
