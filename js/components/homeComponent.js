@@ -54,13 +54,15 @@ const HomeComponent = {
                   <h2 class="text-xl font-semibold text-gray-800 mb-2">${category}</h2>
                   <div class="mb-6">
                     <h2 class="font-semibold text-gray-800 mb-2">Цвета в наличии:</h2>
-                    <div class="flex flex-wrap gap-2 mb-4">
+                    <div class="flex flex-wrap gap-2 mb-4" id="color-buttons-${product.id}">
                     ${ColorService.renderColorButtons(product)}
                     </div>
 
                     <button
-                      onclick="window.location.href='#product/${product.id}'"
-                      class="w-full bg-blue-200 text-gray-800 px-4 py-2 rounded hover:bg-blue-300 transition duration-300"
+                      data-product-id="${product.id}"
+                      data-base-name="${product.name}"
+                      data-base-size="${product.sizeType}"
+                      class="view-all-btn w-full bg-blue-200 text-gray-800 px-4 py-2 rounded hover:bg-blue-300 transition duration-300"
                     >
                       Посмотреть все
                     </button>
@@ -75,7 +77,35 @@ const HomeComponent = {
     `;
     
     // Инициализируем все слайдеры
-    SwiperService.initSwipers();
+    setTimeout(() => {
+      SwiperService.initSwipers();
+      
+      // Добавляем обработчики для кнопок "Посмотреть все"
+      document.querySelectorAll('.view-all-btn').forEach(button => {
+        button.addEventListener('click', function() {
+          const productId = this.dataset.productId;
+          const baseName = this.dataset.baseName;
+          const baseSize = this.dataset.baseSize;
+          
+          // Находим активную кнопку цвета
+          const activeColorButton = document.querySelector(`.color-button[data-product-id="${productId}"].border-blue-500`);
+          
+          if (activeColorButton) {
+            // Если есть активная кнопка цвета, используем её цвет
+            const color = activeColorButton.dataset.color;
+            const matchingProduct = ColorService.findMatchingProduct(baseName, baseSize, color);
+            
+            if (matchingProduct) {
+              window.location.href = `#product/${matchingProduct.id}`;
+              return;
+            }
+          }
+          
+          // Если активной кнопки нет или продукт не найден, просто переходим к текущему продукту
+          window.location.href = `#product/${productId}`;
+        });
+      });
+    }, 100);
   }
 };
 
