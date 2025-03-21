@@ -2,13 +2,33 @@
 import Router from './router.js';
 import { cartService } from './services/cartService.js';
 import { eventBus } from './utils/eventBus.js';
-import { ColorService } from './services/colorService.js';
-import SwiperService from './services/swiperService.js';
 
 // Initialize all global event listeners and app state
 export function initApp() {
-  // Инициализация ColorService
-  ColorService.init();
+  // Set up the router
+  const router = new Router();
+  
+  // Initialize global event listeners
+  document.addEventListener('click', (e) => {
+    // Проверяем, кликнули ли по элементу .color-button
+    if (e.target.matches('.color-button')) {
+      e.preventDefault();
+      
+      // Получаем атрибуты
+      const productId = e.target.dataset.productId; 
+      const baseName = e.target.dataset.baseName; 
+      const baseSize = e.target.dataset.baseSize;
+      const chosenColor = e.target.dataset.color;
+      
+      // Вызываем событие смены цвета
+      eventBus.emit('color-changed', {
+        productId,
+        baseName,
+        baseSize,
+        chosenColor
+      });
+    }
+  });
   
   // Register cart toggle functionality
   window.toggleCart = () => {
@@ -33,11 +53,13 @@ export function initApp() {
   // Register add to cart functionality
   window.addToCart = (productId, quantity) => {
     cartService.addToCart(productId, quantity);
+    router.navigate(window.location.hash);
   };
   
   // Register remove from cart functionality
   window.removeFromCart = (productId) => {
     cartService.removeFromCart(productId);
+    router.navigate(window.location.hash);
   };
   
   // Register go to order page functionality
@@ -45,7 +67,4 @@ export function initApp() {
     window.toggleCart();
     window.location.hash = '#order';
   };
-  
-  // Делаем SwiperService доступным глобально
-  window.SwiperService = SwiperService;
 }
