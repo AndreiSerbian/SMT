@@ -76,21 +76,16 @@ export const ColorService = {
     });
   },
   
-  // Find matching product by parameters
-  findMatchingProduct(baseName, baseSize, color) {
-    return products.find(p =>
-      p.name === baseName &&
-      p.sizeType === baseSize &&
-      p.color === color
-    );
-  },
-  
   // Handle color change event
   handleColorChange(data) {
     const { productId, baseName, baseSize, chosenColor } = data;
     
     // Find the matching product
-    const matchingProduct = this.findMatchingProduct(baseName, baseSize, chosenColor);
+    const matchingProduct = products.find(p =>
+      p.name === baseName &&
+      p.sizeType === baseSize &&
+      p.color === chosenColor
+    );
     
     if (!matchingProduct) return;
     

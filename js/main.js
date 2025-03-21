@@ -30,11 +30,6 @@ export function initApp() {
     }
   });
   
-  // Listen for cart updates
-  eventBus.subscribe('cart-updated', () => {
-    cartService.updateCartUI();
-  });
-  
   // Register cart toggle functionality
   window.toggleCart = () => {
     const modal = document.getElementById('cartModal');
@@ -58,22 +53,13 @@ export function initApp() {
   // Register add to cart functionality
   window.addToCart = (productId, quantity) => {
     cartService.addToCart(productId, quantity);
+    router.navigate(window.location.hash);
   };
   
   // Register remove from cart functionality
   window.removeFromCart = (productId) => {
     cartService.removeFromCart(productId);
-  };
-  
-  // Register update cart quantity functionality
-  window.updateCartQuantity = (productId, newQuantity) => {
-    const cart = cartService.getCart();
-    const item = cart.find(item => item.id === productId);
-    
-    if (item) {
-      item.quantity = Math.max(1, newQuantity);
-      cartService.saveCart(cart);
-    }
+    router.navigate(window.location.hash);
   };
   
   // Register go to order page functionality
