@@ -2,11 +2,23 @@
 import Router from './router.js';
 import { cartService } from './services/cartService.js';
 import { eventBus } from './utils/eventBus.js';
+import { supabase } from '@/integrations/supabase/client';
+import { Toaster } from "@/components/ui/toaster";
 
 // Initialize all global event listeners and app state
 export function initApp() {
   // Set up the router
   const router = new Router();
+  
+  // Add toaster to the DOM
+  const toasterContainer = document.createElement('div');
+  toasterContainer.id = 'toaster-container';
+  document.body.appendChild(toasterContainer);
+  
+  // Render the Toaster component
+  const toaster = document.createElement('div');
+  toaster.innerHTML = '<div id="toaster"></div>';
+  document.body.appendChild(toaster);
   
   // Initialize global event listeners
   document.addEventListener('click', (e) => {

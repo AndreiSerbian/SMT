@@ -1,4 +1,8 @@
 
+// В этом файле оставим функциональность для прямой отправки уведомлений,
+// но она больше не будет использоваться для оформления заказов,
+// так как теперь это делается через Supabase Edge Functions.
+
 import { products } from '../data/products.js';
 
 export const notificationService = {

@@ -1,7 +1,7 @@
 
 import { products } from '../data/products.js';
 import { cartService } from '../services/cartService.js';
-import { notificationService } from '../services/notificationService.js';
+import { toast } from '@/hooks/use-toast';
 
 const OrderComponent = {
   render() {
@@ -181,6 +181,19 @@ const OrderComponent = {
     
     const cart = cartService.getCart();
     
+    // Преобразуем корзину, добавляя информацию о товарах
+    const cartItems = cart.map(item => {
+      const product = products.find(p => p.id === item.id);
+      return {
+        id: item.id,
+        quantity: item.quantity,
+        name: product.name,
+        artikul: product.artikul,
+        color: product.color,
+        price: product.price
+      };
+    });
+    
     // Calculate order totals
     const subtotal = cart.reduce((sum, item) => {
       const product = products.find(p => p.id === item.id);
@@ -202,30 +215,63 @@ const OrderComponent = {
     const total = subtotal - discount;
     
     const orderData = {
-      customerName: name,
+      name: name,
       phone: phone,
       email: email,
-      yandexAddress: yandexAddress,
+      yandex_address: yandexAddress,
       comment: comment,
       payment: paymentValue,
       delivery: deliveryValue,
-      cart: cart,
+      cart_items: cartItems,
       subtotal: subtotal,
       discount: discount,
-      total: total,
-      created_at: new Date().toISOString()
+      total: total
     };
     
-    // Отправка уведомления в Телеграм
-    notificationService.sendTelegramNotification(orderData);
+    // Показываем индикатор загрузки
+    const submitButton = form.querySelector('button[type="submit"]');
+    const originalButtonText = submitButton.innerHTML;
+    submitButton.disabled = true;
+    submitButton.innerHTML = 'Обработка...';
     
-    // Очистка корзины
-    cartService.clearCart();
-    
-    // Переход на главную
-    window.location.hash = '#';
-    
-    alert('Заказ оформлен! Уведомление отправлено в Телеграм.');
+    // Отправляем заказ в Supabase Edge Function
+    fetch('https://bsndismiessofvhglzrv.supabase.co/functions/v1/order-processing', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ orderData }),
+    })
+    .then(response => response.json())
+    .then(data => {
+      // Обработка успешного ответа
+      if (data.success) {
+        // Очистка корзины
+        cartService.clearCart();
+        
+        // Показываем уведомление
+        toast({
+          title: "Заказ оформлен!",
+          description: "На вашу почту отправлено письмо для подтверждения заказа.",
+          duration: 5000,
+        });
+        
+        // Переход на главную
+        window.location.hash = '#';
+      } else {
+        // Обработка ошибки
+        alert(`Ошибка при оформлении заказа: ${data.error}`);
+        submitButton.disabled = false;
+        submitButton.innerHTML = originalButtonText;
+      }
+    })
+    .catch(error => {
+      // Обработка ошибки сети
+      console.error('Error submitting order:', error);
+      alert(`Ошибка при отправке заказа: ${error.message}`);
+      submitButton.disabled = false;
+      submitButton.innerHTML = originalButtonText;
+    });
   }
 };
 
