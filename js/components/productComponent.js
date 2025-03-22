@@ -4,9 +4,6 @@ import { cartService } from '../services/cartService.js';
 import { colorMap } from '../data/products.js';
 
 const ProductComponent = {
-  currentSlide: 0,
-  swiper: null,
-
   render(productId) {
     const product = products.find(p => p.id === productId);
     if (!product) return HomeComponent.render();
@@ -26,49 +23,14 @@ const ProductComponent = {
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div class="space-y-4">
-            <!-- Swiper Slider -->
-            <div class="swiper product-slider bg-white rounded-lg shadow-lg overflow-hidden">
-              <div class="swiper-wrapper">
-                ${product.photo.map(photo => `
-                  <div class="swiper-slide">
-                    <img src="${photo}" alt="${product.name}" class="w-full h-96 object-contain">
-                  </div>
-                `).join('')}
-              </div>
-              <!-- Add Navigation buttons -->
-              <div class="swiper-button-next"></div>
-              <div class="swiper-button-prev"></div>
-              <!-- Add Pagination -->
-              <div class="swiper-pagination"></div>
-              <!-- Add slide counter -->
-              <div class="absolute bottom-2 right-2 bg-white/80 px-2 py-1 rounded text-sm z-10 slide-counter">
-                1/${product.photo.length}
-              </div>
+            <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+              <img src="${product.photo[0]}" alt="${product.name}" class="w-full h-96 object-cover">
             </div>
-
-            <!-- Thumbnail Navigation -->
             <div class="grid grid-cols-4 gap-4">
-              ${product.photo.map((photo, index) => `
-                <img src="${photo}" alt="${product.name}" 
-                  class="w-full h-24 object-cover rounded-lg cursor-pointer hover:opacity-75 transition thumbnail-nav"
-                  data-index="${index}">
+              ${product.photo.map(photo => `
+                <img src="${photo}" alt="${product.name}" class="w-full h-24 object-cover rounded-lg cursor-pointer hover:opacity-75 transition">
               `).join('')}
             </div>
-            
-            <!-- Video Player (conditionally rendered) -->
-            ${product.videos && product.videos.length > 0 ? `
-              <div class="mt-6 bg-white rounded-lg shadow-lg p-4">
-                <h3 class="text-lg font-semibold mb-3">Видео товара</h3>
-                <div class="video-container">
-                  ${product.videos.map(video => `
-                    <video controls class="w-full rounded-lg mb-3">
-                      <source src="${video}" type="video/mp4">
-                      Ваш браузер не поддерживает видео.
-                    </video>
-                  `).join('')}
-                </div>
-              </div>
-            ` : ''}
           </div>
 
           <div class="bg-white rounded-lg shadow-lg p-8">
@@ -143,56 +105,7 @@ const ProductComponent = {
       </div>
       ${cartService.renderCart()}
     `;
-
-    this.initProductSlider();
-    this.initThumbnailNavigation();
-  },
-
-  initProductSlider() {
-    // Initialize the Swiper slider
-    this.swiper = new Swiper('.product-slider', {
-      loop: true,
-      navigation: {
-        nextEl: '.swiper-button-next',
-        prevEl: '.swiper-button-prev',
-      },
-      pagination: {
-        el: '.swiper-pagination',
-        clickable: true,
-      },
-      on: {
-        slideChange: () => {
-          // Update the slide counter
-          const counter = document.querySelector('.slide-counter');
-          if (counter) {
-            const activeIndex = this.swiper.realIndex + 1;
-            const total = this.swiper.slides.length - 2; // Adjust for loop duplicated slides
-            counter.textContent = `${activeIndex}/${total}`;
-          }
-        }
-      }
-    });
-  },
-
-  initThumbnailNavigation() {
-    // Add click handlers to thumbnail images
-    const thumbnails = document.querySelectorAll('.thumbnail-nav');
-    thumbnails.forEach(thumbnail => {
-      thumbnail.addEventListener('click', () => {
-        const index = parseInt(thumbnail.dataset.index);
-        if (this.swiper) {
-          this.swiper.slideTo(index + 1); // +1 because of loop mode
-        }
-      });
-    });
   }
-};
-
-// Global function to add to cart (needed for onclick attribute)
-window.addToCart = function(productId, quantity) {
-  cartService.addToCart(productId, quantity);
-  // Refresh cart display
-  document.getElementById('cart-container').innerHTML = cartService.renderCart();
 };
 
 export default ProductComponent;
