@@ -23,10 +23,17 @@
 </nav>
 
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
+  // Инициализация меню после добавления компонента в DOM
+  (function initializeMenu() {
     const menuButton = document.getElementById('menuButton');
     const mobileMenuItems = document.getElementById('mobileMenuItems');
     const menuIcon = document.getElementById('menuIcon');
+    
+    if (!menuButton || !mobileMenuItems || !menuIcon) {
+      // Если элементы еще не доступны, пробуем еще раз через небольшую задержку
+      setTimeout(initializeMenu, 100);
+      return;
+    }
     
     // Функция для открытия/закрытия меню
     function toggleMenu() {
@@ -49,6 +56,7 @@
     menuButton.addEventListener('click', function(e) {
       e.stopPropagation();
       toggleMenu();
+      console.log('Menu button clicked'); // Отладочный вывод
     });
     
     // Закрытие меню при клике на ссылку внутри меню
@@ -67,5 +75,7 @@
         toggleMenu();
       }
     });
-  });
+    
+    console.log('Menu initialized successfully'); // Отладочный вывод
+  })();
 </script>

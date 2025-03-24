@@ -28,4 +28,27 @@ document.addEventListener('DOMContentLoaded', () => {
   `;
   script.type = 'module';
   document.body.appendChild(script);
+  
+  // Обеспечиваем инициализацию меню после загрузки header.html
+  const headerContainer = document.getElementById('header-container');
+  if (headerContainer) {
+    const observer = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+          // Запускаем повторную инициализацию скриптов в header
+          const scripts = headerContainer.querySelectorAll('script');
+          scripts.forEach(oldScript => {
+            const newScript = document.createElement('script');
+            Array.from(oldScript.attributes).forEach(attr => {
+              newScript.setAttribute(attr.name, attr.value);
+            });
+            newScript.textContent = oldScript.textContent;
+            oldScript.parentNode.replaceChild(newScript, oldScript);
+          });
+          observer.disconnect();
+        }
+      }
+    });
+    observer.observe(headerContainer, { childList: true });
+  }
 });
