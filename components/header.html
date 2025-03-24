@@ -1,23 +1,14 @@
-
 <nav class="bg-white shadow-md">
   <div class="container mx-auto px-6 py-3 flex justify-between items-center">
-    <a href="#" class="text-xl font-bold text-gray-800">Gift Box Shop</a>
+    <a href="#" class="text-xl font-bold text-gray-800">
+      <span class="hidden sm:inline">Gift Box Shop</span>
+      <span class="sm:hidden">Gift Box</span>
+    </a>
     
-    <!-- Десктопное меню -->
-    <div class="hidden md:flex space-x-4">
+    <!-- Навигационное меню (одинаковое для всех устройств) -->
+    <div class="flex space-x-4">
       <a href="#" class="text-gray-600 hover:text-gray-800">Главная</a>
       <a href="#order" class="text-gray-600 hover:text-gray-800">Оформление заказа</a>
-    </div>
-    
-    <!-- Мобильное меню -->
-    <div class="md:hidden relative" id="mobileMenu">
-      <button id="menuButton" class="text-2xl focus:outline-none">
-        <i class="fas fa-bars" id="menuIcon"></i>
-      </button>
-      <ul id="mobileMenuItems" class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg transform scale-0 opacity-0 transition-all duration-300 origin-top-right z-20">
-        <li><a href="#" class="block px-4 py-2 text-gray-600 hover:bg-gray-100">Главная</a></li>
-        <li><a href="#order" class="block px-4 py-2 text-gray-600 hover:bg-gray-100">Оформление заказа</a></li>
-      </ul>
     </div>
   </div>
 </nav>
