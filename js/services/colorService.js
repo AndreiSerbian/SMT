@@ -23,11 +23,6 @@ export const ColorService = {
       )
       .map(([color, hex]) => {
         const isActive = color === product.color;
-        const matchingProduct = products.find(p =>
-          p.name === product.name &&
-          p.sizeType === product.sizeType &&
-          p.color === color
-        );
         
         return `
           <button
@@ -37,6 +32,7 @@ export const ColorService = {
             data-base-name="${product.name}"
             data-base-size="${product.sizeType}"
             data-color="${color}"
+            data-active="${isActive}"
           ></button>
         `;
       }).join('');
@@ -52,27 +48,9 @@ export const ColorService = {
       const isActive = button.dataset.color === color;
       button.classList.toggle('border-blue-500', isActive);
       button.classList.toggle('border-transparent', !isActive);
-    });
-  },
-  
-  // Update hrefs for color buttons
-  updateHrefs(productId) {
-    let product = products.find(p => p.id === productId);
-    if (!product) return;
-    
-    const colorButtons = document.querySelectorAll(`.color-button[data-product-id="${productId}"]`);
-    colorButtons.forEach(button => {
-      const matchingProduct = products.find(p =>
-        p.name === product.name &&
-        p.sizeType === product.sizeType &&
-        p.color === button.dataset.color
-      );
       
-      if (matchingProduct) {
-        button.addEventListener('click', () => {
-          window.location.href = `#product/${matchingProduct.id}`;
-        });
-      }
+      // Обновляем атрибут data-active для отслеживания текущего активного цвета
+      button.dataset.active = isActive ? 'true' : 'false';
     });
   },
   
@@ -99,8 +77,5 @@ export const ColorService = {
     
     // Update button colors
     this.updateButtonColor(productId, chosenColor);
-    
-    // Update hrefs
-    this.updateHrefs(productId);
   }
 };

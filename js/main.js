@@ -31,8 +31,16 @@ export function initApp() {
       const baseName = e.target.dataset.baseName; 
       const baseSize = e.target.dataset.baseSize;
       const chosenColor = e.target.dataset.color;
+      const isActive = e.target.dataset.active === 'true';
       
-      // Вызываем событие смены цвета
+      // Если кнопка уже активна (второй клик), переходим на страницу товара
+      if (isActive) {
+        // Найти соответствующий продукт и перейти на его страницу
+        window.location.href = `#product/${productId}`;
+        return;
+      }
+      
+      // Иначе просто вызываем событие смены цвета (обновление слайдера)
       eventBus.emit('color-changed', {
         productId,
         baseName,
