@@ -2,9 +2,70 @@
 <nav class="bg-white shadow-md">
   <div class="container mx-auto px-6 py-3 flex justify-between items-center">
     <a href="#" class="text-xl font-bold text-gray-800">Gift Box Shop</a>
-    <div class="flex space-x-4">
+    
+    <!-- Десктопное меню -->
+    <div class="hidden md:flex space-x-4">
       <a href="#" class="text-gray-600 hover:text-gray-800">Главная</a>
       <a href="#order" class="text-gray-600 hover:text-gray-800">Оформление заказа</a>
     </div>
+    
+    <!-- Мобильное меню -->
+    <div class="md:hidden relative" id="mobileMenu">
+      <button id="menuButton" class="text-2xl focus:outline-none">
+        <i class="fas fa-bars" id="menuIcon"></i>
+      </button>
+      <ul id="mobileMenuItems" class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg transform scale-0 opacity-0 transition-all duration-300 origin-top-right z-20">
+        <li><a href="#" class="block px-4 py-2 text-gray-600 hover:bg-gray-100">Главная</a></li>
+        <li><a href="#order" class="block px-4 py-2 text-gray-600 hover:bg-gray-100">Оформление заказа</a></li>
+      </ul>
+    </div>
   </div>
 </nav>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const menuButton = document.getElementById('menuButton');
+    const mobileMenuItems = document.getElementById('mobileMenuItems');
+    const menuIcon = document.getElementById('menuIcon');
+    
+    // Функция для открытия/закрытия меню
+    function toggleMenu() {
+      const isOpen = mobileMenuItems.classList.contains('scale-100');
+      
+      if (isOpen) {
+        // Закрыть меню
+        mobileMenuItems.classList.replace('scale-100', 'scale-0');
+        mobileMenuItems.classList.replace('opacity-100', 'opacity-0');
+        menuIcon.classList.replace('fa-times', 'fa-bars');
+      } else {
+        // Открыть меню
+        mobileMenuItems.classList.replace('scale-0', 'scale-100');
+        mobileMenuItems.classList.replace('opacity-0', 'opacity-100');
+        menuIcon.classList.replace('fa-bars', 'fa-times');
+      }
+    }
+    
+    // Обработчик для кнопки меню
+    menuButton.addEventListener('click', function(e) {
+      e.stopPropagation();
+      toggleMenu();
+    });
+    
+    // Закрытие меню при клике на ссылку внутри меню
+    mobileMenuItems.querySelectorAll('a').forEach(link => {
+      link.addEventListener('click', function() {
+        toggleMenu();
+      });
+    });
+    
+    // Закрытие меню при клике вне меню
+    document.addEventListener('click', function(e) {
+      const isMenuOpen = mobileMenuItems.classList.contains('scale-100');
+      const isClickInsideMenu = mobileMenuItems.contains(e.target) || menuButton.contains(e.target);
+      
+      if (isMenuOpen && !isClickInsideMenu) {
+        toggleMenu();
+      }
+    });
+  });
+</script>
