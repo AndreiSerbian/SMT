@@ -45,12 +45,6 @@ export const cartService = {
     eventBus.emit('cart-updated', []);
   },
   
-  // Get total quantity of items in cart
-  getTotalQuantity() {
-    const cart = this.getCart();
-    return cart.reduce((total, item) => total + item.quantity, 0);
-  },
-  
   // Render cart component
   renderCart() {
     const cart = this.getCart();
@@ -58,9 +52,6 @@ export const cartService = {
       const product = products.find(p => p.id === item.id);
       return sum + (product ? product.price * item.quantity : 0);
     }, 0);
-
-    // Calculate total quantity
-    const totalQuantity = this.getTotalQuantity();
 
     return `
       <div class="fixed bottom-4 right-4 z-50">
@@ -77,11 +68,11 @@ export const cartService = {
                      2 2 0 014 0z"
             />
           </svg>
-          ${totalQuantity > 0
+          ${cart.length > 0
             ? `<span class="absolute -top-1 -right-1 bg-blue-500 text-white
                            rounded-full w-5 h-5 flex items-center
                            justify-center text-xs">
-                 ${totalQuantity}
+                 ${cart.length}
                </span>`
             : ''
           }
@@ -172,25 +163,15 @@ export const cartService = {
   // Update cart UI without re-rendering everything
   updateCartUI() {
     const cart = this.getCart();
-    const totalQuantity = this.getTotalQuantity();
     
     // Update cart icon count
     const cartCountElement = document.querySelector('.bg-blue-500.text-white.rounded-full');
     if (cartCountElement) {
-      if (totalQuantity > 0) {
-        cartCountElement.textContent = totalQuantity;
+      if (cart.length > 0) {
+        cartCountElement.textContent = cart.length;
         cartCountElement.classList.remove('hidden');
       } else {
         cartCountElement.classList.add('hidden');
-      }
-    } else if (totalQuantity > 0) {
-      // If element doesn't exist but should, refresh the entire cart
-      const cartButton = document.querySelector('.fixed.bottom-4.right-4 button');
-      if (cartButton) {
-        const counterSpan = document.createElement('span');
-        counterSpan.className = "absolute -top-1 -right-1 bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs";
-        counterSpan.textContent = totalQuantity.toString();
-        cartButton.appendChild(counterSpan);
       }
     }
     
