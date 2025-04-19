@@ -17,12 +17,17 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 const GOOGLE_SHEETS_ID = Deno.env.get("GOOGLE_SHEETS_ID");
 
 // Конфигурация Telegram бота
-const TELEGRAM_BOT_TOKEN = "7304653990:AAE0bmI6O8L_8-9WlBplisvFiy-lOoNLtSQ";
-const TELEGRAM_CHAT_ID = "-4656195871";
+const TELEGRAM_BOT_TOKEN = Deno.env.get("TELEGRAM_TOKEN") || "";
+const TELEGRAM_CHAT_ID = Deno.env.get("TELEGRAM_CHAT_ID") || "";
 
 // Отправка уведомления в Telegram
 async function sendTelegramNotification(message) {
   try {
+    if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
+      console.log("Telegram notification skipped: Missing token or chat ID");
+      return { skipped: true, reason: "Missing token or chat ID" };
+    }
+
     const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -63,12 +68,14 @@ async function updateGoogleSheets(order) {
       order.confirmed_at || ""
     ];
 
-    // Мы используем Google Apps Script как посредник для работы с Google Sheets
-    // Это публичный веб-приложение, развернутое из Google Apps Script
-    // Необходимо заменить этот URL на ваш реальный URL веб-приложения Google Apps Script
-    const scriptUrl = `https://script.google.com/macros/s/YOUR_GOOGLE_APPS_SCRIPT_DEPLOYMENT_ID/exec`;
+    const googleScriptUrl = Deno.env.get("GOOGLE_SCRIPT_URL");
     
-    const response = await fetch(scriptUrl, {
+    if (!googleScriptUrl || !GOOGLE_SHEETS_ID) {
+      console.log("Google Sheets update skipped: Missing script URL or sheet ID");
+      return { skipped: true, reason: "Missing script URL or sheet ID" };
+    }
+    
+    const response = await fetch(googleScriptUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -138,6 +145,7 @@ function getConfirmationPage(success, message) {
         }
         <p>${message}</p>
         <p>Спасибо за ваш заказ.</p>
+        <p><a href="/" style="color: #2754C5;">Вернуться на главную</a></p>
       </div>
     </body>
     </html>

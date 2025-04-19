@@ -1,0 +1,18 @@
+
+{
+  "version": 2,
+  "builds": [
+    { "src": "index.html", "use": "@vercel/static" }
+  ],
+  "routes": [
+    { "src": "/(.*)", "dest": "/" }
+  ],
+  "env": {
+    "VITE_API_URL": "@vite_api_url",
+    "VITE_SUPABASE_URL": "@vite_supabase_url",
+    "VITE_SUPABASE_ANON_KEY": "@vite_supabase_anon_key",
+    "VITE_APP_NAME": "Gift Box Shop",
+    "VITE_DEBUG_MODE": "false",
+    "VITE_MIN_ORDER_AMOUNT": "10000"
+  }
+}

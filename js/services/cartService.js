@@ -1,6 +1,7 @@
 
 import { products } from '../data/products.js';
 import { eventBus } from '../utils/eventBus.js';
+import { env } from '../utils/env.js';
 
 export const cartService = {
   // Get cart from localStorage
@@ -45,13 +46,25 @@ export const cartService = {
     eventBus.emit('cart-updated', []);
   },
   
-  // Render cart component
-  renderCart() {
+  // Get cart total
+  getCartTotal() {
     const cart = this.getCart();
-    const total = cart.reduce((sum, item) => {
+    return cart.reduce((sum, item) => {
       const product = products.find(p => p.id === item.id);
       return sum + (product ? product.price * item.quantity : 0);
     }, 0);
+  },
+  
+  // Check if order meets minimum amount
+  meetsMinimumOrderAmount() {
+    return this.getCartTotal() >= env.minOrderAmount;
+  },
+  
+  // Render cart component
+  renderCart() {
+    const cart = this.getCart();
+    const total = this.getCartTotal();
+    const meetsMinimum = this.meetsMinimumOrderAmount();
 
     return `
       <div class="fixed bottom-4 right-4 z-50">
@@ -145,13 +158,26 @@ export const cartService = {
                   <span class="font-semibold text-gray-800">Всего:</span>
                   <span class="font-bold text-xl text-gray-800">₽${total}</span>
                 </div>
-                <button
-                  onclick="goToOrderPage()"
-                  class="w-full bg-blue-200 text-gray-800 px-6 py-3 rounded-lg
+                ${meetsMinimum ? `
+                  <button
+                    onclick="goToOrderPage()"
+                    class="w-full bg-blue-200 text-gray-800 px-6 py-3 rounded-lg
                          font-semibold hover:bg-blue-300 transition duration-300"
-                >
-                  Перейти к оплате
-                </button>
+                  >
+                    Перейти к оплате
+                  </button>
+                ` : `
+                  <div class="text-orange-500 text-center mb-4">
+                    Минимальная сумма заказа: ₽${env.minOrderAmount}
+                  </div>
+                  <button
+                    class="w-full bg-gray-200 text-gray-500 px-6 py-3 rounded-lg
+                         font-semibold cursor-not-allowed"
+                    disabled
+                  >
+                    Перейти к оплате
+                  </button>
+                `}
               </div>
             `}
           </div>

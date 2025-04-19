@@ -1,7 +1,7 @@
 
 import { products } from '../data/products.js';
 import { cartService } from '../services/cartService.js';
-import { toast } from '@/hooks/use-toast';
+import { env } from '../utils/env.js';
 
 const OrderComponent = {
   render() {
@@ -9,13 +9,10 @@ const OrderComponent = {
     const cart = cartService.getCart();
     
     // Check minimum order value
-    const subtotal = cart.reduce((sum, item) => {
-      const product = products.find(p => p.id === item.id);
-      return sum + (product ? product.price * item.quantity : 0);
-    }, 0);
+    const subtotal = cartService.getCartTotal();
     
-    if (subtotal < 10000) {
-      alert('Минимальная сумма заказа — 10 000₽. Пожалуйста, добавьте ещё товары.');
+    if (subtotal < env.minOrderAmount) {
+      alert(`Минимальная сумма заказа — ${env.minOrderAmount}₽. Пожалуйста, добавьте ещё товары.`);
       window.location.hash = '#';
       return;
     }
@@ -81,23 +78,27 @@ const OrderComponent = {
       <p class="mb-2">Для оформления заказа заполните форму ниже. Мы свяжемся с вами для уточнения деталей.</p>
 
       <!-- Форма -->
-      <form id="orderForm" class="grid grid-cols-2 space-4 mb-6 gap-8">
+      <form id="orderForm" class="grid grid-cols-1 md:grid-cols-2 space-4 mb-6 gap-4 md:gap-8">
         <div>
-          <label class="block font-semibold mb-1" for="customerName">Имя</label>
+          <label class="block font-semibold mb-1" for="customerName">Имя <span class="text-red-500">*</span></label>
           <input type="text" id="customerName" name="customerName" required
             class="w-full border border-gray-300 px-3 py-2 rounded focus:outline-none focus:ring">
+          <p id="nameError" class="text-red-500 text-sm mt-1 hidden">Пожалуйста, укажите ваше имя</p>
         </div>
 
         <div>
-          <label class="block font-semibold mb-1" for="phone">Телефон</label>
-          <input type="tel" id="phone" name="phone" required
-            class="w-full border border-gray-300 px-3 py-2 rounded focus:outline-none focus:ring">
+          <label class="block font-semibold mb-1" for="phone">Телефон <span class="text-red-500">*</span></label>
+          <input type="tel" id="phone" name="phone" required pattern="^\\+?[0-9\\s\\-\\(\\)]{10,20}$"
+            class="w-full border border-gray-300 px-3 py-2 rounded focus:outline-none focus:ring"
+            placeholder="+7 (XXX) XXX-XX-XX">
+          <p id="phoneError" class="text-red-500 text-sm mt-1 hidden">Пожалуйста, укажите корректный номер телефона</p>
         </div>
 
         <div>
-          <label class="block font-semibold mb-1" for="email">Электронная почта</label>
+          <label class="block font-semibold mb-1" for="email">Электронная почта <span class="text-red-500">*</span></label>
           <input type="email" id="email" name="email" required
             class="w-full border border-gray-300 px-3 py-2 rounded focus:outline-none focus:ring">
+          <p id="emailError" class="text-red-500 text-sm mt-1 hidden">Пожалуйста, укажите корректный email</p>
         </div>
 
         <div>
@@ -107,7 +108,7 @@ const OrderComponent = {
             placeholder="Например, ул. Ленина, д. 10">
         </div>
 
-        <div class="col-span-2">
+        <div class="col-span-1 md:col-span-2">
           <label class="block font-semibold mb-1" for="comment">Комментарий к заказу</label>
           <textarea id="comment" name="comment" rows="3"
             class="w-full border border-gray-300 px-3 py-2 rounded focus:outline-none focus:ring"
@@ -116,7 +117,7 @@ const OrderComponent = {
 
         <!-- Оплата -->
         <div>
-          <span class="block font-semibold mb-1">Способ оплаты</span>
+          <span class="block font-semibold mb-1">Способ оплаты <span class="text-red-500">*</span></span>
           
           <label class="inline-flex items-center mr-4">
             <input type="radio" name="payment" value="cash" style="accent-color: #00008b;" class="mr-2" checked>
@@ -130,7 +131,7 @@ const OrderComponent = {
 
         <!-- Доставка / Самовывоз - обновленная секция -->
         <div>
-          <span class="block font-semibold mb-1">Доставка / Самовывоз</span>
+          <span class="block font-semibold mb-1">Доставка / Самовывоз <span class="text-red-500">*</span></span>
           <div class="space-y-2">
             <label class="flex items-center">
               <input type="radio" name="delivery" value="delivery" style="accent-color: #00008b;" class="mr-2" checked>
@@ -147,37 +148,110 @@ const OrderComponent = {
           </div>
         </div>
 
+        <!-- Сообщение о состоянии -->
+        <div id="orderStatus" class="col-span-1 md:col-span-2 hidden">
+          <div class="bg-blue-100 text-blue-800 p-4 rounded my-4">
+            <p class="font-semibold">Заказ отправлен. Подтвердите его по email.</p>
+            <p class="text-sm mt-2">На указанный вами адрес электронной почты было отправлено письмо для подтверждения заказа.</p>
+          </div>
+        </div>
+
         <!-- Кнопка -->
-        <button type="submit" class="bg-blue-950 text-white px-4 py-2 rounded hover:bg-blue-800">
+        <button type="submit" id="submitButton" class="bg-blue-950 text-white px-4 py-2 rounded hover:bg-blue-800">
           Оформить заказ
         </button>
       </form>
     </main>
     `;
     
+    // Add input validation event listeners
+    const nameInput = document.getElementById('customerName');
+    const phoneInput = document.getElementById('phone');
+    const emailInput = document.getElementById('email');
+    
+    nameInput.addEventListener('blur', () => {
+      const errorElem = document.getElementById('nameError');
+      if (!nameInput.value.trim()) {
+        errorElem.classList.remove('hidden');
+      } else {
+        errorElem.classList.add('hidden');
+      }
+    });
+    
+    phoneInput.addEventListener('blur', () => {
+      const errorElem = document.getElementById('phoneError');
+      if (!phoneInput.value.trim() || !phoneInput.checkValidity()) {
+        errorElem.classList.remove('hidden');
+      } else {
+        errorElem.classList.add('hidden');
+      }
+    });
+    
+    emailInput.addEventListener('blur', () => {
+      const errorElem = document.getElementById('emailError');
+      if (!emailInput.value.trim() || !emailInput.checkValidity()) {
+        errorElem.classList.remove('hidden');
+      } else {
+        errorElem.classList.add('hidden');
+      }
+    });
+    
     // Add form submission handler
     const form = document.getElementById('orderForm');
     form.addEventListener('submit', OrderComponent.submitOrder);
   },
   
-  submitOrder(event) {
-    event.preventDefault();
-    
-    // Сбор данных формы
-    const form = event.target;
+  validateForm(form) {
+    // Get form fields
     const name = form.customerName.value.trim();
     const phone = form.phone.value.trim();
     const email = form.email.value.trim();
-    const yandexAddress = form.yandexAddress.value.trim();
-    const comment = form.comment.value.trim();
-    const paymentValue = form.payment.value;
-    const deliveryValue = form.delivery.value;
     
-    // Проверка обязательных полей
-    if (!name || !phone || !email) {
-      alert('Пожалуйста, заполните поля Имя, Телефон и Email');
+    // Reset error messages
+    document.getElementById('nameError').classList.add('hidden');
+    document.getElementById('phoneError').classList.add('hidden');
+    document.getElementById('emailError').classList.add('hidden');
+    
+    // Validate required fields
+    let isValid = true;
+    
+    if (!name) {
+      document.getElementById('nameError').classList.remove('hidden');
+      isValid = false;
+    }
+    
+    if (!phone || !/^\\+?[0-9\\s\\-\\(\\)]{10,20}$/.test(phone)) {
+      document.getElementById('phoneError').classList.remove('hidden');
+      isValid = false;
+    }
+    
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      document.getElementById('emailError').classList.remove('hidden');
+      isValid = false;
+    }
+    
+    return isValid;
+  },
+  
+  submitOrder(event) {
+    event.preventDefault();
+    
+    // Get form
+    const form = event.target;
+    
+    // Validate form
+    if (!OrderComponent.validateForm(form)) {
       return;
     }
+    
+    // Сбор данных формы
+    const name = form.customerName.value.trim();
+    const phone = form.phone.value.trim();
+    const email = form.email.value.trim();
+    const yandexAddress = form.yandexAddress ? form.yandexAddress.value.trim() : '';
+    const comment = form.comment ? form.comment.value.trim() : '';
+    const paymentValue = form.payment.value;
+    const deliveryValue = form.delivery.value;
     
     const cart = cartService.getCart();
     
@@ -195,10 +269,7 @@ const OrderComponent = {
     });
     
     // Calculate order totals
-    const subtotal = cart.reduce((sum, item) => {
-      const product = products.find(p => p.id === item.id);
-      return sum + (product ? product.price * item.quantity : 0);
-    }, 0);
+    const subtotal = cartService.getCartTotal();
     
     let discountRate = 0;
     if (subtotal >= 50000) {
@@ -234,8 +305,11 @@ const OrderComponent = {
     submitButton.disabled = true;
     submitButton.innerHTML = 'Обработка...';
     
+    // Получаем URL из переменной окружения или используем хардкод как запасной вариант
+    const apiUrl = env.supabaseUrl || 'https://bsndismiessofvhglzrv.supabase.co';
+    
     // Отправляем заказ в Supabase Edge Function
-    fetch('https://bsndismiessofvhglzrv.supabase.co/functions/v1/order-processing', {
+    fetch(`${apiUrl}/functions/v1/order-processing`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -249,15 +323,20 @@ const OrderComponent = {
         // Очистка корзины
         cartService.clearCart();
         
-        // Показываем уведомление
-        toast({
-          title: "Заказ оформлен!",
-          description: "На вашу почту отправлено письмо для подтверждения заказа.",
-          duration: 5000,
-        });
+        // Показываем сообщение о подтверждении
+        document.getElementById('orderStatus').classList.remove('hidden');
         
-        // Переход на главную
-        window.location.hash = '#';
+        // Меняем текст кнопки
+        submitButton.innerHTML = 'Заказ отправлен';
+        
+        // Скроллим к статусу заказа
+        document.getElementById('orderStatus').scrollIntoView({ behavior: 'smooth' });
+        
+        // Отключаем все поля формы
+        const formInputs = form.querySelectorAll('input, textarea, button, select');
+        formInputs.forEach(input => {
+          input.disabled = true;
+        });
       } else {
         // Обработка ошибки
         alert(`Ошибка при оформлении заказа: ${data.error}`);
