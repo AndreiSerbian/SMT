@@ -1,3 +1,4 @@
+
 import { products } from '../data/products.js';
 import { cartService } from '../services/cartService.js';
 import { env } from '../utils/env.js';
@@ -318,10 +319,13 @@ const OrderComponent = {
     submitButton.disabled = true;
     submitButton.innerHTML = 'Обработка...';
     
-    // Получаем URL из переменной окружения или используем хардкод как запасной вариант
+    // Получаем URL API из переменной окружения
     const apiUrl = env.supabaseUrl || 'https://bsndismiessofvhglzrv.supabase.co';
     
-    // Отправляем заказ в Supabase Edge Function
+    console.log('Отправляем заказ на:', `${apiUrl}/functions/v1/order-processing`);
+    console.log('Данные заказа:', orderData);
+    
+    // Отправляем заказ в Supabase Edge Function с улучшенной обработкой ошибок
     fetch(`${apiUrl}/functions/v1/order-processing`, {
       method: 'POST',
       headers: {
@@ -329,7 +333,15 @@ const OrderComponent = {
       },
       body: JSON.stringify({ orderData }),
     })
-    .then(response => response.json())
+    .then(response => {
+      if (!response.ok) {
+        // Если ответ не OK, получаем текст ошибки
+        return response.text().then(text => {
+          throw new Error(`HTTP ошибка ${response.status}: ${text}`);
+        });
+      }
+      return response.json();
+    })
     .then(data => {
       // Обработка успешного ответа
       if (data.success) {
@@ -352,6 +364,7 @@ const OrderComponent = {
         });
       } else {
         // Обработка ошибки
+        console.error('Ошибка данных:', data.error);
         alert(`Ошибка при оформлении заказа: ${data.error}`);
         submitButton.disabled = false;
         submitButton.innerHTML = originalButtonText;
@@ -359,7 +372,7 @@ const OrderComponent = {
     })
     .catch(error => {
       // Обработка ошибки сети
-      console.error('Error submitting order:', error);
+      console.error('Ошибка отправки заказа:', error);
       alert(`Ошибка при отправке заказа: ${error.message}`);
       submitButton.disabled = false;
       submitButton.innerHTML = originalButtonText;

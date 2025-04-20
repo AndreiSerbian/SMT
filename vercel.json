@@ -13,6 +13,10 @@
     "VITE_SUPABASE_ANON_KEY": "@vite_supabase_anon_key",
     "VITE_APP_NAME": "Gift Box Shop",
     "VITE_DEBUG_MODE": "false",
-    "VITE_MIN_ORDER_AMOUNT": "10000"
+    "VITE_MIN_ORDER_AMOUNT": "10000",
+    "VITE_TELEGRAM_TOKEN": "@vite_telegram_token",
+    "VITE_TELEGRAM_CHAT_ID": "@vite_telegram_chat_id",
+    "VITE_GOOGLE_SCRIPT_URL": "@vite_google_script_url",
+    "VITE_PUBLIC_SITE_URL": "@vite_public_site_url"
   }
 }

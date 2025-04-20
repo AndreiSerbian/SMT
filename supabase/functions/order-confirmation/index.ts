@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.0";
 
@@ -16,9 +15,9 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 // ID таблицы Google Sheets
 const GOOGLE_SHEETS_ID = Deno.env.get("GOOGLE_SHEETS_ID");
 
-// Конфигурация Telegram бота
-const TELEGRAM_BOT_TOKEN = "7304653990:AAE0bmI6O8L_8-9WlBplisvFiy-lOoNLtSQ";
-const TELEGRAM_CHAT_ID = "-4656195871";
+// Конфигурация Telegram бота - используем переменные окружения
+const TELEGRAM_BOT_TOKEN = Deno.env.get("TELEGRAM_TOKEN") || "";
+const TELEGRAM_CHAT_ID = Deno.env.get("TELEGRAM_CHAT_ID") || "";
 
 // Отправка уведомления в Telegram
 async function sendTelegramNotification(message: string) {

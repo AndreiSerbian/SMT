@@ -4,8 +4,8 @@
  */
 export const env = {
   apiUrl: import.meta.env.VITE_API_URL || '',
-  supabaseUrl: import.meta.env.VITE_SUPABASE_URL || '',
-  supabaseAnonKey: import.meta.env.VITE_SUPABASE_ANON_KEY || '',
+  supabaseUrl: import.meta.env.VITE_SUPABASE_URL || 'https://bsndismiessofvhglzrv.supabase.co',
+  supabaseAnonKey: import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzbmRpc21pZXNzb2Z2aGdsenJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzg2ODYyNTIsImV4cCI6MjA1NDI2MjI1Mn0.4pumjrK8SV79xaegTEZaJMmi6lnp-_5uhSytvWpoZHY',
   appName: import.meta.env.VITE_APP_NAME || 'Gift Box Shop',
   debugMode: import.meta.env.VITE_DEBUG_MODE === 'true',
   telegramToken: import.meta.env.VITE_TELEGRAM_TOKEN || '',
