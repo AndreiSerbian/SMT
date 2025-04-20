@@ -1,4 +1,3 @@
-
 import { products } from '../data/products.js';
 import { cartService } from '../services/cartService.js';
 import { env } from '../utils/env.js';
@@ -88,10 +87,12 @@ const OrderComponent = {
 
         <div>
           <label class="block font-semibold mb-1" for="phone">Телефон <span class="text-red-500">*</span></label>
-          <input type="tel" id="phone" name="phone" required pattern="^\\+?[0-9\\s\\-\\(\\)]{10,20}$"
+          <input type="tel" id="phone" name="phone" required 
             class="w-full border border-gray-300 px-3 py-2 rounded focus:outline-none focus:ring"
-            placeholder="+7 (XXX) XXX-XX-XX">
-          <p id="phoneError" class="text-red-500 text-sm mt-1 hidden">Пожалуйста, укажите корректный номер телефона</p>
+            placeholder="+7 (XXX) XXX-XX-XX" 
+            maxlength="18"
+          >
+          <p id="phoneError" class="text-red-500 text-sm mt-1 hidden">Пожалуйста, введите 11 цифр номера телефона</p>
         </div>
 
         <div>
@@ -196,6 +197,18 @@ const OrderComponent = {
       }
     });
     
+    phoneInput.addEventListener('input', function() {
+      const errorElem = document.getElementById('phoneError');
+      const cleanPhone = this.value.replace(/\D/g, '');
+      
+      if (cleanPhone.length !== 11) {
+        errorElem.textContent = 'Пожалуйста, введите 11 цифр номера телефона';
+        errorElem.classList.remove('hidden');
+      } else {
+        errorElem.classList.add('hidden');
+      }
+    });
+    
     // Add form submission handler
     const form = document.getElementById('orderForm');
     form.addEventListener('submit', OrderComponent.submitOrder);
@@ -220,7 +233,7 @@ const OrderComponent = {
       isValid = false;
     }
     
-    if (!phone || !/^\\+?[0-9\\s\\-\\(\\)]{10,20}$/.test(phone)) {
+    if (!phone || !/^(8|\+7)?[\d\s-]{10,15}$/.test(phone.replace(/\D/g, ''))) {
       document.getElementById('phoneError').classList.remove('hidden');
       isValid = false;
     }
