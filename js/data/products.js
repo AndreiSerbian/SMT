@@ -11,8 +11,8 @@ export const products = [
       weight: 0.195,
       price: 290,
       photo: [
-        "src/assets/BoxesPhoto/SmallBowBoxes/Слайд1-3.JPG",
-        "src/assets/BoxesPhoto/SmallBowBoxes/Слайд2-3.JPG"
+        "images/Малые с бантом/Розовая/Слайд1.JPG",
+        "images/Малые с бантом/Розовая/Слайд2.JPG"
       ],
       videos: [],
     },
@@ -27,8 +27,8 @@ export const products = [
       price: 290,
      
       photo: [
-        "src/assets/BoxesPhoto/SmallBowBoxes/Слайд3-3.JPG",
-        "src/assets/BoxesPhoto/SmallBowBoxes/Слайд4-3.JPG"
+        "images/Малые с бантом/Тиффани/Слайд4.JPG",
+        "images/Малые с бантом/Тиффани/Слайд5.JPG"
       ],
       videos: [],
     },
@@ -43,8 +43,10 @@ export const products = [
       price: 290,
       
       photo: [
-        "src/assets/BoxesPhoto/SmallBowBoxes/Слайд5-3.JPG",
-        "src/assets/BoxesPhoto/SmallBowBoxes/Слайд6-3.JPG"
+        "images/Малые с бантом/Черная/Слайд6.JPG",
+        "images/Малые с бантом/Черная/Слайд7.JPG",
+        "images/Малые с бантом/Черная/Слайд8.JPG",
+        "images/Малые с бантом/Черная/Слайд9.JPG",
       ],
       videos: [],
     },
@@ -59,8 +61,10 @@ export const products = [
       price: 290,
  
       photo: [
-        "src/assets/BoxesPhoto/SmallBowBoxes/Слайд7-2.JPG",
-        "src/assets/BoxesPhoto/SmallBowBoxes/Слайд8-2.JPG"
+        "images/Малые с бантом/Белая/Слайд10.JPG",
+        "images/Малые с бантом/Белая/Слайд11.JPG",
+        "images/Малые с бантом/Белая/Слайд12.JPG",
+        "images/Малые с бантом/Белая/Слайд13.JPG",
       ],
       videos: [],
     },
@@ -75,8 +79,8 @@ export const products = [
       price: 290,
      
       photo: [
-        "src/assets/BoxesPhoto/SmallBowBoxes/Слайд9-2.JPG",
-        "src/assets/BoxesPhoto/SmallBowBoxes/Слайд10-3.JPG"
+        "images/Малые с бантом/Красная/Слайд14.JPG",
+        "images/Малые с бантом/Красная/Слайд15.JPG"
       ],
       videos: [],
     },
@@ -90,8 +94,8 @@ export const products = [
       weight: 0.195,
       price: 290,
       photo: [
-        "src/assets/BoxesPhoto/SmallBowBoxes/Слайд11-3.JPG",
-        "src/assets/BoxesPhoto/SmallBowBoxes/Слайд12-3.JPG"
+        "images/Малые с бантом/Оранжевая/Слайд16.JPG",
+        "images/Малые с бантом/Оранжевая/Слайд17.JPG"
       ],
       videos: [],
     },
@@ -105,9 +109,10 @@ export const products = [
       weight: 0.245,
       price: 310,
       photo: [
-        "src/assets/BoxesPhoto/SmallBowBoxes/Слайд19-2.JPG",
-        "src/assets/BoxesPhoto/SmallBowBoxes/Слайд20-2.JPG",
-        "src/assets/BoxesPhoto/SmallBowBoxes/Слайд21.JPG"
+        "images/Малые с бантом/Голубой лед/Слайд26.JPG",
+        "images/Малые с бантом/Голубой лед/Слайд27.JPG",
+        "images/Малые с бантом/Голубой лед/Слайд28.JPG",
+        "images/Малые с бантом/Голубой лед/Слайд29.JPG"
       ],
       videos: [],
     },
@@ -115,15 +120,16 @@ export const products = [
       name: 'Подарочная коробка с лентой',
       id: '0597',
       artikul: '0597',
-      color: 'Ваниль',
+      color: 'Ванильная',
       sizeType: 'малая',
       dimensions: { length: 22, width: 16.5, height: 8.8 },
       weight: 0.245,
       price: 310,
       photo: [
-        "src/assets/BoxesPhoto/SmallBowBoxes/Слайд16-3.JPG",
-        "src/assets/BoxesPhoto/SmallBowBoxes/Слайд17-2.JPG",
-        "src/assets/BoxesPhoto/SmallBowBoxes/Слайд18-2.JPG"
+        "images/Малые с бантом/Ванильная/Слайд22.JPG",
+        "images/Малые с бантом/Ванильная/Слайд23.JPG",
+        "images/Малые с бантом/Ванильная/Слайд24.JPG",
+        "images/Малые с бантом/Ванильная/Слайд25.JPG"
       ],
       videos: [],
     },
@@ -137,9 +143,10 @@ export const products = [
       weight: 0.245,
       price: 310,
       photo: [
-        "src/assets/BoxesPhoto/SmallBowBoxes/Слайд13-3.JPG",
-        "src/assets/BoxesPhoto/SmallBowBoxes/Слайд14-3.JPG",
-        "src/assets/BoxesPhoto/SmallBowBoxes/Слайд15-3.JPG"
+        "images/Малые с бантом/Золотая/Слайд18.JPG",
+        "images/Малые с бантом/Золотая/Слайд19.JPG",
+        "images/Малые с бантом/Золотая/Слайд20.JPG",
+        "images/Малые с бантом/Золотая/Слайд21.JPG"
       ],
       videos: [],
     },
@@ -154,8 +161,8 @@ export const products = [
       weight: 0.25,
       price: 330,
       photo: [
-        "Фото для сайта/Средние с бантом/Розовая/Слайд1.JPG",
-        "Фото для сайта/Средние с бантом/Розовая/Слайд2.JPG"
+        "images/Средние с бантом/Розовая/Слайд1.JPG",
+        "images/Средние с бантом/Розовая/Слайд2.JPG"
       ],
       videos: [],
     },
@@ -169,8 +176,8 @@ export const products = [
       weight: 0.25,
       price: 330,
       photo: [
-        "src/assets/BoxesPhoto/MiddleBowBoxes/Слайд3.JPG",
-        "src/assets/BoxesPhoto/MiddleBowBoxes/Слайд4.JPG"
+        "images/Средние с бантом/Тиффани/Слайд3.JPG",
+        "images/Средние с бантом/Тиффани/Слайд4.JPG"
       ],
       videos: [],
     },
@@ -184,10 +191,10 @@ export const products = [
       weight: 0.25,
       price: 330,
       photo: [
-        "Фото для сайта/Средние с бантом/Черная/Слайд8.JPG",
-        "Фото для сайта/Средние с бантом/Черная/Слайд7.JPG",
-        "Фото для сайта/Средние с бантом/Черная/Слайд6.JPG",
-        "Фото для сайта/Средние с бантом/Черная/Слайд5.JPG",
+        "images/Средние с бантом/Черная/Слайд8.JPG",
+        "images/Средние с бантом/Черная/Слайд7.JPG",
+        "images/Средние с бантом/Черная/Слайд6.JPG",
+        "images/Средние с бантом/Черная/Слайд5.JPG",
       ],
       videos: [],
     },
@@ -201,8 +208,10 @@ export const products = [
       weight: 0.25,
       price: 330,
       photo: [
-        "src/assets/BoxesPhoto/MiddleBowBoxes/Слайд7.JPG",
-        "src/assets/BoxesPhoto/MiddleBowBoxes/Слайд8.JPG"
+        "images/Средние с бантом/Белая/Слайд9.JPG",
+        "images/Средние с бантом/Белая/Слайд10.JPG",
+        "images/Средние с бантом/Белая/Слайд27.JPG",
+        "images/Средние с бантом/Белая/Слайд28.JPG"
       ],
       videos: [],
     },
@@ -216,8 +225,8 @@ export const products = [
       weight: 0.25,
       price: 330,
       photo: [
-        "src/assets/BoxesPhoto/MiddleBowBoxes/Слайд9.JPG",
-        "src/assets/BoxesPhoto/MiddleBowBoxes/Слайд10-2.JPG"
+        "images/Средние с бантом/Красная/Слайд13.JPG",
+        "images/Средние с бантом/Красная/Слайд14.JPG"
       ],
       videos: [],
     },
@@ -231,8 +240,59 @@ export const products = [
       weight: 0.25,
       price: 330,
       photo: [
-        "src/assets/BoxesPhoto/MiddleBowBoxes/Слайд11-2.JPG",
-        "src/assets/BoxesPhoto/MiddleBowBoxes/Слайд12-2.JPG"
+        "images/Средние с бантом/Оранжевая/Слайд15.JPG",
+        "images/Средние с бантом/Оранжевая/Слайд16.JPG"
+      ],
+      videos: [],
+    },
+    {
+      name: 'Подарочная коробка с лентой',
+      id: '0640',
+      artikul: '0640',
+      color: 'Розовая пудра',
+      sizeType: 'средняя',
+      dimensions: { length: 26, width: 17, height: 11 },
+      price: 370,
+      weight: 0.32, // эквивалент 320 г
+      photo: [
+        "images/Средние с бантом/Розовая пудра/Слайд29.JPG",
+        "images/Средние с бантом/Розовая пудра/Слайд30.JPG",
+        "images/Средние с бантом/Розовая пудра/Слайд31.JPG",
+        "images/Средние с бантом/Розовая пудра/Слайд32.JPG"
+      ],
+      videos: [],
+    },
+    {
+      name: 'Подарочная коробка с лентой',
+      id: '0642',
+      artikul: '0642',
+      color: 'Черный муар',
+      sizeType: 'средняя',
+      dimensions: { length: 26, width: 17, height: 11 },
+      price: 370,
+      weight: 0.32,
+      photo: [
+        "images/Средние с бантом/Черный муар/Слайд33.JPG",
+        "images/Средние с бантом/Черный муар/Слайд34.JPG",
+        "images/Средние с бантом/Черный муар/Слайд35.JPG",
+        "images/Средние с бантом/Черный муар/Слайд36.JPG"
+      ],
+      videos: [],
+    },
+    {
+      name: 'Подарочная коробка с лентой',
+      id: '0643',
+      artikul: '0643',
+      color: 'Белый бриллиант',
+      sizeType: 'средняя',
+      dimensions: { length: 26, width: 17, height: 11 },
+      price: 370,
+      weight: 0.32,
+      photo: [
+        "images/Средние с бантом/Белый бриллиант/Слайд25.JPG",
+        "images/Средние с бантом/Белый бриллиант/Слайд26.JPG",
+        "images/Средние с бантом/Белый бриллиант/Слайд27.JPG",
+        "images/Средние с бантом/Белый бриллиант/Слайд28.JPG"
       ],
       videos: [],
     },
@@ -240,16 +300,16 @@ export const products = [
       name: 'Подарочная коробка с лентой',
       id: '0606',
       artikul: '0606',
-      color: 'Синяя',
+      color: 'Синий бархат',
       sizeType: 'средняя',
       dimensions: { length: 26, width: 17, height: 11 },
       weight: 0.32,
       price: 350,
       photo: [
-        "src/assets/BoxesPhoto/MiddleBowBoxes/Слайд17.JPG",
-        "src/assets/BoxesPhoto/MiddleBowBoxes/Слайд18.JPG",
-        "src/assets/BoxesPhoto/MiddleBowBoxes/Слайд19.JPG",
-        "src/assets/BoxesPhoto/MiddleBowBoxes/Слайд20.JPG"
+        "images/Средние с бантом/Синий бархат/Слайд21.JPG",
+        "images/Средние с бантом/Синий бархат/Слайд22.JPG",
+        "images/Средние с бантом/Синий бархат/Слайд23.JPG",
+        "images/Средние с бантом/Синий бархат/Слайд24.JPG"
       ],
       videos: [],
     },
@@ -263,13 +323,14 @@ export const products = [
       weight: 0.25,
       price: 330,
       photo: [
-        "src/assets/BoxesPhoto/MiddleBowBoxes/Слайд13-2.JPG",
-        "src/assets/BoxesPhoto/MiddleBowBoxes/Слайд14-2.JPG",
-        "src/assets/BoxesPhoto/MiddleBowBoxes/Слайд15-2.JPG",
-        "src/assets/BoxesPhoto/MiddleBowBoxes/Слайд16-2.JPG"
+        "images/Средние с бантом/Лавандовая/Слайд17.JPG",
+        "images/Средние с бантом/Лавандовая/Слайд18.JPG",
+        "images/Средние с бантом/Лавандовая/Слайд19.JPG",
+        "images/Средние с бантом/Лавандовая/Слайд20.JPG"
       ],
       videos: [],
     },
+
     // Большой размер (большая)
     {
       name: 'Подарочная коробка с лентой',
@@ -281,8 +342,8 @@ export const products = [
       weight: 0.44,
       price: 440,
       photo: [
-        "src/assets/BoxesPhoto/BigBowBoxes/Слайд1.JPG",
-        "src/assets/BoxesPhoto/BigBowBoxes/Слайд2-2.JPG"
+        "images/Большие с бантом/Розовая/Слайд1.JPG",
+        "images/Большие с бантом/Розовая/Слайд2.JPG"
       ],
       videos: [],
     },
@@ -296,8 +357,8 @@ export const products = [
       weight: 0.44,
       price: 440,
       photo: [
-        "src/assets/BoxesPhoto/BigBowBoxes/Слайд3-2.JPG",
-        "src/assets/BoxesPhoto/BigBowBoxes/Слайд4-3.JPG"
+        "images/Большие с бантом/Тиффани/Слайд3.JPG",
+        "images/Большие с бантом/Тиффани/Слайд4.JPG"
       ],
       videos: [],
     },
@@ -311,8 +372,10 @@ export const products = [
       weight: 0.44,
       price: 440,
       photo: [
-        "src/assets/BoxesPhoto/BigBowBoxes/Слайд5-2.JPG",
-        "src/assets/BoxesPhoto/BigBowBoxes/Слайд6-4.JPG"
+        "images/Большие с бантом/Черная/Слайд5.JPG",
+        "images/Большие с бантом/Черная/Слайд6.JPG",
+        "images/Большие с бантом/Черная/Слайд27.JPG",
+        "images/Большие с бантом/Черная/Слайд28.JPG"
       ],
       videos: [],
     },
@@ -326,8 +389,10 @@ export const products = [
       weight: 0.44,
       price: 440,
       photo: [
-        "src/assets/BoxesPhoto/BigBowBoxes/Слайд7-3.JPG",
-        "src/assets/BoxesPhoto/BigBowBoxes/Слайд8-3.JPG"
+        "images/Большие с бантом/Белая/Слайд7.JPG",
+        "images/Большие с бантом/Белая/Слайд8.JPG",
+        "images/Большие с бантом/Белая/Слайд19.JPG",
+        "images/Большие с бантом/Белая/Слайд20.JPG"
       ],
       videos: [],
     },
@@ -341,8 +406,8 @@ export const products = [
       weight: 0.44,
       price: 440,
       photo: [
-        "src/assets/BoxesPhoto/BigBowBoxes/Слайд9-3.JPG",
-        "src/assets/BoxesPhoto/BigBowBoxes/Слайд10.JPG"
+        "images/Большие с бантом/Красная/Слайд9.JPG",
+        "images/Большие с бантом/Красная/Слайд10.JPG"
       ],
       videos: [],
     },
@@ -356,8 +421,110 @@ export const products = [
       weight: 0.44,
       price: 440,
       photo: [
-        "src/assets/BoxesPhoto/BigBowBoxes/Слайд11.JPG",
-        "src/assets/BoxesPhoto/BigBowBoxes/Слайд12.JPG"
+        "images/Большие с бантом/Оранжевая/Слайд11.JPG",
+        "images/Большие с бантом/Оранжевая/Слайд12.JPG"
+      ],
+      videos: [],
+    },
+    {
+      name: 'Подарочная коробка с лентой',
+      id: '0619',
+      artikul: '0619',
+      color: 'Голубой лед',
+      sizeType: 'большая',
+      dimensions: { length: 29, width: 22, height: 10.5 },
+      price: 490,
+      weight: 0.41, // 410 г
+      photo: [
+        "images/Большие с бантом/Голубой лед/Слайд37.JPG",
+        "images/Большие с бантом/Голубой лед/Слайд38.JPG",
+        "images/Большие с бантом/Голубой лед/Слайд39.JPG",
+        "images/Большие с бантом/Голубой лед/Слайд40.JPG"
+      ],
+      videos: [],
+    },
+    {
+      name: 'Подарочная коробка с лентой',
+      id: '0617',
+      artikul: '0617',
+      color: 'Ванильная',
+      sizeType: 'большая',
+      dimensions: { length: 29, width: 22, height: 10.5 },
+      price: 490,
+      weight: 0.41,
+      photo: [
+        "images/Большие с бантом/Ванильная/Слайд33.JPG",
+        "images/Большие с бантом/Ванильная/Слайд34.JPG",
+        "images/Большие с бантом/Ванильная/Слайд35.JPG",
+        "images/Большие с бантом/Ванильная/Слайд36.JPG"
+      ],
+      videos: [],
+    },
+    {
+      name: 'Подарочная коробка с лентой',
+      id: '0618',
+      artikul: '0618',
+      color: 'Золото',
+      sizeType: 'большая',
+      dimensions: { length: 29, width: 22, height: 10.5 },
+      price: 490,
+      weight: 0.41,
+      photo: [
+        "images/Большие с бантом/Золотая/Слайд29.JPG",
+        "images/Большие с бантом/Золотая/Слайд30.JPG",
+        "images/Большие с бантом/Золотая/Слайд31.JPG",
+        "images/Большие с бантом/Золотая/Слайд32.JPG"
+      ],
+      videos: [],
+    },
+    {
+      name: 'Подарочная коробка с лентой',
+      id: '0650',
+      artikul: '0650',
+      color: 'Розовая пудра',
+      sizeType: 'большая',
+      dimensions: { length: 30, width: 24, height: 10 },
+      price: 490,
+      weight: 0.41,
+      photo: [
+        "images/Большие с бантом/Розовая пудра/Слайд21.JPG",
+        "images/Большие с бантом/Розовая пудра/Слайд22.JPG",
+        "images/Большие с бантом/Розовая пудра/Слайд23.JPG",
+        "images/Большие с бантом/Розовая пудра/Слайд24.JPG"
+      ],
+      videos: [],
+    },
+    {
+      name: 'Подарочная коробка с лентой',
+      id: '0652',
+      artikul: '0652',
+      color: 'Черный муар',
+      sizeType: 'большая',
+      dimensions: { length: 30, width: 24, height: 10 },
+      price: 490,
+      weight: 0.41,
+      photo: [
+        "images/Большие с бантом/Черный муар/Слайд25.JPG",
+        "images/Большие с бантом/Черный муар/Слайд26.JPG",
+        "images/Большие с бантом/Черный муар/Слайд27.JPG",
+        "images/Большие с бантом/Черный муар/Слайд28.JPG"
+      ],
+      videos: [],
+    },
+    {
+      name: 'Подарочная коробка с лентой',
+      id: '0653',
+      artikul: '0653',
+      color: 'Белый бриллиант',
+      sizeType: 'большая',
+      dimensions: { length: 30, width: 24, height: 10 },
+      price: 490,
+      weight: 0.41,
+      photo: [
+        "images/Большие с бантом/Белый бриллиант/Слайд17.JPG",
+        "images/Большие с бантом/Белый бриллиант/Слайд18.JPG",
+        "images/Большие с бантом/Белый бриллиант/Слайд19.JPG",
+        "images/Большие с бантом/Белый бриллиант/Слайд20.JPG"
       ],
       videos: [],
     },
@@ -365,21 +532,21 @@ export const products = [
       name: 'Подарочная коробка с лентой',
       id: '0616',
       artikul: '0616',
-      color: 'Синяя',
+      color: 'Синий бархат',
       sizeType: 'большая',
       dimensions: { length: 30, width: 24, height: 10 },
       weight: 0.41,
       price: 440,
       photo: [
-        "src/assets/BoxesPhoto/BigBowBoxes/Слайд13.JPG",
-        "src/assets/BoxesPhoto/BigBowBoxes/Слайд14.JPG",
-        "src/assets/BoxesPhoto/BigBowBoxes/Слайд15.JPG",
-        "src/assets/BoxesPhoto/BigBowBoxes/Слайд16.JPG",
+        "images/Большие с бантом/Синий бархат/Слайд13.JPG",
+        "images/Большие с бантом/Синий бархат/Слайд14.JPG",
+        "images/Большие с бантом/Синий бархат/Слайд15.JPG",
+        "images/Большие с бантом/Синий бархат/Слайд16.JPG",
       ],
       videos: [],
     },
 
-
+// Коробка с ручками
     {
       name: 'Подарочная коробка с ручкой',
       id: '062',
@@ -390,8 +557,9 @@ export const products = [
       weight: 0.43,
       price: 410,
       photo: [
-        "src/assets/BoxesPhoto/BoxesWithHandles/Слайд10.JPG",
-        "src/assets/BoxesPhoto/BoxesWithHandles/Слайд11.JPG"
+        "images/Коробка с ручками/Слайд3.JPG",
+        "images/Коробка с ручками/Розовая с ручками/Слайд10.JPG",
+        "images/Коробка с ручками/Розовая с ручками/Слайд11.JPG"
       ],
       videos: [],
     },
@@ -405,8 +573,9 @@ export const products = [
       weight: 0.43,
       price: 410,
       photo: [
-        "src/assets/BoxesPhoto/BoxesWithHandles/Слайд18.JPG",
-        "src/assets/BoxesPhoto/BoxesWithHandles/Слайд19.JPG"
+        "images/Коробка с ручками/Слайд3.JPG",
+        "images/Коробка с ручками/Сиреневая с ручками/Слайд18.JPG",
+        "images/Коробка с ручками/Сиреневая с ручками/Слайд19.JPG"
       ],
       videos: [],
     },
@@ -420,8 +589,9 @@ export const products = [
       weight: 0.43,
       price: 410,
       photo: [
-        "Фото для сайта/Коробка с ручками/Черная с ручками/Слайд14.JPG",
-        "Фото для сайта/Коробка с ручками/Черная с ручками/Слайд15.JPG"
+        "images/Коробка с ручками/Слайд3.JPG",
+        "images/Коробка с ручками/Черная с ручками/Слайд14.JPG",
+        "images/Коробка с ручками/Черная с ручками/Слайд15.JPG"
       ],
       videos: [],
     },
@@ -435,8 +605,9 @@ export const products = [
       weight: 0.43,
       price: 410,
       photo: [
-        "src/assets/BoxesPhoto/BoxesWithHandles/Слайд12.JPG",
-        "src/assets/BoxesPhoto/BoxesWithHandles/Слайд13.JPG"
+        "images/Коробка с ручками/Слайд3.JPG",
+        "images/Коробка с ручками/Белая с ручками/Слайд12.JPG",
+        "images/Коробка с ручками/Белая с ручками/Слайд13.JPG"
       ],
       videos: [],
     },
@@ -450,8 +621,9 @@ export const products = [
       weight: 0.43,
       price: 410,
       photo: [
-        "src/assets/BoxesPhoto/BoxesWithHandles/Слайд4.JPG",
-        "src/assets/BoxesPhoto/BoxesWithHandles/Слайд5.JPG"
+        "images/Коробка с ручками/Слайд3.JPG",
+        "images/Коробка с ручками/Красная с ручками/Слайд4.JPG",
+        "images/Коробка с ручками/Красная с ручками/Слайд5.JPG"
       ],
       videos: [],
     },
@@ -464,10 +636,12 @@ export const products = [
       dimensions: { length: 30, width: 23, height: 11 },
       weight: 0.43,
       price: 410,
-      photo: ["src/assets/BoxesPhoto/BoxesWithHandles/Gift box with handle малая WB.jpg",
-        "src/assets/BoxesPhoto/BoxesWithHandles/Gift box with handle малая WB 1.jpg",
-        "src/assets/BoxesPhoto/BoxesWithHandles/Слайд8.JPG",
-        "src/assets/BoxesPhoto/BoxesWithHandles/Слайд9.JPG"
+      photo: [
+        "images/Коробка с ручками/Слайд3.JPG",
+        "images/Коробка с ручками/Оранжевая  с ручками/Gift box with handle small WB.jpg",
+        "images/Коробка с ручками/Оранжевая  с ручками/Gift box with handle small WB 1.jpg",
+        "images/Коробка с ручками/Оранжевая  с ручками/Слайд8.JPG",
+        "images/Коробка с ручками/Оранжевая  с ручками/Слайд9.JPG"
       ],
       videos: [],
     },
@@ -481,8 +655,9 @@ export const products = [
       weight: 0.43,
       price: 410,
       photo: [
-        "src/assets/BoxesPhoto/BoxesWithHandles/Слайд1.JPG",
-        "src/assets/BoxesPhoto/BoxesWithHandles/Слайд2.JPG"
+        "images/Коробка с ручками/Слайд3.JPG",
+        "images/Коробка с ручками/Золотая с ручками/Слайд1.JPG",
+        "images/Коробка с ручками/Золотая с ручками/Слайд2.JPG"
       ],
       videos: [],
     },
@@ -496,14 +671,16 @@ export const products = [
       weight: 0.43,
       price: 410,
       photo: [
-        "src/assets/BoxesPhoto/BoxesWithHandles/Слайд16.JPG",
-        "src/assets/BoxesPhoto/BoxesWithHandles/Слайд17.JPG"
+        "images/Коробка с ручками/Слайд3.JPG",
+        "images/Коробка с ручками/Серебренная с ручками/Слайд16.JPG",
+        "images/Коробка с ручками/Серебренная с ручками/Слайд17.JPG"
       ],
       videos: [],
     },
 
+    // Микрогофрокартон
     {
-      name: 'Подарочная коробка микрогофрокартон',
+      name: 'Подарочная коробка Микрогофрокартон/',
       id: '063',
       artikul: '063',
       color: 'Розовая',
@@ -512,14 +689,14 @@ export const products = [
       weight: 0.06,
       price: 130,
       photo: [
-        "src/assets/BoxesPhoto/MicrogofrocardBoxes/Слайд10.JPG",
-        "src/assets/BoxesPhoto/MicrogofrocardBoxes/Слайд11.JPG",
-        "src/assets/BoxesPhoto/MicrogofrocardBoxes/Слайд12.JPG",
+        "images/Микрогофрокартон/Розовая Микрогофрокартон/Слайд10.JPG",
+        "images/Микрогофрокартон/Розовая Микрогофрокартон/Слайд11.JPG",
+        "images/Микрогофрокартон/Розовая Микрогофрокартон/Слайд12.JPG",
       ],
       videos: [],
     },
     {
-      name: 'Подарочная коробка микрогофрокартон',
+      name: 'Подарочная коробка Микрогофрокартон/',
       id: '0631',
       artikul: '0631',
       color: 'Тиффани',
@@ -528,14 +705,14 @@ export const products = [
       weight: 0.06,
       price: 130,
       photo: [
-        "src/assets/BoxesPhoto/MicrogofrocardBoxes/Слайд7.JPG",
-        "src/assets/BoxesPhoto/MicrogofrocardBoxes/Слайд8.JPG",
-        "src/assets/BoxesPhoto/MicrogofrocardBoxes/Слайд9.JPG",
+        "images/Микрогофрокартон/Тиффани Микрогофрокартон/Слайд7.JPG",
+        "images/Микрогофрокартон/Тиффани Микрогофрокартон/Слайд8.JPG",
+        "images/Микрогофрокартон/Тиффани Микрогофрокартон/Слайд9.JPG",
       ],
       videos: [],
     },
     {
-      name: 'Подарочная коробка микрогофрокартон',
+      name: 'Подарочная коробка Микрогофрокартон/',
       id: '0632',
       artikul: '0632',
       color: 'Черная',
@@ -544,14 +721,14 @@ export const products = [
       weight: 0.06,
       price: 130,
       photo: [
-        "src/assets/BoxesPhoto/MicrogofrocardBoxes/Слайд13.JPG",
-        "src/assets/BoxesPhoto/MicrogofrocardBoxes/Слайд15.JPG",
-        "src/assets/BoxesPhoto/MicrogofrocardBoxes/Слайд16.JPG",
+        "images/Микрогофрокартон/Черная Микрогофрокартон/Слайд13.JPG",
+        "images/Микрогофрокартон/Черная Микрогофрокартон/Слайд15.JPG",
+        "images/Микрогофрокартон/Черная Микрогофрокартон/Слайд16.JPG",
       ],
       videos: [],
     },
     {
-      name: 'Подарочная коробка микрогофрокартон',
+      name: 'Подарочная коробка Микрогофрокартон/',
       id: '0633',
       artikul: '0633',
       color: 'Сиреневая',
@@ -559,14 +736,15 @@ export const products = [
       dimensions: { length: 20, width: 14, height: 4 },
       weight: 0.06,
       price: 130,
-      photo: ["src/assets/BoxesPhoto/MicrogofrocardBoxes/Слайд1.JPG",
-        "src/assets/BoxesPhoto/MicrogofrocardBoxes/Слайд2.JPG",
-        "src/assets/BoxesPhoto/MicrogofrocardBoxes/Слайд3.JPG",
+      photo: [
+        "images/Микрогофрокартон/Сиреневая Микрогофрокартон/Слайд1.JPG",
+        "images/Микрогофрокартон/Сиреневая Микрогофрокартон/Слайд2.JPG",
+        "images/Микрогофрокартон/Сиреневая Микрогофрокартон/Слайд3.JPG",
       ],
       videos: [],
     },
     {
-      name: 'Подарочная коробка микрогофрокартон',
+      name: 'Подарочная коробка Микрогофрокартон/',
       id: '0634',
       artikul: '0634',
       color: 'Красная',
@@ -574,14 +752,15 @@ export const products = [
       dimensions: { length: 20, width: 14, height: 4 },
       weight: 0.06,
       price: 130,
-      photo: [ "src/assets/BoxesPhoto/MicrogofrocardBoxes/Слайд 17.jpg",
-                  "src/assets/BoxesPhoto/MicrogofrocardBoxes/Слайд14.jpg",
-        "src/assets/BoxesPhoto/MicrogofrocardBoxes/Слайд18.jpg"],
+      photo: [ 
+        "images/Микрогофрокартон/Красная Микрогофрокартон/Слайд 17.jpg",
+        "images/Микрогофрокартон/Красная Микрогофрокартон/Слайд14.jpg",
+        "images/Микрогофрокартон/Красная Микрогофрокартон/Слайд18.jpg"],
       videos: [],
     
     },
     {
-      name: 'Подарочная коробка микрогофрокартон',
+      name: 'Подарочная коробка Микрогофрокартон/',
       id: '0635',
       artikul: '0635',
       color: 'Лимонная',
@@ -589,26 +768,30 @@ export const products = [
       dimensions: { length: 20, width: 14, height: 4 },
       weight: 0.06,
       price: 130,
-      photo: ["src/assets/BoxesPhoto/MicrogofrocardBoxes/Слайд4.JPG",
-        "src/assets/BoxesPhoto/MicrogofrocardBoxes/Слайд5.JPG",
-        "src/assets/BoxesPhoto/MicrogofrocardBoxes/Слайд6.JPG",],
+      photo: [
+        "images/Микрогофрокартон/Лимонная Микрогофрокартон/Слайд4.JPG",
+        "images/Микрогофрокартон/Лимонная Микрогофрокартон/Слайд5.JPG",
+        "images/Микрогофрокартон/Лимонная Микрогофрокартон/Слайд6.JPG",],
       videos: [],
     },
   ];
 
 export const colorMap = {
   "Розовая": "#FFB6C1",
+  "Розовая пудра": "#edb8ba",
   "Тиффани": "#81D8D0",
   "Черная": "#000000",
+  "Черный муар": "#0a0a0a",  
   "Сиреневая": "#9370DB",
   "Красная": "#FF0000",
   "Лимонная": "#FFF44F",
   "Белая": "#FFFFFF",
+  "Белый бриллиант": "#fffafa",  
   "Оранжевая": "#FFA500",
   "Голубой лед": "#AFEEEE",
-  "Ваниль": "#F3E5AB",
+  "Ванильная": "#F3E5AB",
   "Золото": "#FFD700",
-  "Синяя": "#0000FF",
+  "Синий бархат": "#0000FF",
   "Лавандовая": "#E6E6FA",
   "Серебро": "#C0C0C0",
   "Красный перламутр": "#E32636"
