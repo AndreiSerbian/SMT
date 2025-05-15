@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.0";
 
@@ -14,11 +13,11 @@ const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 // ID таблицы Google Sheets
-const GOOGLE_SHEETS_ID = Deno.env.get("GOOGLE_SHEETS_ID");
+const GOOGLE_SHEETS_ID = Deno.env.get("GOOGLE_SHEETS_ID") || "1NcBQHJD66m3YLbhwYayaZqJ26Lis6Oz9dk5qYCQ";
 
 // Конфигурация Telegram бота
-const TELEGRAM_BOT_TOKEN = Deno.env.get("TELEGRAM_TOKEN") || "";
-const TELEGRAM_CHAT_ID = Deno.env.get("TELEGRAM_CHAT_ID") || "";
+const TELEGRAM_BOT_TOKEN = Deno.env.get("TELEGRAM_TOKEN") || "7304653990:AAE0bmI6O8L_8-9WlBplisvFiy-lOoNLtSQ";
+const TELEGRAM_CHAT_ID = Deno.env.get("TELEGRAM_CHAT_ID") || "-4656195871";
 
 // Отправка уведомления в Telegram
 async function sendTelegramNotification(message) {
@@ -68,7 +67,7 @@ async function updateGoogleSheets(order) {
       order.confirmed_at || ""
     ];
 
-    const googleScriptUrl = Deno.env.get("GOOGLE_SCRIPT_URL");
+    const googleScriptUrl = Deno.env.get("GOOGLE_SCRIPT_URL") || "https://script.google.com/macros/s/AKfycbxWwYpqNDyjGX9B-iqe65WDJI4mCY8SJCCBbDqVGYwdFDTIY-bceZtlAk5Zk8UlM6MJ/exec";
     
     if (!googleScriptUrl || !GOOGLE_SHEETS_ID) {
       console.log("Google Sheets update skipped: Missing script URL or sheet ID");
