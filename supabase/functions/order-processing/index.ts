@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.0";
 import { Resend } from "npm:resend@1.0.0";
@@ -37,6 +38,9 @@ function generateOrderConfirmationEmail(order: any) {
       <td style="padding: 10px; border: 1px solid #ddd;">${item.quantity * item.price} ₽</td>
     </tr>
   `).join('');
+
+  // Используем PUBLIC_SITE_URL если доступен, или fallback на supabaseUrl
+  const baseUrl = Deno.env.get("PUBLIC_SITE_URL") || supabaseUrl;
 
   // Формирование HTML для всего письма
   return `
@@ -90,7 +94,7 @@ function generateOrderConfirmationEmail(order: any) {
         </table>
         
         <p>Пожалуйста, подтвердите ваш заказ, нажав на кнопку ниже:</p>
-        <a href="${supabaseUrl}/functions/v1/order-confirmation?order_id=${id}" class="button" style="display: inline-block; background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px;">Подтвердить заказ</a>
+        <a href="${baseUrl}/functions/v1/order-confirmation?order_id=${id}" class="button" style="display: inline-block; background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px;">Подтвердить заказ</a>
         
         <p>Если у вас возникли вопросы по заказу, пожалуйста, свяжитесь с нами.</p>
         <p>С уважением,<br>Команда поддержки</p>
@@ -103,6 +107,11 @@ function generateOrderConfirmationEmail(order: any) {
 // Отправка уведомления в Telegram
 async function sendTelegramNotification(message: string) {
   try {
+    if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
+      console.log("Telegram notification skipped: Missing token or chat ID");
+      return { skipped: true, reason: "Missing token or chat ID" };
+    }
+
     const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -143,12 +152,14 @@ async function updateGoogleSheets(order: any) {
       order.confirmed_at || ""
     ];
 
-    // Мы используем Google Apps Script как посредник для работы с Google Sheets
-    // Это публичный веб-приложение, развернутое из Google Apps Script
-    // Необходимо заменить этот URL на ваш реальный URL веб-приложения Google Apps Script
-    const scriptUrl = `https://script.google.com/macros/s/YOUR_GOOGLE_APPS_SCRIPT_DEPLOYMENT_ID/exec`;
+    const googleScriptUrl = Deno.env.get("GOOGLE_SCRIPT_URL");
     
-    const response = await fetch(scriptUrl, {
+    if (!googleScriptUrl || !GOOGLE_SHEETS_ID) {
+      console.log("Google Sheets update skipped: Missing script URL or sheet ID");
+      return { skipped: true, reason: "Missing script URL or sheet ID" };
+    }
+    
+    const response = await fetch(googleScriptUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
