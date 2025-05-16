@@ -9,7 +9,7 @@ const corsHeaders = {
 };
 
 // Инициализация Resend для отправки email
-const resend = new Resend(Deno.env.get("RESEND_API_KEY") || "re_9GjuE5AR_Jt1mTwLWBWEhCYKDCPgqE9Nq");
+const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 // Инициализация Supabase клиента
 const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
@@ -17,11 +17,11 @@ const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 // ID таблицы Google Sheets
-const GOOGLE_SHEETS_ID = Deno.env.get("GOOGLE_SHEETS_ID") || "1NcBQHJD66m3YLbhwYayaZqJ26Lis6Oz9dk5qYCQ";
+const GOOGLE_SHEETS_ID = Deno.env.get("GOOGLE_SHEETS_ID");
 
 // Конфигурация Telegram бота
-const TELEGRAM_BOT_TOKEN = Deno.env.get("TELEGRAM_TOKEN") || "7304653990:AAE0bmI6O8L_8-9WlBplisvFiy-lOoNLtSQ";
-const TELEGRAM_CHAT_ID = Deno.env.get("TELEGRAM_CHAT_ID") || "-4656195871";
+const TELEGRAM_BOT_TOKEN = Deno.env.get("TELEGRAM_TOKEN") || "";
+const TELEGRAM_CHAT_ID = Deno.env.get("TELEGRAM_CHAT_ID") || "";
 
 // Генерация содержимого email для подтверждения заказа
 function generateOrderConfirmationEmail(order) {
