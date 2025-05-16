@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.0";
 import { Resend } from "npm:resend@1.0.0";
@@ -211,18 +212,26 @@ serve(async (req) => {
     try {
       const { orderData } = await req.json();
       
+      console.log("Received order data:", orderData);
+      
       // Сохраняем заказ в базе данных Supabase
+      // Меняем order_status с 'pending' на 'created' для соответствия ограничению
       const { data: order, error } = await supabase
         .from('orders')
         .insert({
           ...orderData,
-          order_status: 'pending',
+          order_status: 'created', // Изменено с 'pending' на 'created'
           created_at: new Date().toISOString()
         })
         .select()
         .single();
         
-      if (error) throw error;
+      if (error) {
+        console.error("Error inserting order:", error);
+        throw error;
+      }
+      
+      console.log("Order created successfully:", order);
       
       // Отправляем уведомление в Telegram
       const telegramMessage = `
