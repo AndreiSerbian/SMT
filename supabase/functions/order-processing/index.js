@@ -151,7 +151,7 @@ async function updateGoogleSheets(order) {
       order.confirmed_at || ""
     ];
 
-    const googleScriptUrl = Deno.env.get("GOOGLE_SCRIPT_URL") || "https://script.google.com/macros/s/AKfycbxWwYpqNDyjGX9B-iqe65WDJI4mCY8SJCCBbDqVGYwdFDTIY-bceZtlAk5Zk8UlM6MJ/exec";
+    const googleScriptUrl = Deno.env.get("GOOGLE_SCRIPT_URL") || "";
     
     if (!googleScriptUrl || !GOOGLE_SHEETS_ID) {
       console.log("Google Sheets update skipped: Missing script URL or sheet ID");
@@ -182,6 +182,8 @@ async function sendOrderConfirmationEmail(order) {
   try {
     const { email, name, id } = order;
     
+    console.log("Attempting to send confirmation email to:", email);
+    
     const data = await resend.emails.send({
       from: 'Подтверждение заказа <onboarding@resend.dev>',
       to: email,
@@ -210,17 +212,34 @@ serve(async (req) => {
   // Обработка создания нового заказа
   if (url.pathname === "/order-processing" && req.method === "POST") {
     try {
-      const { orderData } = await req.json();
+      const requestBody = await req.json();
+      const { orderData } = requestBody;
       
       console.log("Received order data:", orderData);
       
+      // Проверяем, что cart_items - это массив объектов, а не строка
+      if (typeof orderData.cart_items === 'string') {
+        console.warn("Warning: cart_items is a string, converting to JSON");
+        try {
+          orderData.cart_items = JSON.parse(orderData.cart_items);
+        } catch (parseError) {
+          console.error("Error parsing cart_items string:", parseError);
+          throw new Error("Invalid cart_items format");
+        }
+      }
+      
+      // Убедимся, что cart_items - это массив
+      if (!Array.isArray(orderData.cart_items)) {
+        console.error("cart_items is not an array:", orderData.cart_items);
+        throw new Error("cart_items must be an array");
+      }
+      
       // Сохраняем заказ в базе данных Supabase
-      // Меняем order_status с 'pending' на 'created' для соответствия ограничению
       const { data: order, error } = await supabase
         .from('orders')
         .insert({
           ...orderData,
-          order_status: 'created', // Изменено с 'pending' на 'created'
+          order_status: 'created', // Используем 'created' в соответствии с CHECK CONSTRAINT
           created_at: new Date().toISOString()
         })
         .select()
@@ -233,6 +252,11 @@ serve(async (req) => {
       
       console.log("Order created successfully:", order);
       
+      // Формируем детальный список товаров для Telegram
+      const cartItemsDetails = order.cart_items.map((item) => 
+        `- ${item.name} (${item.color}) Арт. ${item.artikul} × ${item.quantity} = ${item.price * item.quantity} ₽`
+      ).join('\n');
+      
       // Отправляем уведомление в Telegram
       const telegramMessage = `
 📦 *Новый заказ!*
@@ -240,18 +264,43 @@ serve(async (req) => {
 📞 *Телефон:* ${order.phone}
 ✉️ *Email:* ${order.email}
 🏠 *Адрес:* ${order.yandex_address || 'Не указан'}
-💰 *Сумма заказа:* ${order.total} ₽
+
+🛒 *Товары:*
+${cartItemsDetails}
+
+💰 *Подытог:* ${order.subtotal} ₽
+🏷️ *Скидка:* ${order.discount || 0} ₽
+💵 *Итого:* ${order.total} ₽
 💳 *Оплата:* ${order.payment === 'cash' ? 'Наличными' : 'Перевод'}
 🚚 *Доставка:* ${order.delivery === 'delivery' ? 'Курьер' : 'Самовывоз'}
+${order.comment ? `📝 *Комментарий:* ${order.comment}` : ''}
       `;
       
-      await sendTelegramNotification(telegramMessage);
+      try {
+        await sendTelegramNotification(telegramMessage);
+        console.log("Telegram notification sent successfully");
+      } catch (telegramError) {
+        console.error("Failed to send Telegram notification:", telegramError);
+        // Продолжаем выполнение, не блокируем процесс
+      }
       
       // Отправляем данные в Google Sheets
-      await updateGoogleSheets(order);
+      try {
+        await updateGoogleSheets(order);
+        console.log("Google Sheets updated successfully");
+      } catch (sheetsError) {
+        console.error("Failed to update Google Sheets:", sheetsError);
+        // Продолжаем выполнение, не блокируем процесс
+      }
       
       // Отправляем email подтверждения
-      await sendOrderConfirmationEmail(order);
+      try {
+        const emailResult = await sendOrderConfirmationEmail(order);
+        console.log("Confirmation email sent successfully");
+      } catch (emailError) {
+        console.error("Failed to send confirmation email:", emailError);
+        // Продолжаем выполнение, не блокируем процесс
+      }
       
       return new Response(
         JSON.stringify({ 
