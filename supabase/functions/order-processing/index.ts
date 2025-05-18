@@ -11,6 +11,7 @@ const corsHeaders = {
 
 // Инициализация Resend для отправки email
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+console.log("Resend initialized with API key:", Deno.env.get("RESEND_API_KEY") ? "API key provided" : "No API key");
 
 // Инициализация Supabase клиента
 const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
@@ -23,6 +24,7 @@ const GOOGLE_SHEETS_ID = Deno.env.get("GOOGLE_SHEETS_ID");
 // Конфигурация Telegram бота
 const TELEGRAM_BOT_TOKEN = Deno.env.get("TELEGRAM_TOKEN") || "";
 const TELEGRAM_CHAT_ID = Deno.env.get("TELEGRAM_CHAT_ID") || "";
+console.log("Telegram config:", TELEGRAM_BOT_TOKEN ? "Token provided" : "No token", TELEGRAM_CHAT_ID ? "Chat ID provided" : "No chat ID");
 
 // Генерация содержимого email для подтверждения заказа
 function generateOrderConfirmationEmail(order: any) {
@@ -39,8 +41,7 @@ function generateOrderConfirmationEmail(order: any) {
     </tr>
   `).join('');
 
-  // Используем PUBLIC_SITE_URL если доступен, или fallback на supabaseUrl
-  const baseUrl = Deno.env.get("PUBLIC_SITE_URL") || supabaseUrl;
+  const publicSiteUrl = Deno.env.get("PUBLIC_SITE_URL") || supabaseUrl;
 
   // Формирование HTML для всего письма
   return `
@@ -94,7 +95,7 @@ function generateOrderConfirmationEmail(order: any) {
         </table>
         
         <p>Пожалуйста, подтвердите ваш заказ, нажав на кнопку ниже:</p>
-        <a href="${baseUrl}/functions/v1/order-confirmation?order_id=${id}" class="button" style="display: inline-block; background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px;">Подтвердить заказ</a>
+        <a href="${publicSiteUrl}/functions/v1/order-confirmation?order_id=${id}" class="button" style="display: inline-block; background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px;">Подтвердить заказ</a>
         
         <p>Если у вас возникли вопросы по заказу, пожалуйста, свяжитесь с нами.</p>
         <p>С уважением,<br>Команда поддержки</p>
@@ -112,6 +113,7 @@ async function sendTelegramNotification(message: string) {
       return { skipped: true, reason: "Missing token or chat ID" };
     }
 
+    console.log("Sending Telegram notification to chat:", TELEGRAM_CHAT_ID);
     const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -200,6 +202,18 @@ async function sendOrderConfirmationEmail(order: any) {
   }
 }
 
+// Нормализация значения доставки в соответствии с ограничениями базы данных
+function normalizeDeliveryValue(delivery: string | undefined): string {
+  // Приводим к стандартным значениям, которые соответствуют ограничениям в базе
+  if (!delivery) return 'delivery'; // значение по умолчанию
+  
+  if (delivery === 'pickup_moscow' || delivery === 'pickup_ershovo') {
+    return 'pickup'; // обобщаем до просто "самовывоз"
+  }
+  
+  return delivery; // оставляем как есть, если это уже стандартное значение
+}
+
 // Обработчик запросов
 serve(async (req) => {
   // Обработка CORS preflight запросов
@@ -235,6 +249,10 @@ serve(async (req) => {
         throw new Error("cart_items must be an array");
       }
       
+      // Нормализуем значение доставки
+      orderData.delivery = normalizeDeliveryValue(orderData.delivery);
+      console.log("Normalized delivery value:", orderData.delivery);
+
       // Сохраняем заказ в базе данных Supabase
       const { data: order, error } = await supabase
         .from('orders')
@@ -253,10 +271,11 @@ serve(async (req) => {
       
       console.log("Order created successfully:", order);
       
-      // Формируем детальный список товаров для Telegram
-      const cartItemsDetails = order.cart_items.map((item: any) => 
-        `- ${item.name} (${item.color}) Арт. ${item.artikul} × ${item.quantity} = ${item.price * item.quantity} ₽`
-      ).join('\n');
+      // Формируем детальный список товаров для Telegram с суммами
+      const cartItemsDetails = order.cart_items.map((item: any) => {
+        const itemTotal = item.price * item.quantity;
+        return `- ${item.name} (${item.color || 'Н/Д'}) Арт. ${item.artikul || 'Н/Д'} × ${item.quantity} = ${itemTotal} ₽`;
+      }).join('\n');
       
       // Отправляем уведомление в Telegram
       const telegramMessage = `
@@ -277,31 +296,34 @@ ${cartItemsDetails}
 ${order.comment ? `📝 *Комментарий:* ${order.comment}` : ''}
       `;
       
+      // Отправляем все уведомления асинхронно и параллельно
+      const notificationPromises = [];
+      
       try {
-        await sendTelegramNotification(telegramMessage);
-        console.log("Telegram notification sent successfully");
+        notificationPromises.push(sendTelegramNotification(telegramMessage));
+        console.log("Telegram notification queued");
       } catch (telegramError) {
-        console.error("Failed to send Telegram notification:", telegramError);
-        // Продолжаем выполнение, не блокируем процесс
+        console.error("Failed to queue Telegram notification:", telegramError);
       }
       
-      // Отправляем данные в Google Sheets
       try {
-        await updateGoogleSheets(order);
-        console.log("Google Sheets updated successfully");
+        notificationPromises.push(updateGoogleSheets(order));
+        console.log("Google Sheets update queued");
       } catch (sheetsError) {
-        console.error("Failed to update Google Sheets:", sheetsError);
-        // Продолжаем выполнение, не блокируем процесс
+        console.error("Failed to queue Google Sheets update:", sheetsError);
       }
       
-      // Отправляем email подтверждения
       try {
-        const emailResult = await sendOrderConfirmationEmail(order);
-        console.log("Confirmation email sent successfully");
+        notificationPromises.push(sendOrderConfirmationEmail(order));
+        console.log("Confirmation email queued");
       } catch (emailError) {
-        console.error("Failed to send confirmation email:", emailError);
-        // Продолжаем выполнение, не блокируем процесс
+        console.error("Failed to queue confirmation email:", emailError);
       }
+      
+      // Ждем завершения всех уведомлений
+      const results = await Promise.allSettled(notificationPromises);
+      console.log("Notification results:", 
+        results.map((r, i) => `${i}: ${r.status === 'fulfilled' ? 'success' : r.reason}`));
       
       return new Response(
         JSON.stringify({ 

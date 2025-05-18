@@ -26,8 +26,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const script = document.createElement('script');
   script.textContent = `
     import { Toaster } from "./components/ui/toaster.js";
-    import { createRoot } from "react-dom/client";
-    import React from "react";
+    import { createRoot } from "/node_modules/react-dom/client.js";
+    import React from "/node_modules/react/index.js";
     
     const root = createRoot(document.getElementById('toaster-root'));
     root.render(React.createElement(Toaster, {}));
