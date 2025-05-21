@@ -24,11 +24,15 @@ const ProductComponent = {
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div class="space-y-4">
             <div class="bg-white rounded-lg shadow-lg overflow-hidden">
-              <img src="${product.photo[0]}" alt="${product.name}" class="w-full h-96 object-cover">
+              <img id="main-product-image" src="${product.photo[0]}" alt="${product.name}" class="w-full h-96 object-cover cursor-pointer">
             </div>
             <div class="grid grid-cols-4 gap-4">
               ${product.photo.map(photo => `
-                <img src="${photo}" alt="${product.name}" class="w-full h-24 object-cover rounded-lg cursor-pointer hover:opacity-75 transition">
+                <img 
+                  src="${photo}" 
+                  alt="${product.name}" 
+                  class="product-thumbnail w-full h-24 object-cover rounded-lg cursor-pointer hover:opacity-75 transition"
+                >
               `).join('')}
             </div>
           </div>
@@ -57,19 +61,22 @@ const ProductComponent = {
                       p.color === color
                     )
                   )
-                  .map(([color, hex]) => `
-                    <button 
-                      class="w-8 h-8 rounded-full border-2 ${product.color === color ? 'border-blue-500' : 'border-transparent'}"
-                      style="background-color: ${hex}"
-                      onclick="window.location.href='#product/${
-                        products.find(p => 
-                          p.name === product.name && 
-                          p.sizeType === product.sizeType && 
-                          p.color === color
-                        ).id
-                      }'"
-                    ></button>
-                  `).join('')}
+                  .map(([color, hex]) => {
+                    const isLight = this.isLightColor(hex);
+                    return `
+                      <button 
+                        class="w-8 h-8 rounded-full border-2 ${isLight ? 'border-gray-300' : 'border-transparent'} ${product.color === color ? 'border-blue-500' : ''}"
+                        style="background-color: ${hex}"
+                        onclick="window.location.href='#product/${
+                          products.find(p => 
+                            p.name === product.name && 
+                            p.sizeType === product.sizeType && 
+                            p.color === color
+                          ).id
+                        }'"
+                      ></button>
+                    `;
+                  }).join('')}
               </div>
             </div>
 
@@ -105,6 +112,23 @@ const ProductComponent = {
       </div>
       ${cartService.renderCart()}
     `;
+  },
+  
+  // Определяет, является ли цвет светлым
+  isLightColor(hex) {
+    // Удаляем # если есть
+    hex = hex.replace('#', '');
+    
+    // Преобразуем hex в RGB
+    const r = parseInt(hex.substr(0, 2), 16);
+    const g = parseInt(hex.substr(2, 2), 16);
+    const b = parseInt(hex.substr(4, 2), 16);
+    
+    // Вычисляем яркость цвета
+    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+    
+    // Если яркость больше 180, считаем цвет светлым
+    return brightness > 180;
   }
 };
 

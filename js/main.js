@@ -4,6 +4,7 @@ import { cartService } from './services/cartService.js';
 import { eventBus } from './utils/eventBus.js';
 import { supabase } from '@/integrations/supabase/client';
 import { Toaster } from "@/components/ui/toaster";
+import { ColorService } from './services/colorService.js';
 
 // Initialize all global event listeners and app state
 export function initApp() {
@@ -34,19 +35,39 @@ export function initApp() {
       const isActive = e.target.dataset.active === 'true';
       
       // Если кнопка уже активна (второй клик), переходим на страницу товара
-      if (isActive) {
+      if (isActive || ColorService.selectedColors[productId] === chosenColor) {
         // Найти соответствующий продукт и перейти на его страницу
         window.location.href = `#product/${productId}`;
         return;
       }
       
       // Иначе просто вызываем событие смены цвета (обновление слайдера)
-      eventBus.emit('color-changed', {
+      const needsRedirect = eventBus.emit('color-changed', {
         productId,
         baseName,
         baseSize,
         chosenColor
       });
+      
+      // Если функция обработки события вернула true, выполняем редирект
+      if (needsRedirect) {
+        window.location.href = `#product/${productId}`;
+      }
+    }
+    
+    // Проверяем клик по миниатюрам в карточке товара
+    if (e.target.matches('.product-thumbnail')) {
+      e.preventDefault();
+      const mainImage = document.getElementById('main-product-image');
+      if (mainImage) {
+        mainImage.src = e.target.src;
+      }
+    }
+    
+    // Проверяем клик по основному изображению для открытия лайтбокса
+    if (e.target.matches('#main-product-image')) {
+      e.preventDefault();
+      openLightbox(e.target.src);
     }
   });
   
@@ -100,5 +121,136 @@ export function initApp() {
   window.goToOrderPage = () => {
     window.toggleCart();
     window.location.hash = '#order';
+  };
+  
+  // Функция для открытия лайтбокса
+  window.openLightbox = (initialImage = null) => {
+    // Создаем лайтбокс, если его еще нет
+    let lightbox = document.getElementById('product-lightbox');
+    
+    if (!lightbox) {
+      lightbox = document.createElement('div');
+      lightbox.id = 'product-lightbox';
+      lightbox.className = 'fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center';
+      
+      const content = document.createElement('div');
+      content.className = 'relative max-w-4xl w-full';
+      
+      // Добавляем кнопку закрытия
+      const closeButton = document.createElement('button');
+      closeButton.className = 'absolute top-2 right-2 text-white text-3xl z-20';
+      closeButton.innerHTML = '&times;';
+      closeButton.onclick = closeLightbox;
+      
+      // Добавляем контейнер для изображения
+      const imageContainer = document.createElement('div');
+      imageContainer.className = 'relative';
+      
+      const image = document.createElement('img');
+      image.id = 'lightbox-image';
+      image.className = 'w-full max-h-[80vh] object-contain';
+      
+      // Добавляем навигационные кнопки
+      const prevButton = document.createElement('button');
+      prevButton.className = 'absolute left-2 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-50 rounded-full p-2 z-10';
+      prevButton.innerHTML = '&lt;';
+      prevButton.onclick = showPrevImage;
+      
+      const nextButton = document.createElement('button');
+      nextButton.className = 'absolute right-2 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-50 rounded-full p-2 z-10';
+      nextButton.innerHTML = '&gt;';
+      nextButton.onclick = showNextImage;
+      
+      // Добавляем миниатюры
+      const thumbnails = document.createElement('div');
+      thumbnails.id = 'lightbox-thumbnails';
+      thumbnails.className = 'flex justify-center gap-2 mt-4';
+      
+      // Собираем все вместе
+      imageContainer.appendChild(image);
+      imageContainer.appendChild(prevButton);
+      imageContainer.appendChild(nextButton);
+      
+      content.appendChild(closeButton);
+      content.appendChild(imageContainer);
+      content.appendChild(thumbnails);
+      
+      lightbox.appendChild(content);
+      document.body.appendChild(lightbox);
+      
+      // Останавливаем прокрутку страницы
+      document.body.style.overflow = 'hidden';
+    }
+    
+    if (initialImage) {
+      // Находим все изображения в продукте
+      const productId = window.location.hash.split('/')[1];
+      const product = products.find(p => p.id === productId);
+      
+      if (product && product.photo) {
+        window.lightboxImages = product.photo;
+        window.currentLightboxIndex = product.photo.indexOf(initialImage);
+        if (window.currentLightboxIndex < 0) window.currentLightboxIndex = 0;
+        
+        updateLightboxImage();
+        updateLightboxThumbnails();
+      } else {
+        // Если не нашли продукт, просто показываем одно изображение
+        document.getElementById('lightbox-image').src = initialImage;
+        document.getElementById('lightbox-thumbnails').innerHTML = '';
+      }
+    }
+    
+    lightbox.style.display = 'flex';
+  };
+  
+  // Функция для обновления главного изображения в лайтбоксе
+  window.updateLightboxImage = () => {
+    const image = document.getElementById('lightbox-image');
+    if (image && window.lightboxImages && window.lightboxImages.length > 0) {
+      image.src = window.lightboxImages[window.currentLightboxIndex];
+    }
+  };
+  
+  // Функция для обновления миниатюр в лайтбоксе
+  window.updateLightboxThumbnails = () => {
+    const thumbnails = document.getElementById('lightbox-thumbnails');
+    if (thumbnails && window.lightboxImages) {
+      thumbnails.innerHTML = window.lightboxImages.map((src, index) => `
+        <img 
+          src="${src}" 
+          class="w-16 h-16 object-cover cursor-pointer ${index === window.currentLightboxIndex ? 'border-2 border-blue-500' : ''}" 
+          onclick="window.currentLightboxIndex = ${index}; window.updateLightboxImage(); window.updateLightboxThumbnails();"
+        />
+      `).join('');
+    }
+  };
+  
+  // Функция для показа предыдущего изображения
+  window.showPrevImage = () => {
+    if (window.lightboxImages && window.lightboxImages.length > 0) {
+      window.currentLightboxIndex = (window.currentLightboxIndex - 1 + window.lightboxImages.length) % window.lightboxImages.length;
+      window.updateLightboxImage();
+      window.updateLightboxThumbnails();
+    }
+  };
+  
+  // Функция для показа следующего изображения
+  window.showNextImage = () => {
+    if (window.lightboxImages && window.lightboxImages.length > 0) {
+      window.currentLightboxIndex = (window.currentLightboxIndex + 1) % window.lightboxImages.length;
+      window.updateLightboxImage();
+      window.updateLightboxThumbnails();
+    }
+  };
+  
+  // Функция для закрытия лайтбокса
+  window.closeLightbox = () => {
+    const lightbox = document.getElementById('product-lightbox');
+    if (lightbox) {
+      lightbox.style.display = 'none';
+      // Возвращаем прокрутку страницы
+      document.body.style.overflow = '';
+    }
   };
 }
