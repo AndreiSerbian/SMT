@@ -1,10 +1,10 @@
-
 import Router from './router.js';
 import { cartService } from './services/cartService.js';
 import { eventBus } from './utils/eventBus.js';
 import { supabase } from '@/integrations/supabase/client';
 import { Toaster } from "@/components/ui/toaster";
 import { ColorService } from './services/colorService.js';
+import { products } from './data/products.js'; // Import products directly
 
 // Initialize all global event listeners and app state
 export function initApp() {
@@ -185,19 +185,36 @@ export function initApp() {
     if (initialImage) {
       // Находим все изображения в продукте
       const productId = window.location.hash.split('/')[1];
-      const product = products.find(p => p.id === productId);
       
-      if (product && product.photo) {
-        window.lightboxImages = product.photo;
-        window.currentLightboxIndex = product.photo.indexOf(initialImage);
-        if (window.currentLightboxIndex < 0) window.currentLightboxIndex = 0;
+      // Fix: Make sure products is accessible - use imported products variable
+      if (productId && products) {
+        const product = products.find(p => p.id === productId);
         
-        updateLightboxImage();
-        updateLightboxThumbnails();
+        if (product && product.photo) {
+          window.lightboxImages = product.photo;
+          window.currentLightboxIndex = product.photo.indexOf(initialImage);
+          if (window.currentLightboxIndex < 0) window.currentLightboxIndex = 0;
+          
+          updateLightboxImage();
+          updateLightboxThumbnails();
+        } else {
+          // Если не нашли продукт, просто показываем одно изображение
+          console.log('Product not found, showing single image:', initialImage);
+          document.getElementById('lightbox-image').src = initialImage;
+          document.getElementById('lightbox-thumbnails').innerHTML = '';
+          
+          // Use the initial image as a fallback
+          window.lightboxImages = [initialImage];
+          window.currentLightboxIndex = 0;
+        }
       } else {
-        // Если не нашли продукт, просто показываем одно изображение
+        console.log('No product ID found or products not defined, showing single image');
         document.getElementById('lightbox-image').src = initialImage;
         document.getElementById('lightbox-thumbnails').innerHTML = '';
+        
+        // Use the initial image as a fallback
+        window.lightboxImages = [initialImage];
+        window.currentLightboxIndex = 0;
       }
     }
     
@@ -254,3 +271,49 @@ export function initApp() {
     }
   };
 }
+
+// Make these functions available in the window object to avoid ReferenceError
+window.updateLightboxImage = () => {
+  const image = document.getElementById('lightbox-image');
+  if (image && window.lightboxImages && window.lightboxImages.length > 0) {
+    image.src = window.lightboxImages[window.currentLightboxIndex];
+  }
+};
+
+window.updateLightboxThumbnails = () => {
+  const thumbnails = document.getElementById('lightbox-thumbnails');
+  if (thumbnails && window.lightboxImages) {
+    thumbnails.innerHTML = window.lightboxImages.map((src, index) => `
+      <img 
+        src="${src}" 
+        class="w-16 h-16 object-cover cursor-pointer ${index === window.currentLightboxIndex ? 'border-2 border-blue-500' : ''}" 
+        onclick="window.currentLightboxIndex = ${index}; window.updateLightboxImage(); window.updateLightboxThumbnails();"
+      />
+    `).join('');
+  }
+};
+
+window.showPrevImage = () => {
+  if (window.lightboxImages && window.lightboxImages.length > 0) {
+    window.currentLightboxIndex = (window.currentLightboxIndex - 1 + window.lightboxImages.length) % window.lightboxImages.length;
+    window.updateLightboxImage();
+    window.updateLightboxThumbnails();
+  }
+};
+
+window.showNextImage = () => {
+  if (window.lightboxImages && window.lightboxImages.length > 0) {
+    window.currentLightboxIndex = (window.currentLightboxIndex + 1) % window.lightboxImages.length;
+    window.updateLightboxImage();
+    window.updateLightboxThumbnails();
+  }
+};
+
+window.closeLightbox = () => {
+  const lightbox = document.getElementById('product-lightbox');
+  if (lightbox) {
+    lightbox.style.display = 'none';
+    // Возвращаем прокрутку страницы
+    document.body.style.overflow = '';
+  }
+};

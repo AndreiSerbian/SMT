@@ -23,11 +23,12 @@ document.addEventListener('DOMContentLoaded', () => {
   document.body.appendChild(toasterRoot);
   
   // Create a script element to render the Toaster component
+  // Fix the import paths to ensure they work correctly
   const script = document.createElement('script');
   script.textContent = `
-    import { Toaster } from "../src/components/ui/toaster.js";
-    import { createRoot } from "/node_modules/react-dom/client.js";
-    import React from "/node_modules/react/index.js";
+    import { Toaster } from "./src/components/ui/toaster.js";
+    import { createRoot } from "./node_modules/react-dom/client.js";
+    import React from "./node_modules/react/index.js";
     
     const root = createRoot(document.getElementById('toaster-root'));
     root.render(React.createElement(Toaster, {}));
