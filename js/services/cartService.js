@@ -133,7 +133,7 @@ export const cartService = {
                             type="number" 
                             value="${item.quantity}" 
                             min="1"
-                            class="w-8 text-center border-x"
+                            class="w-16 text-center border-x"
                             onchange="updateCartQuantity('${item.id}', parseInt(this.value))"
                           >
                           <button 
