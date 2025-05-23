@@ -128,7 +128,7 @@ export const cartService = {
                         <div class="flex items-center mt-1">
                           <button 
                             onclick="updateCartQuantity('${item.id}', ${Math.max(1, item.quantity - 1)})"
-                            class="px-3 py-1 h-8 border border-gray-300 border-r-0 bg-white text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-colors rounded-l"
+                            class="px-3 py-1 h-8 border border-gray-300 bg-white text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-colors rounded-l"
                           >-</button>
                           <input 
                             type="number" 
