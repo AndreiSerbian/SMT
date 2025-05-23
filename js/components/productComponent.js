@@ -28,14 +28,14 @@ const ProductComponent = {
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div class="space-y-4">
             <div class="bg-white rounded-lg shadow-lg overflow-hidden">
-              <img id="main-product-image" src="${product.photo[0]}" alt="${product.name}" class="w-full h-96 object-cover cursor-pointer">
+              <img id="main-product-image" src="${product.photo[0]}" alt="${product.name}" class="w-full h-96 object-contain cursor-pointer">
             </div>
             <div class="grid grid-cols-4 gap-4">
               ${product.photo.map(photo => `
                 <img 
                   src="${photo}" 
                   alt="${product.name}" 
-                  class="product-thumbnail w-full h-24 object-cover rounded-lg cursor-pointer hover:opacity-75 transition"
+                  class="product-thumbnail w-full h-32 object-cover rounded-lg cursor-pointer hover:opacity-75 transition"
                 >
               `).join('')}
             </div>
@@ -113,8 +113,51 @@ const ProductComponent = {
             </button>
           </div>
         </div>
+
+        <!-- Модальное окно для просмотра изображения -->
+        <div id="imageModal" class="fixed inset-0 bg-black bg-opacity-75 hidden z-50 flex items-center justify-center">
+          <div class="relative max-w-4xl max-h-full p-4">
+            <button 
+              onclick="closeImageModal()"
+              class="absolute top-2 right-2 text-red-500 hover:text-red-700 text-4xl font-bold z-10"
+            >
+              ×
+            </button>
+            <img id="modalImage" src="" alt="" class="max-w-full max-h-full object-contain">
+          </div>
+        </div>
       </div>
       ${cartService.renderCart()}
+      
+      <script>
+        // Обработчики для просмотра изображений
+        document.getElementById('main-product-image').addEventListener('click', function() {
+          openImageModal(this.src);
+        });
+        
+        document.querySelectorAll('.product-thumbnail').forEach(thumbnail => {
+          thumbnail.addEventListener('click', function() {
+            document.getElementById('main-product-image').src = this.src;
+            openImageModal(this.src);
+          });
+        });
+        
+        function openImageModal(imageSrc) {
+          document.getElementById('modalImage').src = imageSrc;
+          document.getElementById('imageModal').classList.remove('hidden');
+        }
+        
+        function closeImageModal() {
+          document.getElementById('imageModal').classList.add('hidden');
+        }
+        
+        // Закрытие модального окна по клику на фон
+        document.getElementById('imageModal').addEventListener('click', function(e) {
+          if (e.target === this) {
+            closeImageModal();
+          }
+        });
+      </script>
     `;
   }
 };
