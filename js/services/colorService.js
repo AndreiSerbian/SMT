@@ -26,11 +26,16 @@ export const ColorService = {
       )
       .map(([color, hex]) => {
         const isActive = color === product.color;
-        const isLight = this.isLightColor(hex); // Определяем светлый ли цвет
+        const isLight = this.isLightColor(hex);
+        
+        // Устанавливаем начальный выбранный цвет
+        if (isActive && !this.selectedColors[product.id]) {
+          this.selectedColors[product.id] = color;
+        }
         
         return `
           <button
-            class="color-button w-6 h-6 rounded-full ${isLight ? 'border-2 border-gray-300' : 'border-2 border-transparent'} ${isActive ? 'border-blue-500' : ''}"
+            class="color-button w-6 h-6 rounded-full border-2 ${this.getButtonBorderClass(color, product.id, isLight)}"
             style="background-color: ${hex}"
             data-product-id="${product.id}"
             data-base-name="${product.name}"
@@ -40,6 +45,18 @@ export const ColorService = {
           ></button>
         `;
       }).join('');
+  },
+  
+  // Получает правильный класс окантовки для кнопки цвета
+  getButtonBorderClass(color, productId, isLight) {
+    const selectedColor = this.selectedColors[productId];
+    const isSelected = selectedColor === color;
+    
+    if (isSelected) {
+      return 'border-blue-500'; // Синяя окантовка для активного цвета
+    } else {
+      return 'border-gray-300'; // Серая окантовка для неактивных цветов
+    }
   },
   
   // Проверяет, является ли цвет светлым
@@ -64,14 +81,27 @@ export const ColorService = {
     const product = products.find(p => p.id === productId);
     if (!product) return;
     
+    // Обновляем выбранный цвет
+    this.selectedColors[productId] = color;
+    
     const colorButtons = document.querySelectorAll(`.color-button[data-product-id="${productId}"]`);
     colorButtons.forEach(button => {
-      const isActive = button.dataset.color === color;
-      button.classList.toggle('border-blue-500', isActive);
-      button.classList.toggle('border-transparent', !isActive && !this.isLightColor(button.style.backgroundColor));
+      const buttonColor = button.dataset.color;
+      const isSelected = buttonColor === color;
+      const isLight = this.isLightColor(button.style.backgroundColor);
+      
+      // Удаляем все классы окантовки
+      button.classList.remove('border-blue-500', 'border-gray-300');
+      
+      // Добавляем правильный класс окантовки
+      if (isSelected) {
+        button.classList.add('border-blue-500');
+      } else {
+        button.classList.add('border-gray-300');
+      }
       
       // Обновляем атрибут data-active для отслеживания текущего активного цвета
-      button.dataset.active = isActive ? 'true' : 'false';
+      button.dataset.active = isSelected ? 'true' : 'false';
     });
   },
   
@@ -92,9 +122,6 @@ export const ColorService = {
     if (this.selectedColors[productId] === chosenColor) {
       return true;
     }
-    
-    // Сохраняем выбранный цвет
-    this.selectedColors[productId] = chosenColor;
     
     // Find the matching product
     const matchingProduct = this.findMatchingProduct(baseName, baseSize, chosenColor);

@@ -32,12 +32,17 @@ export function initApp() {
       const baseName = e.target.dataset.baseName; 
       const baseSize = e.target.dataset.baseSize;
       const chosenColor = e.target.dataset.color;
-      const isActive = e.target.dataset.active === 'true';
       
-      // Если кнопка уже активна (второй клик), переходим на страницу товара
-      if (isActive || ColorService.selectedColors[productId] === chosenColor) {
+      // Проверяем, выбран ли уже этот цвет
+      const isCurrentlySelected = ColorService.selectedColors[productId] === chosenColor;
+      
+      // Если кнопка уже выбрана (второй клик), переходим на страницу товара
+      if (isCurrentlySelected) {
         // Найти соответствующий продукт и перейти на его страницу
-        window.location.href = `#product/${productId}`;
+        const matchingProduct = ColorService.findMatchingProduct(baseName, baseSize, chosenColor);
+        if (matchingProduct) {
+          window.location.href = `#product/${matchingProduct.id}`;
+        }
         return;
       }
       
@@ -51,7 +56,10 @@ export function initApp() {
       
       // Если функция обработки события вернула true, выполняем редирект
       if (needsRedirect) {
-        window.location.href = `#product/${productId}`;
+        const matchingProduct = ColorService.findMatchingProduct(baseName, baseSize, chosenColor);
+        if (matchingProduct) {
+          window.location.href = `#product/${matchingProduct.id}`;
+        }
       }
     }
     

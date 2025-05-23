@@ -2,11 +2,15 @@
 import { products } from '../data/products.js';
 import { cartService } from '../services/cartService.js';
 import { colorMap } from '../data/products.js';
+import { ColorService } from '../services/colorService.js';
 
 const ProductComponent = {
   render(productId) {
     const product = products.find(p => p.id === productId);
     if (!product) return HomeComponent.render();
+
+    // Устанавливаем текущий продукт как выбранный цвет
+    ColorService.selectedColors[productId] = product.color;
 
     const app = document.getElementById('app');
     app.innerHTML = `
@@ -62,10 +66,10 @@ const ProductComponent = {
                     )
                   )
                   .map(([color, hex]) => {
-                    const isLight = this.isLightColor(hex);
+                    const isSelected = product.color === color;
                     return `
                       <button 
-                        class="w-8 h-8 rounded-full border-2 ${isLight ? 'border-gray-300' : 'border-transparent'} ${product.color === color ? 'border-blue-500' : ''}"
+                        class="w-8 h-8 rounded-full border-2 ${isSelected ? 'border-blue-500' : 'border-gray-300'}"
                         style="background-color: ${hex}"
                         onclick="window.location.href='#product/${
                           products.find(p => 
@@ -112,23 +116,6 @@ const ProductComponent = {
       </div>
       ${cartService.renderCart()}
     `;
-  },
-  
-  // Определяет, является ли цвет светлым
-  isLightColor(hex) {
-    // Удаляем # если есть
-    hex = hex.replace('#', '');
-    
-    // Преобразуем hex в RGB
-    const r = parseInt(hex.substr(0, 2), 16);
-    const g = parseInt(hex.substr(2, 2), 16);
-    const b = parseInt(hex.substr(4, 2), 16);
-    
-    // Вычисляем яркость цвета
-    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
-    
-    // Если яркость больше 180, считаем цвет светлым
-    return brightness > 180;
   }
 };
 
