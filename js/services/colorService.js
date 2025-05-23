@@ -35,7 +35,7 @@ export const ColorService = {
         
         return `
           <button
-            class="color-button w-10 h-10 rounded-full border-2 ${this.getButtonBorderClass(color, product.id, isLight)}"
+            class="color-button w-9 h-9 rounded-full border-2 ${this.getButtonBorderClass(color, product.id, isLight)}"
             style="background-color: ${hex}"
             data-product-id="${product.id}"
             data-base-name="${product.name}"
