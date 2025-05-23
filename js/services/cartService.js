@@ -1,4 +1,3 @@
-
 import { products } from '../data/products.js';
 import { eventBus } from '../utils/eventBus.js';
 import { env } from '../utils/env.js';
@@ -125,12 +124,18 @@ export const cartService = {
                       <div class="flex-1">
                         <h3 class="font-semibold text-gray-800">${product.name}</h3>
                         <p class="text-gray-600 text-sm">Цвет: ${product.color}</p>
-                        <div class="flex items-center mt-1">
+                        <div class="flex items-center mt-1 border rounded">
                           <button 
                             onclick="updateCartQuantity('${item.id}', ${Math.max(1, item.quantity - 1)})"
                             class="px-2 text-gray-500 hover:text-gray-700"
                           >-</button>
-                          <span class="mx-2">${item.quantity}</span>
+                          <input 
+                            type="number" 
+                            value="${item.quantity}" 
+                            min="1"
+                            class="w-16 text-center border-x"
+                            onchange="updateCartQuantity('${item.id}', parseInt(this.value))"
+                          >
                           <button 
                             onclick="updateCartQuantity('${item.id}', ${item.quantity + 1})"
                             class="px-2 text-gray-500 hover:text-gray-700"
@@ -227,12 +232,18 @@ export const cartService = {
               <div class="flex-1">
                 <h3 class="font-semibold text-gray-800">${product.name}</h3>
                 <p class="text-gray-600 text-sm">Цвет: ${product.color}</p>
-                <div class="flex items-center mt-1">
+                <div class="flex items-center mt-1 border rounded">
                   <button 
                     onclick="updateCartQuantity('${item.id}', ${Math.max(1, item.quantity - 1)})"
                     class="px-2 text-gray-500 hover:text-gray-700"
                   >-</button>
-                  <span class="mx-2">${item.quantity}</span>
+                  <input 
+                    type="number" 
+                    value="${item.quantity}" 
+                    min="1"
+                    class="w-16 text-center border-x"
+                    onchange="updateCartQuantity('${item.id}', parseInt(this.value))"
+                  >
                   <button 
                     onclick="updateCartQuantity('${item.id}', ${item.quantity + 1})"
                     class="px-2 text-gray-500 hover:text-gray-700"
