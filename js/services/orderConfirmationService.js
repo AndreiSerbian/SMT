@@ -1,65 +1,21 @@
-
 /**
  * Сервис для обработки подтверждения заказов
- * Отвечает за обновление статуса заказа и отправку уведомлений
+ * Теперь использует новый OrderConfirmationHandler для генерации номеров заказов
  */
 import { env } from '../utils/env.js';
+import { OrderConfirmationHandler } from './orderConfirmationHandler.js';
 
 export const orderConfirmationService = {
   /**
    * Основная функция для подтверждения заказа
+   * Теперь делегирует обработку в OrderConfirmationHandler
    * @param {string} orderId - ID заказа для подтверждения
    * @param {HTMLButtonElement} button - Кнопка подтверждения (для изменения состояния)
    * @returns {Promise<boolean>} - Успешность операции
    */
   async confirmOrder(orderId, button = null) {
-    try {
-      // Блокируем кнопку и показываем состояние загрузки
-      if (button) {
-        this.setButtonLoading(button, true);
-      }
-
-      // Отправляем запрос на подтверждение заказа в Supabase Edge Function
-      const response = await this.sendConfirmationRequest(orderId);
-      
-      // Проверяем успешность ответа от сервера
-      if (!response.ok) {
-        throw new Error(`Ошибка сервера: ${response.status} ${response.statusText}`);
-      }
-
-      // Парсим JSON ответ от сервера
-      const result = await response.json();
-
-      // Проверяем результат операции
-      if (result.success) {
-        // Показываем сообщение об успехе
-        this.showSuccessMessage('Заказ успешно подтверждён!');
-        
-        // Обновляем интерфейс для подтверждённого заказа
-        if (button) {
-          this.setButtonConfirmed(button);
-        }
-        
-        return true;
-      } else {
-        // Обрабатываем ошибку от сервера
-        throw new Error(result.error || 'Неизвестная ошибка при подтверждении заказа');
-      }
-
-    } catch (error) {
-      // Логируем ошибку для отладки
-      console.error('Ошибка при подтверждении заказа:', error);
-      
-      // Показываем ошибку пользователю
-      this.showErrorMessage(`Ошибка: ${error.message}`);
-      
-      // Возвращаем кнопку в исходное состояние
-      if (button) {
-        this.setButtonLoading(button, false);
-      }
-      
-      return false;
-    }
+    // Используем новый обработчик с генерацией номеров заказов
+    return await OrderConfirmationHandler.confirmOrder(orderId, button);
   },
 
   /**
@@ -185,27 +141,10 @@ export const orderConfirmationService = {
 
   /**
    * Инициализирует обработчики событий для кнопок подтверждения
-   * Автоматически находит все кнопки с атрибутом data-order-id
+   * Теперь делегирует в OrderConfirmationHandler
    */
   initializeConfirmationButtons() {
-    // Находим все кнопки подтверждения на странице
-    const confirmButtons = document.querySelectorAll('[data-order-id]');
-    
-    // Добавляем обработчик клика для каждой кнопки
-    confirmButtons.forEach(button => {
-      button.addEventListener('click', async (event) => {
-        // Предотвращаем стандартное поведение ссылки/кнопки
-        event.preventDefault();
-        
-        // Получаем ID заказа из data-атрибута
-        const orderId = button.getAttribute('data-order-id');
-        
-        // Подтверждаем заказ
-        await this.confirmOrder(orderId, button);
-      });
-    });
-    
-    console.log(`Инициализировано ${confirmButtons.length} кнопок подтверждения заказов`);
+    OrderConfirmationHandler.initializeConfirmationButtons();
   }
 };
 
