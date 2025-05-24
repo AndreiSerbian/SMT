@@ -2,32 +2,51 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.0";
 
-// Конфигурация CORS
+// Конфигурация CORS для веб-запросов
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Инициализация Supabase клиента
+// Инициализация Supabase клиента с правами сервиса
 const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-// ID таблицы Google Sheets
-const GOOGLE_SHEETS_ID = Deno.env.get("GOOGLE_SHEETS_ID");
-
-// Конфигурация Telegram бота
+// Конфигурация Telegram бота для уведомлений
 const TELEGRAM_BOT_TOKEN = Deno.env.get("TELEGRAM_TOKEN") || "";
 const TELEGRAM_CHAT_ID = Deno.env.get("TELEGRAM_CHAT_ID") || "";
 
-// Отправка уведомления в Telegram
-async function sendTelegramNotification(message: string) {
+/**
+ * Отправляет уведомление о подтверждении заказа в Telegram
+ * @param order - Объект заказа с информацией о клиенте
+ */
+async function sendTelegramConfirmation(order: any) {
   try {
+    // Проверяем наличие конфигурации Telegram
     if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
-      console.log("Telegram notification skipped: Missing token or chat ID");
-      return { skipped: true, reason: "Missing token or chat ID" };
+      console.log("Telegram уведомление пропущено: отсутствует токен или chat ID");
+      return { skipped: true, reason: "Отсутствует конфигурация Telegram" };
     }
 
+    // Формируем сообщение о подтверждении заказа
+    const message = `
+✅ *Заказ подтверждён клиентом!*
+
+📋 *Заказ №${order.id}*
+👤 *Клиент:* ${order.name}
+📞 *Телефон:* ${order.phone}
+✉️ *Email:* ${order.email}
+🏠 *Адрес:* ${order.yandex_address || 'Не указан'}
+
+💰 *Сумма заказа:* ${order.total} ₽
+💳 *Оплата:* ${order.payment === 'cash' ? 'Наличными' : 'Переводом'}
+🚚 *Доставка:* ${order.delivery === 'delivery' ? 'Курьер' : 'Самовывоз'}
+
+⏰ *Подтверждено:* ${new Date().toLocaleString('ru-RU')}
+    `;
+
+    // Отправляем POST-запрос в Telegram API
     const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -39,18 +58,32 @@ async function sendTelegramNotification(message: string) {
     });
     
     const result = await response.json();
-    console.log("Telegram notification sent:", result);
+    console.log("Telegram уведомление отправлено:", result);
     return result;
   } catch (error) {
-    console.error("Error sending Telegram notification:", error);
-    throw error;
+    console.error("Ошибка отправки Telegram уведомления:", error);
+    // Не прерываем выполнение функции из-за ошибки уведомления
+    return { error: error.message };
   }
 }
 
-// Обновление данных в Google Sheets
+/**
+ * Обновляет данные заказа в Google Sheets
+ * @param order - Объект заказа для обновления
+ */
 async function updateGoogleSheets(order: any) {
   try {
-    // Формирование данных для отправки в Sheets API
+    // Получаем конфигурацию Google Sheets
+    const googleScriptUrl = Deno.env.get("GOOGLE_SCRIPT_URL");
+    const googleSheetsId = Deno.env.get("GOOGLE_SHEETS_ID");
+    
+    // Проверяем наличие необходимой конфигурации
+    if (!googleScriptUrl || !googleSheetsId) {
+      console.log("Google Sheets обновление пропущено: отсутствует URL скрипта или ID таблицы");
+      return { skipped: true, reason: "Отсутствует конфигурация Google Sheets" };
+    }
+    
+    // Формируем данные для отправки в Google Sheets
     const sheetValues = [
       order.id,
       order.name,
@@ -67,218 +100,172 @@ async function updateGoogleSheets(order: any) {
       order.created_at,
       order.confirmed_at || ""
     ];
-
-    const googleScriptUrl = Deno.env.get("GOOGLE_SCRIPT_URL");
     
-    if (!googleScriptUrl || !GOOGLE_SHEETS_ID) {
-      console.log("Google Sheets update skipped: Missing script URL or sheet ID");
-      return { skipped: true, reason: "Missing script URL or sheet ID" };
-    }
-    
+    // Отправляем POST-запрос в Google Apps Script
     const response = await fetch(googleScriptUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        sheetId: GOOGLE_SHEETS_ID,
+        sheetId: googleSheetsId,
         action: 'addOrUpdateOrder',
         orderData: sheetValues
       })
     });
     
     const result = await response.json();
-    console.log("Google Sheets update result:", result);
+    console.log("Google Sheets обновлено:", result);
     return result;
   } catch (error) {
-    console.error("Error updating Google Sheets:", error);
-    throw error;
+    console.error("Ошибка обновления Google Sheets:", error);
+    // Не прерываем выполнение функции из-за ошибки синхронизации
+    return { error: error.message };
   }
 }
 
-// HTML-страница для подтверждения заказа
-function getConfirmationPage(success: boolean, message: string) {
-  return `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset="utf-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Подтверждение заказа</title>
-      <style>
-        body {
-          font-family: Arial, sans-serif;
-          line-height: 1.6;
-          color: #333;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          height: 100vh;
-          margin: 0;
-          background-color: #f5f5f5;
-        }
-        .container {
-          max-width: 600px;
-          padding: 40px;
-          background-color: white;
-          border-radius: 8px;
-          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-          text-align: center;
-        }
-        .success {
-          color: #4CAF50;
-        }
-        .error {
-          color: #F44336;
-        }
-        .icon {
-          font-size: 72px;
-          margin-bottom: 20px;
-        }
-      </style>
-    </head>
-    <body>
-      <div class="container">
-        ${success 
-          ? `<div class="icon success">✓</div>
-             <h1 class="success">Заказ подтвержден!</h1>`
-          : `<div class="icon error">✗</div>
-             <h1 class="error">Ошибка</h1>`
-        }
-        <p>${message}</p>
-        <p>Спасибо за ваш заказ.</p>
-      </div>
-    </body>
-    </html>
-  `;
-}
-
-// Обработчик запросов
+// Основной обработчик HTTP запросов
 serve(async (req) => {
   // Обработка CORS preflight запросов
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const url = new URL(req.url);
-  
-  if (req.method === "GET") {
+  // Обработка POST запросов для подтверждения заказа
+  if (req.method === "POST") {
     try {
-      // Получаем id заказа из параметров запроса
-      const orderId = url.searchParams.get("order_id");
+      // Парсим JSON из тела запроса
+      const requestBody = await req.json();
+      const { orderId } = requestBody;
       
+      console.log("Получен запрос на подтверждение заказа:", orderId);
+      
+      // Проверяем наличие ID заказа
       if (!orderId) {
         return new Response(
-          getConfirmationPage(false, "Идентификатор заказа не указан"),
+          JSON.stringify({ 
+            success: false, 
+            error: "ID заказа не указан" 
+          }),
           { 
+            status: 400,
             headers: { 
-              "Content-Type": "text/html",
+              "Content-Type": "application/json",
               ...corsHeaders
             } 
           }
         );
       }
       
-      // Получаем информацию о заказе из базы данных
-      const { data: order, error } = await supabase
+      // Получаем заказ из базы данных
+      const { data: order, error: fetchError } = await supabase
         .from('orders')
         .select('*')
         .eq('id', orderId)
         .single();
         
-      if (error || !order) {
+      // Проверяем успешность получения заказа
+      if (fetchError || !order) {
+        console.error("Ошибка получения заказа:", fetchError);
         return new Response(
-          getConfirmationPage(false, "Заказ не найден"),
+          JSON.stringify({ 
+            success: false, 
+            error: "Заказ не найден" 
+          }),
           { 
+            status: 404,
             headers: { 
-              "Content-Type": "text/html",
+              "Content-Type": "application/json",
               ...corsHeaders
             } 
           }
         );
       }
       
-      // Проверяем, не подтвержден ли заказ уже
+      // Проверяем, не подтверждён ли заказ уже
       if (order.order_status === 'confirmed') {
         return new Response(
-          getConfirmationPage(true, "Ваш заказ уже был подтвержден ранее"),
+          JSON.stringify({ 
+            success: true, 
+            message: "Заказ уже был подтверждён ранее",
+            order 
+          }),
           { 
             headers: { 
-              "Content-Type": "text/html",
+              "Content-Type": "application/json",
               ...corsHeaders
             } 
           }
         );
       }
       
-      // Обновляем статус заказа
-      const { error: updateError } = await supabase
+      // Обновляем статус заказа на "confirmed"
+      const { data: updatedOrder, error: updateError } = await supabase
         .from('orders')
         .update({ 
           order_status: 'confirmed',
           confirmed_at: new Date().toISOString()
         })
-        .eq('id', orderId);
-        
-      if (updateError) {
-        return new Response(
-          getConfirmationPage(false, "Не удалось обновить статус заказа"),
-          { 
-            headers: { 
-              "Content-Type": "text/html",
-              ...corsHeaders
-            } 
-          }
-        );
-      }
-      
-      // Получаем обновленный заказ
-      const { data: updatedOrder, error: fetchError } = await supabase
-        .from('orders')
-        .select('*')
         .eq('id', orderId)
+        .select()
         .single();
         
-      if (fetchError || !updatedOrder) {
+      // Проверяем успешность обновления
+      if (updateError) {
+        console.error("Ошибка обновления заказа:", updateError);
         return new Response(
-          getConfirmationPage(false, "Заказ обновлен, но не удалось получить обновленные данные"),
+          JSON.stringify({ 
+            success: false, 
+            error: "Не удалось обновить статус заказа" 
+          }),
           { 
+            status: 500,
             headers: { 
-              "Content-Type": "text/html",
+              "Content-Type": "application/json",
               ...corsHeaders
             } 
           }
         );
       }
       
-      // Отправка уведомления в Telegram
-      const telegramMessage = `
-✅ *Заказ подтверждён!*
-👤 *Имя:* ${updatedOrder.name}
-📞 *Телефон:* ${updatedOrder.phone}
-✉️ *Email:* ${updatedOrder.email}
-💰 *Сумма заказа:* ${updatedOrder.total} ₽
-      `;
+      console.log("Заказ успешно подтверждён:", updatedOrder);
       
-      await sendTelegramNotification(telegramMessage);
+      // Отправляем уведомления асинхронно (не ждём их завершения)
+      const notificationPromises = [
+        sendTelegramConfirmation(updatedOrder),
+        updateGoogleSheets(updatedOrder)
+      ];
       
-      // Обновление данных в Google Sheets
-      await updateGoogleSheets(updatedOrder);
+      // Запускаем уведомления в фоне и логируем результаты
+      Promise.allSettled(notificationPromises).then(results => {
+        console.log("Результаты уведомлений:", 
+          results.map((r, i) => `${i}: ${r.status === 'fulfilled' ? 'успех' : r.reason}`));
+      });
       
+      // Возвращаем успешный ответ клиенту
       return new Response(
-        getConfirmationPage(true, "Ваш заказ успешно подтвержден"),
+        JSON.stringify({ 
+          success: true, 
+          message: "Заказ успешно подтверждён",
+          order: updatedOrder 
+        }),
         { 
           headers: { 
-            "Content-Type": "text/html",
+            "Content-Type": "application/json",
             ...corsHeaders
           } 
         }
       );
+      
     } catch (error) {
-      console.error("Error confirming order:", error);
+      console.error("Ошибка обработки запроса:", error);
       return new Response(
-        getConfirmationPage(false, "Произошла ошибка при обработке запроса"),
+        JSON.stringify({ 
+          success: false, 
+          error: error.message 
+        }),
         { 
+          status: 500,
           headers: { 
-            "Content-Type": "text/html",
+            "Content-Type": "application/json",
             ...corsHeaders
           } 
         }
@@ -286,13 +273,13 @@ serve(async (req) => {
     }
   }
   
-  // Неизвестный метод или маршрут
+  // Обработка неподдерживаемых методов
   return new Response(
     JSON.stringify({ 
-      error: "Unknown route or method" 
+      error: "Метод не поддерживается" 
     }),
     { 
-      status: 404,
+      status: 405,
       headers: { 
         "Content-Type": "application/json",
         ...corsHeaders
