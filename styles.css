@@ -1,4 +1,7 @@
 
+/* Import Tailwind CSS base, components, and utilities */
+@import 'https://cdn.tailwindcss.com/3.4.0/tailwind.min.css';
+
 /* Custom styles for the gift box shop */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
@@ -12,11 +15,6 @@ body {
   font-family: 'Inter', sans-serif;
   line-height: 1.6;
   color: #333;
-}
-
-/* Remove Tailwind CDN warning styles */
-.bg-gray-50 {
-  background-color: #f9fafb;
 }
 
 /* Basic responsive grid */
