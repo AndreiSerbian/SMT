@@ -3,13 +3,49 @@
   command = "npm run build"
   publish = "dist"
 
-# Redirect rules for SPA routing
+# Handle Edge Functions - exclude from SPA redirects
+[[redirects]]
+  from = "/functions/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+  force = true
+
+# Handle static assets - prevent SPA redirect for JS/CSS files
+[[redirects]]
+  from = "/js/*"
+  to = "/js/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/components/*"
+  to = "/components/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/styles.css"
+  to = "/styles.css"
+  status = 200
+  force = true
+
+# SPA routing - only for HTML requests (last rule)
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
 
-# Handle images properly
+# Cache static assets
+[[headers]]
+  for = "/js/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000"
+
+[[headers]]
+  for = "/components/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000"
+
 [[headers]]
   for = "/images/*"
   [headers.values]
