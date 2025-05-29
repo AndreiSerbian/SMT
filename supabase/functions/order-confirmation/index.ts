@@ -2,103 +2,86 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.0";
 
-// Конфигурация CORS для веб-запросов
+// Конфигурация CORS для всех запросов
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
 };
 
-// Инициализация Supabase клиента с правами сервиса
+// Инициализация Supabase клиента с service role для обхода RLS
 const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-// Конфигурация Telegram бота для уведомлений
+// Конфигурация для внешних сервисов
 const TELEGRAM_BOT_TOKEN = Deno.env.get("TELEGRAM_TOKEN") || "";
 const TELEGRAM_CHAT_ID = Deno.env.get("TELEGRAM_CHAT_ID") || "";
 
 /**
- * Генерирует HTML-страницу подтверждения заказа
- * @param orderNumber - Номер заказа или ID
- * @param isAlreadyConfirmed - Был ли заказ уже подтверждён
+ * Генерирует простую HTML-страницу подтверждения без редиректов
  */
-function generateConfirmationHTML(orderNumber: string, isAlreadyConfirmed: boolean = false) {
-  const title = isAlreadyConfirmed ? "Заказ уже подтверждён" : "Заказ подтверждён";
-  const message = isAlreadyConfirmed 
-    ? `Заказ №${orderNumber} уже был подтверждён ранее`
-    : `Спасибо! Заказ №${orderNumber} успешно подтверждён`;
-  
+function generateSuccessHTML(orderNumber: string) {
   return `
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${title}</title>
+    <title>Заказ подтверждён</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #f8fafc;
             margin: 0;
             padding: 20px;
-            min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
+            min-height: 100vh;
         }
         .container {
             background: white;
             padding: 40px;
-            border-radius: 16px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
             text-align: center;
-            max-width: 500px;
+            max-width: 400px;
             width: 100%;
         }
         .icon {
-            font-size: 64px;
-            margin-bottom: 20px;
-            color: #22c55e;
+            font-size: 48px;
+            margin-bottom: 16px;
+            color: #10b981;
         }
         h1 {
             color: #1f2937;
-            margin-bottom: 10px;
+            margin: 0 0 12px 0;
             font-size: 24px;
         }
         p {
             color: #6b7280;
             font-size: 16px;
-            line-height: 1.6;
-            margin-bottom: 20px;
+            margin: 0 0 20px 0;
         }
-        .order-number {
+        .order-info {
             background: #f3f4f6;
-            padding: 15px;
+            padding: 16px;
             border-radius: 8px;
             font-family: monospace;
-            font-size: 18px;
             color: #374151;
-            margin: 20px 0;
-        }
-        .footer {
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #e5e7eb;
-            color: #9ca3af;
-            font-size: 14px;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="icon">✅</div>
-        <h1>${title}</h1>
-        <p>${message}</p>
-        <div class="order-number">Заказ №${orderNumber}</div>
-        <p>Мы свяжемся с вами в ближайшее время для уточнения деталей доставки.</p>
-        <div class="footer">
+        <h1>Заказ подтверждён!</h1>
+        <p>Спасибо! Ваш заказ успешно подтверждён.</p>
+        <div class="order-info">Заказ №${orderNumber}</div>
+        <p style="margin-top: 20px; font-size: 14px; color: #9ca3af;">
             Это окно можно закрыть
-        </div>
+        </p>
     </div>
 </body>
 </html>
@@ -107,7 +90,6 @@ function generateConfirmationHTML(orderNumber: string, isAlreadyConfirmed: boole
 
 /**
  * Генерирует HTML-страницу с ошибкой
- * @param error - Текст ошибки
  */
 function generateErrorHTML(error: string) {
   return `
@@ -116,50 +98,49 @@ function generateErrorHTML(error: string) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ошибка подтверждения</title>
+    <title>Ошибка</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+            background: #fef2f2;
             margin: 0;
             padding: 20px;
-            min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
+            min-height: 100vh;
         }
         .container {
             background: white;
             padding: 40px;
-            border-radius: 16px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
             text-align: center;
-            max-width: 500px;
+            max-width: 400px;
             width: 100%;
         }
         .icon {
-            font-size: 64px;
-            margin-bottom: 20px;
+            font-size: 48px;
+            margin-bottom: 16px;
             color: #ef4444;
         }
         h1 {
             color: #1f2937;
-            margin-bottom: 10px;
+            margin: 0 0 12px 0;
             font-size: 24px;
         }
         p {
             color: #6b7280;
             font-size: 16px;
-            line-height: 1.6;
+            margin: 0;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="icon">❌</div>
-        <h1>Ошибка подтверждения</h1>
+        <h1>Ошибка</h1>
         <p>${error}</p>
-        <p>Пожалуйста, свяжитесь с нами для решения проблемы.</p>
     </div>
 </body>
 </html>
@@ -167,18 +148,15 @@ function generateErrorHTML(error: string) {
 }
 
 /**
- * Отправляет уведомление о подтверждении заказа в Telegram
- * @param order - Объект заказа с информацией о клиенте
+ * Отправляет уведомление в Telegram
  */
-async function sendTelegramConfirmation(order: any) {
+async function sendTelegramNotification(order: any): Promise<{ success: boolean; error?: string }> {
   try {
-    // Проверяем наличие конфигурации Telegram
     if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
-      console.log("Telegram уведомление пропущено: отсутствует токен или chat ID");
-      return { skipped: true, reason: "Отсутствует конфигурация Telegram" };
+      console.log("⚠️ Telegram: конфигурация отсутствует, уведомление пропущено");
+      return { success: false, error: "Конфигурация Telegram отсутствует" };
     }
 
-    // Формируем сообщение о подтверждении заказа
     const message = `
 ✅ *Заказ подтверждён клиентом!*
 
@@ -186,18 +164,13 @@ async function sendTelegramConfirmation(order: any) {
 👤 *Клиент:* ${order.name}
 📞 *Телефон:* ${order.phone}
 ✉️ *Email:* ${order.email}
-🏠 *Адрес:* ${order.yandex_address || 'Не указан'}
-
-💰 *Сумма заказа:* ${order.total} ₽
-💳 *Оплата:* ${order.payment === 'cash' ? 'Наличными' : 'Переводом'}
-🚚 *Доставка:* ${order.delivery === 'delivery' ? 'Курьер' : 'Самовывоз'}
+💰 *Сумма:* ${order.total} ₽
 
 ⏰ *Подтверждено:* ${new Date().toLocaleString('ru-RU')}
     `;
 
-    console.log("Отправляем Telegram уведомление...");
+    console.log("🔔 Отправка Telegram уведомления...");
     
-    // Отправляем POST-запрос в Telegram API
     const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -208,43 +181,37 @@ async function sendTelegramConfirmation(order: any) {
       })
     });
     
-    const result = await response.json();
-    
     if (!response.ok) {
-      console.error("Ошибка Telegram API:", result);
-      return { error: `Telegram API ошибка: ${result.description || 'Неизвестная ошибка'}` };
+      const errorData = await response.text();
+      console.error("❌ Telegram API ошибка:", response.status, errorData);
+      return { success: false, error: `Telegram API ошибка: ${response.status}` };
     }
     
-    console.log("Telegram уведомление отправлено успешно:", result);
-    return { success: true, result };
+    const result = await response.json();
+    console.log("✅ Telegram уведомление отправлено:", result.message_id);
+    return { success: true };
+    
   } catch (error) {
-    console.error("Ошибка отправки Telegram уведомления:", error);
-    return { error: error.message };
+    console.error("❌ Ошибка Telegram уведомления:", error);
+    return { success: false, error: error.message };
   }
 }
 
 /**
- * Обновляет данные заказа в Google Sheets с улучшенным логированием
- * @param order - Объект заказа для обновления
+ * Обновляет Google Sheets
  */
-async function updateGoogleSheets(order: any) {
+async function updateGoogleSheets(order: any): Promise<{ success: boolean; error?: string }> {
   try {
-    // Получаем конфигурацию Google Sheets
     const googleScriptUrl = Deno.env.get("GOOGLE_SCRIPT_URL");
     const googleSheetsId = Deno.env.get("GOOGLE_SHEETS_ID");
     
-    // Проверяем наличие необходимой конфигурации
     if (!googleScriptUrl || !googleSheetsId) {
-      console.log("Google Sheets обновление пропущено: отсутствует URL скрипта или ID таблицы");
-      return { skipped: true, reason: "Отсутствует конфигурация Google Sheets" };
+      console.log("⚠️ Google Sheets: конфигурация отсутствует, обновление пропущено");
+      return { success: false, error: "Конфигурация Google Sheets отсутствует" };
     }
     
-    console.log("Начинаем обновление Google Sheets...");
-    console.log("Google Script URL:", googleScriptUrl);
-    console.log("Google Sheets ID:", googleSheetsId);
-    
-    // Формируем данные для отправки в Google Sheets
-    const sheetValues = [
+    // Подготавливаем данные для Google Sheets
+    const sheetData = [
       order.id,
       order.name || "",
       order.phone || "",
@@ -252,26 +219,25 @@ async function updateGoogleSheets(order: any) {
       order.yandex_address || "Не указан",
       order.payment || "Не указан",
       order.delivery || "Не указан",
-      JSON.stringify(order.cart_items || []), // Убеждаемся, что JSON корректный
+      JSON.stringify(order.cart_items || []),
       order.subtotal || 0,
       order.discount || 0,
       order.total || 0,
       order.order_status || "confirmed",
       order.created_at || "",
-      order.confirmed_at || new Date().toISOString() // Добавляем confirmed_at
+      order.confirmed_at || new Date().toISOString()
     ];
-    
-    console.log("Данные для отправки в Google Sheets:", sheetValues);
     
     const requestBody = {
       sheetId: googleSheetsId,
       action: 'addOrUpdateOrder',
-      orderData: sheetValues
+      orderData: sheetData
     };
     
-    console.log("Тело запроса:", JSON.stringify(requestBody, null, 2));
+    console.log("📊 Отправка данных в Google Sheets...");
+    console.log("📊 URL:", googleScriptUrl);
+    console.log("📊 Данные:", JSON.stringify(requestBody, null, 2));
     
-    // Отправляем POST-запрос в Google Apps Script
     const response = await fetch(googleScriptUrl, {
       method: 'POST',
       headers: { 
@@ -281,93 +247,100 @@ async function updateGoogleSheets(order: any) {
       body: JSON.stringify(requestBody)
     });
     
-    console.log("Google Sheets ответ статус:", response.status);
-    console.log("Google Sheets ответ заголовки:", Object.fromEntries(response.headers.entries()));
+    console.log("📊 Google Sheets ответ:", response.status, response.statusText);
     
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`Google Sheets HTTP ошибка ${response.status}:`, errorText);
-      return { 
-        error: `HTTP ${response.status}: ${errorText}`,
-        status: response.status,
-        statusText: response.statusText
-      };
+      console.error("❌ Google Sheets HTTP ошибка:", response.status, errorText);
+      return { success: false, error: `HTTP ${response.status}: ${errorText}` };
     }
     
     const result = await response.json();
-    console.log("Google Sheets успешно обновлено:", result);
-    return { success: true, result };
+    console.log("✅ Google Sheets обновлено успешно:", result);
+    return { success: true };
     
   } catch (error) {
-    console.error("Критическая ошибка при обновлении Google Sheets:", error);
-    console.error("Стек ошибки:", error.stack);
-    return { 
-      error: error.message,
-      type: error.name,
-      stack: error.stack
-    };
+    console.error("❌ Критическая ошибка Google Sheets:", error);
+    return { success: false, error: error.message };
   }
 }
 
-// Основной обработчик HTTP запросов
+// Основной обработчик
 serve(async (req) => {
-  console.log(`Получен ${req.method} запрос:`, req.url);
+  const requestId = crypto.randomUUID().substring(0, 8);
+  const timestamp = new Date().toISOString();
   
-  // Обработка CORS preflight запросов
+  console.log(`\n🚀 [${requestId}] ${timestamp} - Новый запрос: ${req.method} ${req.url}`);
+  
+  // Обработка CORS preflight
   if (req.method === "OPTIONS") {
+    console.log(`✅ [${requestId}] CORS preflight обработан`);
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Обработка GET запросов (из email ссылок)
+  // Обработка GET запросов (основной сценарий из email)
   if (req.method === "GET") {
     try {
       const url = new URL(req.url);
       const orderId = url.searchParams.get('order_id');
       
-      console.log("GET запрос на подтверждение заказа:", orderId);
+      console.log(`📋 [${requestId}] GET запрос с order_id: ${orderId}`);
       
       if (!orderId) {
-        console.error("Отсутствует order_id в GET параметрах");
+        console.error(`❌ [${requestId}] Отсутствует order_id`);
         return new Response(
-          generateErrorHTML("ID заказа не указан в ссылке"),
+          generateErrorHTML("ID заказа не указан"),
           { 
             status: 400,
-            headers: { "Content-Type": "text/html; charset=utf-8" }
+            headers: { 
+              "Content-Type": "text/html; charset=utf-8",
+              ...corsHeaders
+            }
           }
         );
       }
       
-      // Получаем заказ из базы данных
+      // Получаем заказ из БД
+      console.log(`🔍 [${requestId}] Поиск заказа в Supabase...`);
       const { data: order, error: fetchError } = await supabase
         .from('orders')
         .select('*')
         .eq('id', orderId)
         .single();
         
-      // Проверяем успешность получения заказа
       if (fetchError || !order) {
-        console.error("Ошибка получения заказа:", fetchError);
+        console.error(`❌ [${requestId}] Заказ не найден:`, fetchError);
         return new Response(
-          generateErrorHTML("Заказ не найден в системе"),
+          generateErrorHTML("Заказ не найден"),
           { 
             status: 404,
-            headers: { "Content-Type": "text/html; charset=utf-8" }
+            headers: { 
+              "Content-Type": "text/html; charset=utf-8",
+              ...corsHeaders
+            }
           }
         );
       }
       
-      // Проверяем, не подтверждён ли заказ уже
+      console.log(`📦 [${requestId}] Заказ найден: ${order.id}, статус: ${order.order_status}`);
+      
+      // Проверяем, не подтверждён ли уже
       if (order.order_status === 'confirmed') {
-        console.log("Заказ уже был подтверждён:", order.id);
+        console.log(`⚠️ [${requestId}] Заказ уже подтверждён`);
         return new Response(
-          generateConfirmationHTML(order.order_number || order.id, true),
+          generateSuccessHTML(order.order_number || order.id),
           { 
-            headers: { "Content-Type": "text/html; charset=utf-8" }
+            status: 200,
+            headers: { 
+              "Content-Type": "text/html; charset=utf-8",
+              ...corsHeaders
+            }
           }
         );
       }
       
-      // Обновляем статус заказа на "confirmed"
+      // Обновляем статус заказа
+      console.log(`🔄 [${requestId}] Обновление статуса заказа...`);
       const confirmedAt = new Date().toISOString();
       const { data: updatedOrder, error: updateError } = await supabase
         .from('orders')
@@ -379,204 +352,76 @@ serve(async (req) => {
         .select()
         .single();
         
-      // Проверяем успешность обновления
-      if (updateError) {
-        console.error("Ошибка обновления заказа:", updateError);
+      if (updateError || !updatedOrder) {
+        console.error(`❌ [${requestId}] Ошибка обновления заказа:`, updateError);
         return new Response(
           generateErrorHTML("Не удалось обновить статус заказа"),
           { 
             status: 500,
-            headers: { "Content-Type": "text/html; charset=utf-8" }
+            headers: { 
+              "Content-Type": "text/html; charset=utf-8",
+              ...corsHeaders
+            }
           }
         );
       }
       
-      console.log("Заказ успешно подтверждён:", updatedOrder);
+      console.log(`✅ [${requestId}] Заказ успешно подтверждён: ${updatedOrder.id}`);
       
-      // Отправляем уведомления асинхронно и логируем результаты
+      // Запускаем уведомления в фоне (не блокируем ответ)
       Promise.allSettled([
-        sendTelegramConfirmation(updatedOrder),
+        sendTelegramNotification(updatedOrder),
         updateGoogleSheets(updatedOrder)
       ]).then(results => {
-        console.log("=== РЕЗУЛЬТАТЫ УВЕДОМЛЕНИЙ ===");
+        console.log(`📊 [${requestId}] Результаты уведомлений:`);
         results.forEach((result, index) => {
-          const serviceName = index === 0 ? "Telegram" : "Google Sheets";
+          const service = index === 0 ? "Telegram" : "Google Sheets";
           if (result.status === 'fulfilled') {
-            console.log(`${serviceName} - Успех:`, result.value);
+            console.log(`✅ [${requestId}] ${service}:`, result.value);
           } else {
-            console.error(`${serviceName} - Ошибка:`, result.reason);
+            console.error(`❌ [${requestId}] ${service}:`, result.reason);
           }
         });
-        console.log("=== КОНЕЦ РЕЗУЛЬТАТОВ ===");
       });
       
-      // Возвращаем HTML страницу подтверждения
+      // Возвращаем успешную HTML-страницу
+      console.log(`🎉 [${requestId}] Возврат HTML страницы подтверждения`);
       return new Response(
-        generateConfirmationHTML(updatedOrder.order_number || updatedOrder.id),
+        generateSuccessHTML(updatedOrder.order_number || updatedOrder.id),
         { 
-          headers: { "Content-Type": "text/html; charset=utf-8" }
+          status: 200,
+          headers: { 
+            "Content-Type": "text/html; charset=utf-8",
+            ...corsHeaders
+          }
         }
       );
       
     } catch (error) {
-      console.error("Критическая ошибка в GET обработчике:", error);
+      console.error(`💥 [${requestId}] Критическая ошибка:`, error);
       return new Response(
         generateErrorHTML(`Системная ошибка: ${error.message}`),
         { 
           status: 500,
-          headers: { "Content-Type": "text/html; charset=utf-8" }
+          headers: { 
+            "Content-Type": "text/html; charset=utf-8",
+            ...corsHeaders
+          }
         }
       );
     }
   }
 
-  // Обработка POST запросов для подтверждения заказа (для совместимости)
-  if (req.method === "POST") {
-    try {
-      // Парсим JSON из тела запроса
-      const requestBody = await req.json();
-      const { orderId } = requestBody;
-      
-      console.log("POST запрос на подтверждение заказа:", orderId);
-      
-      // Проверяем наличие ID заказа
-      if (!orderId) {
-        return new Response(
-          JSON.stringify({ 
-            success: false, 
-            error: "ID заказа не указан" 
-          }),
-          { 
-            status: 400,
-            headers: { 
-              "Content-Type": "application/json",
-              ...corsHeaders
-            } 
-          }
-        );
-      }
-      
-      // Получаем заказ из базы данных
-      const { data: order, error: fetchError } = await supabase
-        .from('orders')
-        .select('*')
-        .eq('id', orderId)
-        .single();
-        
-      // Проверяем успешность получения заказа
-      if (fetchError || !order) {
-        console.error("Ошибка получения заказа:", fetchError);
-        return new Response(
-          JSON.stringify({ 
-            success: false, 
-            error: "Заказ не найден" 
-          }),
-          { 
-            status: 404,
-            headers: { 
-              "Content-Type": "application/json",
-              ...corsHeaders
-            } 
-          }
-        );
-      }
-      
-      // Проверяем, не подтверждён ли заказ уже
-      if (order.order_status === 'confirmed') {
-        return new Response(
-          JSON.stringify({ 
-            success: true, 
-            message: "Заказ уже был подтверждён ранее",
-            order 
-          }),
-          { 
-            headers: { 
-              "Content-Type": "application/json",
-              ...corsHeaders
-            } 
-          }
-        );
-      }
-      
-      // Обновляем статус заказа на "confirmed"
-      const { data: updatedOrder, error: updateError } = await supabase
-        .from('orders')
-        .update({ 
-          order_status: 'confirmed',
-          confirmed_at: new Date().toISOString()
-        })
-        .eq('id', orderId)
-        .select()
-        .single();
-        
-      // Проверяем успешность обновления
-      if (updateError) {
-        console.error("Ошибка обновления заказа:", updateError);
-        return new Response(
-          JSON.stringify({ 
-            success: false, 
-            error: "Не удалось обновить статус заказа" 
-          }),
-          { 
-            status: 500,
-            headers: { 
-              "Content-Type": "application/json",
-              ...corsHeaders
-            } 
-          }
-        );
-      }
-      
-      console.log("Заказ успешно подтверждён:", updatedOrder);
-      
-      // Отправляем уведомления асинхронно
-      Promise.allSettled([
-        sendTelegramConfirmation(updatedOrder),
-        updateGoogleSheets(updatedOrder)
-      ]).then(results => {
-        console.log("Результаты уведомлений:", 
-          results.map((r, i) => `${i}: ${r.status === 'fulfilled' ? 'успех' : r.reason}`));
-      });
-      
-      // Возвращаем успешный ответ клиенту
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          message: "Заказ успешно подтверждён",
-          order: updatedOrder 
-        }),
-        { 
-          headers: { 
-            "Content-Type": "application/json",
-            ...corsHeaders
-          } 
-        }
-      );
-      
-    } catch (error) {
-      console.error("Ошибка обработки POST запроса:", error);
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: error.message 
-        }),
-        { 
-          status: 500,
-          headers: { 
-            "Content-Type": "application/json",
-            ...corsHeaders
-          } 
-        }
-      );
-    }
-  }
-  
   // Обработка неподдерживаемых методов
+  console.log(`❌ [${requestId}] Неподдерживаемый метод: ${req.method}`);
   return new Response(
     generateErrorHTML("Метод не поддерживается"),
     { 
       status: 405,
-      headers: { "Content-Type": "text/html; charset=utf-8" }
+      headers: { 
+        "Content-Type": "text/html; charset=utf-8",
+        ...corsHeaders
+      }
     }
   );
 });
