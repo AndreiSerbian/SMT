@@ -8,7 +8,7 @@
     <meta name="description" content="Beautiful Gift Boxes for Every Occasion" />
     <link rel="icon" href="/lovable-uploads/47650ad9-6815-46f4-a1e5-8989d582bdc9.png" type="image/png">
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="styles.css" rel="stylesheet">
+    <link href="./styles.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.css"/>
     <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
@@ -20,22 +20,32 @@
     
     <script>
     // Загрузка и вставка header.html
-    fetch('components/header.html')
-      .then(response => response.text())
+    fetch('./components/header.html')
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.text();
+      })
       .then(data => {
         document.getElementById('header-container').innerHTML = data;
       })
       .catch(error => console.error('Ошибка при загрузке header.html:', error));
  
     // Загрузка и вставка footer.html
-    fetch('components/footer.html')
-      .then(response => response.text())
+    fetch('./components/footer.html')
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.text();
+      })
       .then(data => {
         document.getElementById('footer-container').innerHTML = data;
       })
       .catch(error => console.error('Ошибка при загрузке footer.html:', error));
     </script>  
     
-    <script type="module" src="js/app.js"></script>
+    <script type="module" src="./js/app.js"></script>
   </body>
 </html>
