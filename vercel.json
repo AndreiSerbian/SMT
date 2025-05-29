@@ -2,58 +2,10 @@
 {
   "version": 2,
   "builds": [
-    { "src": "index.html", "use": "@vercel/static" },
-    { "src": "js/**/*", "use": "@vercel/static" },
-    { "src": "components/**/*", "use": "@vercel/static" },
-    { "src": "styles.css", "use": "@vercel/static" }
+    { "src": "index.html", "use": "@vercel/static" }
   ],
   "routes": [
-    {
-      "src": "/functions/v1/(.*)",
-      "dest": "https://bsndismiessofvhglzrv.supabase.co/functions/v1/$1",
-      "headers": {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization"
-      }
-    },
-    {
-      "src": "/js/(.*)",
-      "dest": "/js/$1",
-      "headers": {
-        "Content-Type": "application/javascript"
-      }
-    },
-    {
-      "src": "/components/(.*)",
-      "dest": "/components/$1",
-      "headers": {
-        "Content-Type": "text/html"
-      }
-    },
-    {
-      "src": "/styles.css",
-      "dest": "/styles.css",
-      "headers": {
-        "Content-Type": "text/css"
-      }
-    },
-    {
-      "src": "/images/(.*)",
-      "dest": "/images/$1"
-    },
-    {
-      "src": "/public/(.*)",
-      "dest": "/public/$1"
-    },
-    {
-      "src": "/(.*\\.(js|css|html|png|jpg|jpeg|gif|svg|ico|mp4|webm))",
-      "dest": "/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
-    }
+    { "src": "/(.*)", "dest": "/" }
   ],
   "env": {
     "VITE_API_URL": "@vite_api_url",
