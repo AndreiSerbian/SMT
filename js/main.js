@@ -85,6 +85,7 @@ export function initApp() {
       return;
     }
     
+    const isCurrentlyHidden = modal.classList.contains('hidden');
     modal.classList.toggle('hidden');
     
     const isOpen = !modal.classList.contains('hidden');

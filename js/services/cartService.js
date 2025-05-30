@@ -128,8 +128,9 @@ export const cartService = {
     // Use event delegation - single listener on the modal
     newCartModal.addEventListener('click', (e) => {
       e.preventDefault();
+      e.stopPropagation();
       
-      console.log('Click detected on:', e.target.className);
+      console.log('Click detected on:', e.target.className, e.target);
       
       // Handle quantity decrease button
       if (e.target.classList.contains('quantity-decrease')) {
@@ -139,10 +140,12 @@ export const cartService = {
         
         console.log('Decrease clicked:', { productId, color, currentQuantity });
         
-        if (productId && color && currentQuantity > 1) {
-          this.updateQuantity(productId, color, currentQuantity - 1);
-        } else if (currentQuantity <= 1) {
-          this.removeFromCart(productId, color);
+        if (productId && color) {
+          if (currentQuantity > 1) {
+            this.updateQuantity(productId, color, currentQuantity - 1);
+          } else {
+            this.removeFromCart(productId, color);
+          }
         }
       }
       
@@ -177,11 +180,17 @@ export const cartService = {
       if (e.target.classList.contains('quantity-input')) {
         const productId = e.target.getAttribute('data-product-id');
         const color = e.target.getAttribute('data-color');
-        const newQuantity = parseInt(e.target.value) || 1;
+        let newQuantity = parseInt(e.target.value);
+        
+        // Validate input
+        if (isNaN(newQuantity) || newQuantity < 1) {
+          newQuantity = 1;
+          e.target.value = 1;
+        }
         
         console.log('Input changed:', { productId, color, newQuantity });
         
-        if (productId && color && newQuantity > 0) {
+        if (productId && color) {
           this.updateQuantity(productId, color, newQuantity);
         }
       }
