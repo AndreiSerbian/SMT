@@ -96,24 +96,35 @@ export function initApp() {
     }
   };
   
-  // Register add to cart functionality
-  window.addToCart = (productId, quantity) => {
-    cartService.addToCart(productId, quantity);
+  // Register add to cart functionality with color support
+  window.addToCart = (productId, quantity, color = null) => {
+    // Get current selected color for the product if no color specified
+    if (!color) {
+      const selectedColor = ColorService.selectedColors[productId];
+      const product = products.find(p => p.id === productId);
+      color = selectedColor || (product ? product.color : null);
+    }
+    
+    cartService.addToCart(productId, quantity, color);
   };
   
   // Register remove from cart functionality
-  window.removeFromCart = (productId) => {
-    cartService.removeFromCart(productId);
+  window.removeFromCart = (productId, color = null) => {
+    cartService.removeFromCart(productId, color);
   };
   
   // Register update cart quantity functionality
-  window.updateCartQuantity = (productId, newQuantity) => {
-    const cart = cartService.getCart();
-    const item = cart.find(item => item.id === productId);
-    
-    if (item) {
-      item.quantity = Math.max(1, newQuantity);
-      cartService.saveCart(cart);
+  window.updateCartQuantity = (productId, newQuantity, color = null) => {
+    if (color) {
+      cartService.updateQuantity(productId, color, newQuantity);
+    } else {
+      // Fallback for legacy calls
+      const cart = cartService.getCart();
+      const item = cart.find(item => item.id === productId);
+      
+      if (item) {
+        cartService.updateQuantity(productId, item.color, newQuantity);
+      }
     }
   };
   
