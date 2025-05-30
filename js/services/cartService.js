@@ -112,6 +112,63 @@ export const cartService = {
     return this.getCartTotal() >= env.minOrderAmount;
   },
   
+  // Initialize cart event listeners with delegation
+  initCartEventListeners() {
+    const cartModal = document.getElementById('cartModal');
+    if (!cartModal) return;
+    
+    // Use event delegation - single listener on the modal
+    cartModal.addEventListener('click', (e) => {
+      // Handle quantity decrease button
+      if (e.target.classList.contains('quantity-decrease')) {
+        e.preventDefault();
+        const productId = e.target.dataset.productId;
+        const color = e.target.dataset.color;
+        const currentQuantity = parseInt(e.target.dataset.quantity);
+        
+        if (productId && color) {
+          this.updateQuantity(productId, color, currentQuantity - 1);
+        }
+      }
+      
+      // Handle quantity increase button
+      if (e.target.classList.contains('quantity-increase')) {
+        e.preventDefault();
+        const productId = e.target.dataset.productId;
+        const color = e.target.dataset.color;
+        const currentQuantity = parseInt(e.target.dataset.quantity);
+        
+        if (productId && color) {
+          this.updateQuantity(productId, color, currentQuantity + 1);
+        }
+      }
+      
+      // Handle remove item button
+      if (e.target.classList.contains('remove-item')) {
+        e.preventDefault();
+        const productId = e.target.dataset.productId;
+        const color = e.target.dataset.color;
+        
+        if (productId && color) {
+          this.removeFromCart(productId, color);
+        }
+      }
+    });
+    
+    // Handle input field changes with delegation
+    cartModal.addEventListener('input', (e) => {
+      if (e.target.classList.contains('quantity-input')) {
+        const productId = e.target.dataset.productId;
+        const color = e.target.dataset.color;
+        const newQuantity = parseInt(e.target.value) || 1;
+        
+        if (productId && color && newQuantity > 0) {
+          this.updateQuantity(productId, color, newQuantity);
+        }
+      }
+    });
+  },
+  
   // Render cart component
   renderCart() {
     const cart = this.getCart();
@@ -172,7 +229,7 @@ export const cartService = {
     `;
   },
 
-  // Render cart items
+  // Render cart items with proper data attributes for event delegation
   renderCartItems(cart) {
     if (cart.length === 0) {
       return `
@@ -199,19 +256,24 @@ export const cartService = {
                 <p class="text-gray-600 text-sm">ID: ${item.id}</p>
                 <div class="flex items-center mt-2">
                   <button 
-                    onclick="cartService.updateQuantity('${item.id}', '${item.color}', ${item.quantity - 1})"
-                    class="px-3 py-1 h-8 border border-gray-300 bg-white text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-colors rounded-l"
+                    class="quantity-decrease px-3 py-1 h-8 border border-gray-300 bg-white text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-colors rounded-l"
+                    data-product-id="${item.id}"
+                    data-color="${item.color}"
+                    data-quantity="${item.quantity}"
                   >-</button>
                   <input 
                     type="number" 
                     value="${item.quantity}" 
                     min="1"
-                    class="w-16 h-8 text-center border-t border-b border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-300"
-                    onchange="cartService.updateQuantity('${item.id}', '${item.color}', parseInt(this.value))"
+                    class="quantity-input w-16 h-8 text-center border-t border-b border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-300"
+                    data-product-id="${item.id}"
+                    data-color="${item.color}"
                   >
                   <button 
-                    onclick="cartService.updateQuantity('${item.id}', '${item.color}', ${item.quantity + 1})"
-                    class="px-3 py-1 h-8 border border-gray-300 bg-white text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-colors rounded-r"
+                    class="quantity-increase px-3 py-1 h-8 border border-gray-300 bg-white text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-colors rounded-r"
+                    data-product-id="${item.id}"
+                    data-color="${item.color}"
+                    data-quantity="${item.quantity}"
                   >+</button>
                 </div>
               </div>
@@ -220,8 +282,9 @@ export const cartService = {
                   ₽${product.price * item.quantity}
                 </p>
                 <button 
-                  onclick="cartService.removeFromCart('${item.id}', '${item.color}')"
-                  class="text-red-500 hover:text-red-700 text-sm mt-1"
+                  class="remove-item text-red-500 hover:text-red-700 text-sm mt-1"
+                  data-product-id="${item.id}"
+                  data-color="${item.color}"
                 >
                   Удалить
                 </button>

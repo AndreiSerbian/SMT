@@ -21,6 +21,9 @@ export function initApp() {
   toaster.innerHTML = '<div id="toaster"></div>';
   document.body.appendChild(toaster);
   
+  // Initialize cart event listeners with delegation
+  cartService.initCartEventListeners();
+  
   // Initialize global event listeners
   document.addEventListener('click', (e) => {
     // Проверяем, кликнули ли по элементу .color-button
@@ -90,6 +93,9 @@ export function initApp() {
     if (isOpen) {
       transformEl.classList.add('translate-x-0');
       transformEl.classList.remove('translate-x-full');
+      
+      // Re-initialize event listeners when cart opens
+      cartService.initCartEventListeners();
     } else {
       transformEl.classList.remove('translate-x-0');
       transformEl.classList.add('translate-x-full');
