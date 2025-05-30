@@ -16,46 +16,4 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // Initialize the application
   initApp();
-  
-  // Render the Toaster component
-  const toasterRoot = document.createElement('div');
-  toasterRoot.id = 'toaster-root';
-  document.body.appendChild(toasterRoot);
-  
-  // Create a script element to render the Toaster component
-  // Fix the import paths to ensure they work correctly
-  const script = document.createElement('script');
-  script.textContent = `
-    import { Toaster } from "./src/components/ui/toaster.js";
-    import { createRoot } from "./node_modules/react-dom/client.js";
-    import React from "./node_modules/react/index.js";
-    
-    const root = createRoot(document.getElementById('toaster-root'));
-    root.render(React.createElement(Toaster, {}));
-  `;
-  script.type = 'module';
-  document.body.appendChild(script);
-  
-  // Обеспечиваем инициализацию меню после загрузки header.html
-  const headerContainer = document.getElementById('header-container');
-  if (headerContainer) {
-    const observer = new MutationObserver((mutations) => {
-      for (const mutation of mutations) {
-        if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
-          // Запускаем повторную инициализацию скриптов в header
-          const scripts = headerContainer.querySelectorAll('script');
-          scripts.forEach(oldScript => {
-            const newScript = document.createElement('script');
-            Array.from(oldScript.attributes).forEach(attr => {
-              newScript.setAttribute(attr.name, attr.value);
-            });
-            newScript.textContent = oldScript.textContent;
-            oldScript.parentNode.replaceChild(newScript, oldScript);
-          });
-          observer.disconnect();
-        }
-      }
-    });
-    observer.observe(headerContainer, { childList: true });
-  }
 });

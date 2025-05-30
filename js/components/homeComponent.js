@@ -17,16 +17,88 @@ const HomeComponent = {
     return Array.from(categories);
   },
   
-  // Инициализация обработчиков событий
-  initEventListeners() {
-    // Делегирование событий для кнопок цвета
-    document.addEventListener('click', (e) => {
-      if (e.target.matches('.color-button')) {
-        this.handleColorButtonClick(e);
-      }
-      
-      if (e.target.matches('.view-all-btn')) {
-        this.handleViewAllClick(e);
+  // Проверка, является ли цвет светлым
+  isLightColor(hex) {
+    hex = hex.replace('#', '');
+    const r = parseInt(hex.substr(0, 2), 16);
+    const g = parseInt(hex.substr(2, 2), 16);
+    const b = parseInt(hex.substr(4, 2), 16);
+    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+    return brightness > 180;
+  },
+  
+  // Рендер кнопок цвета
+  renderColorButtons(product) {
+    const colorMap = {
+      'Розовая': '#FFB6C1',
+      'Тиффани': '#0ABAB5',
+      'Черная': '#000000',
+      'Белая': '#FFFFFF',
+      'Красная': '#DC143C',
+      'Оранжевая': '#FF8C00',
+      'Синий бархат': '#191970',
+      'Белый бриллиант': '#F8F8FF',
+      'Розовая пудра': '#F0E68C',
+      'Черный муар': '#2F2F2F',
+      'Золотая': '#FFD700',
+      'Ванильная': '#F3E5AB',
+      'Голубой лед': '#B0E0E6',
+      'Лавандовая': '#E6E6FA'
+    };
+
+    return Object.entries(colorMap)
+      .filter(([color]) =>
+        products.some(p =>
+          p.name === product.name &&
+          p.sizeType === product.sizeType &&
+          p.color === color
+        )
+      )
+      .map(([color, hex]) => {
+        const isActive = color === product.color;
+        const isLight = this.isLightColor(hex);
+        
+        return `
+          <button
+            class="color-button w-9 h-9 rounded-full border-2 ${isActive ? 'border-blue-500' : 'border-gray-300'}"
+            style="background-color: ${hex}"
+            data-product-id="${product.id}"
+            data-base-name="${product.name}"
+            data-base-size="${product.sizeType}"
+            data-color="${color}"
+            data-active="${isActive}"
+          ></button>
+        `;
+      }).join('');
+  },
+  
+  // Поиск соответствующего продукта
+  findMatchingProduct(baseName, baseSize, color) {
+    return products.find(p =>
+      p.name === baseName &&
+      p.sizeType === baseSize &&
+      p.color === color
+    );
+  },
+  
+  // Обновление слайдера для продукта
+  updateSliderForProduct(productId, newPhotos) {
+    SwiperService.updateSliderPhotos(productId, newPhotos);
+  },
+  
+  // Обновление визуального состояния кнопок цвета
+  updateColorButtonsVisual(productId, selectedColor) {
+    const colorButtons = document.querySelectorAll(`.color-button[data-product-id="${productId}"]`);
+    colorButtons.forEach(button => {
+      const buttonColor = button.dataset.color;
+      if (buttonColor === selectedColor) {
+        button.classList.remove('border-gray-300');
+        button.classList.add('border-blue-500');
+        button.dataset.active = 'true';
+      } else {
+        button.classList.remove('border-blue-500');
+        button.classList.add('border-gray-300');
+        button.dataset.active = 'false';
       }
     });
   },
@@ -93,95 +165,23 @@ const HomeComponent = {
     window.location.href = `#product/${productId}`;
   },
   
-  // Поиск соответствующего продукта
-  findMatchingProduct(baseName, baseSize, color) {
-    return products.find(p =>
-      p.name === baseName &&
-      p.sizeType === baseSize &&
-      p.color === color
-    );
-  },
-  
-  // Обновление слайдера для продукта
-  updateSliderForProduct(productId, newPhotos) {
-    SwiperService.updateSliderPhotos(productId, newPhotos);
-  },
-  
-  // Обновление визуального состояния кнопок цвета
-  updateColorButtonsVisual(productId, selectedColor) {
-    const colorButtons = document.querySelectorAll(`.color-button[data-product-id="${productId}"]`);
-    colorButtons.forEach(button => {
-      const buttonColor = button.dataset.color;
-      if (buttonColor === selectedColor) {
-        button.classList.remove('border-gray-300');
-        button.classList.add('border-blue-500');
-        button.dataset.active = 'true';
-      } else {
-        button.classList.remove('border-blue-500');
-        button.classList.add('border-gray-300');
-        button.dataset.active = 'false';
+  // Инициализация обработчиков событий
+  initEventListeners() {
+    // Делегирование событий для кнопок цвета
+    document.addEventListener('click', (e) => {
+      if (e.target.matches('.color-button')) {
+        this.handleColorButtonClick(e);
+      }
+      
+      if (e.target.matches('.view-all-btn')) {
+        this.handleViewAllClick(e);
       }
     });
   },
   
-  // Рендер кнопок цвета
-  renderColorButtons(product) {
-    const colorMap = {
-      'Розовая': '#FFB6C1',
-      'Тиффани': '#0ABAB5',
-      'Черная': '#000000',
-      'Белая': '#FFFFFF',
-      'Красная': '#DC143C',
-      'Оранжевая': '#FF8C00',
-      'Синий бархат': '#191970',
-      'Белый бриллиант': '#F8F8FF',
-      'Розовая пудра': '#F0E68C',
-      'Черный муар': '#2F2F2F',
-      'Золотая': '#FFD700',
-      'Ванильная': '#F3E5AB',
-      'Голубой лед': '#B0E0E6',
-      'Лавандовая': '#E6E6FA'
-    };
-
-    return Object.entries(colorMap)
-      .filter(([color]) =>
-        products.some(p =>
-          p.name === product.name &&
-          p.sizeType === product.sizeType &&
-          p.color === color
-        )
-      )
-      .map(([color, hex]) => {
-        const isActive = color === product.color;
-        const isLight = this.isLightColor(hex);
-        
-        return `
-          <button
-            class="color-button w-9 h-9 rounded-full border-2 ${isActive ? 'border-blue-500' : 'border-gray-300'}"
-            style="background-color: ${hex}"
-            data-product-id="${product.id}"
-            data-base-name="${product.name}"
-            data-base-size="${product.sizeType}"
-            data-color="${color}"
-            data-active="${isActive}"
-          ></button>
-        `;
-      }).join('');
-  },
-  
-  // Проверка, является ли цвет светлым
-  isLightColor(hex) {
-    hex = hex.replace('#', '');
-    const r = parseInt(hex.substr(0, 2), 16);
-    const g = parseInt(hex.substr(2, 2), 16);
-    const b = parseInt(hex.substr(4, 2), 16);
-    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
-    return brightness > 180;
-  },
-  
   render() {
     const app = document.getElementById('app');
-    const categories = HomeComponent.getCategories();
+    const categories = this.getCategories();
     
     app.innerHTML = `
       <div class="container mx-auto px-4 py-8">
