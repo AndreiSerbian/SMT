@@ -21,9 +21,6 @@ export function initApp() {
   toaster.innerHTML = '<div id="toaster"></div>';
   document.body.appendChild(toaster);
   
-  // Initialize cart event listeners with delegation
-  cartService.initCartEventListeners();
-  
   // Initialize global event listeners
   document.addEventListener('click', (e) => {
     // Проверяем, кликнули ли по элементу .color-button
@@ -76,12 +73,18 @@ export function initApp() {
   
   // Listen for cart updates
   eventBus.subscribe('cart-updated', () => {
+    console.log('Cart updated event received');
     cartService.updateCartUI();
   });
   
   // Register cart toggle functionality
   window.toggleCart = () => {
     const modal = document.getElementById('cartModal');
+    if (!modal) {
+      console.error('Cart modal not found');
+      return;
+    }
+    
     modal.classList.toggle('hidden');
     
     const isOpen = !modal.classList.contains('hidden');
@@ -90,15 +93,19 @@ export function initApp() {
     document.body.style.overflow = isOpen ? 'hidden' : '';
     
     const transformEl = modal.querySelector('.transform');
-    if (isOpen) {
-      transformEl.classList.add('translate-x-0');
-      transformEl.classList.remove('translate-x-full');
-      
-      // Re-initialize event listeners when cart opens
-      cartService.initCartEventListeners();
-    } else {
-      transformEl.classList.remove('translate-x-0');
-      transformEl.classList.add('translate-x-full');
+    if (transformEl) {
+      if (isOpen) {
+        transformEl.classList.add('translate-x-0');
+        transformEl.classList.remove('translate-x-full');
+        
+        // Initialize event listeners when cart opens
+        setTimeout(() => {
+          cartService.initCartEventListeners();
+        }, 100);
+      } else {
+        transformEl.classList.remove('translate-x-0');
+        transformEl.classList.add('translate-x-full');
+      }
     }
   };
   
@@ -111,11 +118,13 @@ export function initApp() {
       color = selectedColor || (product ? product.color : null);
     }
     
+    console.log('Adding to cart:', { productId, quantity, color });
     cartService.addToCart(productId, quantity, color);
   };
   
   // Register remove from cart functionality
   window.removeFromCart = (productId, color = null) => {
+    console.log('Removing from cart:', { productId, color });
     cartService.removeFromCart(productId, color);
   };
   

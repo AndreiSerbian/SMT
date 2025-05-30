@@ -1,3 +1,4 @@
+
 import { products } from '../data/products.js';
 import { eventBus } from '../utils/eventBus.js';
 import { env } from '../utils/env.js';
@@ -115,28 +116,43 @@ export const cartService = {
   // Initialize cart event listeners with delegation
   initCartEventListeners() {
     const cartModal = document.getElementById('cartModal');
-    if (!cartModal) return;
+    if (!cartModal) {
+      console.log('Cart modal not found, skipping event listeners initialization');
+      return;
+    }
+    
+    // Remove existing listeners to prevent duplicates
+    const newCartModal = cartModal.cloneNode(true);
+    cartModal.parentNode.replaceChild(newCartModal, cartModal);
     
     // Use event delegation - single listener on the modal
-    cartModal.addEventListener('click', (e) => {
+    newCartModal.addEventListener('click', (e) => {
+      e.preventDefault();
+      
+      console.log('Click detected on:', e.target.className);
+      
       // Handle quantity decrease button
       if (e.target.classList.contains('quantity-decrease')) {
-        e.preventDefault();
-        const productId = e.target.dataset.productId;
-        const color = e.target.dataset.color;
-        const currentQuantity = parseInt(e.target.dataset.quantity);
+        const productId = e.target.getAttribute('data-product-id');
+        const color = e.target.getAttribute('data-color');
+        const currentQuantity = parseInt(e.target.getAttribute('data-quantity'));
         
-        if (productId && color) {
+        console.log('Decrease clicked:', { productId, color, currentQuantity });
+        
+        if (productId && color && currentQuantity > 1) {
           this.updateQuantity(productId, color, currentQuantity - 1);
+        } else if (currentQuantity <= 1) {
+          this.removeFromCart(productId, color);
         }
       }
       
       // Handle quantity increase button
       if (e.target.classList.contains('quantity-increase')) {
-        e.preventDefault();
-        const productId = e.target.dataset.productId;
-        const color = e.target.dataset.color;
-        const currentQuantity = parseInt(e.target.dataset.quantity);
+        const productId = e.target.getAttribute('data-product-id');
+        const color = e.target.getAttribute('data-color');
+        const currentQuantity = parseInt(e.target.getAttribute('data-quantity'));
+        
+        console.log('Increase clicked:', { productId, color, currentQuantity });
         
         if (productId && color) {
           this.updateQuantity(productId, color, currentQuantity + 1);
@@ -145,9 +161,10 @@ export const cartService = {
       
       // Handle remove item button
       if (e.target.classList.contains('remove-item')) {
-        e.preventDefault();
-        const productId = e.target.dataset.productId;
-        const color = e.target.dataset.color;
+        const productId = e.target.getAttribute('data-product-id');
+        const color = e.target.getAttribute('data-color');
+        
+        console.log('Remove clicked:', { productId, color });
         
         if (productId && color) {
           this.removeFromCart(productId, color);
@@ -156,17 +173,21 @@ export const cartService = {
     });
     
     // Handle input field changes with delegation
-    cartModal.addEventListener('input', (e) => {
+    newCartModal.addEventListener('input', (e) => {
       if (e.target.classList.contains('quantity-input')) {
-        const productId = e.target.dataset.productId;
-        const color = e.target.dataset.color;
+        const productId = e.target.getAttribute('data-product-id');
+        const color = e.target.getAttribute('data-color');
         const newQuantity = parseInt(e.target.value) || 1;
+        
+        console.log('Input changed:', { productId, color, newQuantity });
         
         if (productId && color && newQuantity > 0) {
           this.updateQuantity(productId, color, newQuantity);
         }
       }
     });
+    
+    console.log('Cart event listeners initialized successfully');
   },
   
   // Render cart component
@@ -331,6 +352,8 @@ export const cartService = {
     const cart = this.getCart();
     const itemsCount = this.getCartItemsCount();
     
+    console.log('Updating cart UI, items count:', itemsCount);
+    
     // Update cart counter
     const counterElement = document.getElementById('cart-counter');
     if (counterElement) {
@@ -346,6 +369,7 @@ export const cartService = {
     const cartContent = document.getElementById('cart-content');
     if (cartContent) {
       cartContent.innerHTML = this.renderCartItems(cart);
+      console.log('Cart content updated');
     }
     
     // Update cart footer
@@ -354,6 +378,10 @@ export const cartService = {
       const total = this.getCartTotal();
       const meetsMinimum = this.meetsMinimumOrderAmount();
       cartFooter.innerHTML = this.renderCartFooter(total, meetsMinimum);
+      console.log('Cart footer updated');
     }
+    
+    // Re-initialize event listeners after content update
+    this.initCartEventListeners();
   }
 };
