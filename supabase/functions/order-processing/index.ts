@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.0";
 import { Resend } from "npm:resend@1.0.0";
@@ -41,7 +40,9 @@ function generateOrderConfirmationEmail(order: any) {
     </tr>
   `).join('');
 
-  const publicSiteUrl = Deno.env.get("PUBLIC_SITE_URL") || supabaseUrl;
+  // ИСПРАВЛЕНО: Используем правильный URL для Edge Function
+  const confirmationUrl = `${supabaseUrl}/functions/v1/order-confirmation?order_id=${id}`;
+  console.log("Формируем ссылку подтверждения:", confirmationUrl);
 
   // Формирование HTML для всего письма
   return `
@@ -56,7 +57,8 @@ function generateOrderConfirmationEmail(order: any) {
         table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
         th { background-color: #f2f2f2; text-align: left; padding: 10px; border: 1px solid #ddd; }
         .total { font-weight: bold; }
-        .button { display: inline-block; background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; }
+        .button { display: inline-block; background-color: #4CAF50; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-size: 16px; }
+        .button:hover { background-color: #45a049; }
       </style>
     </head>
     <body>
@@ -94,11 +96,18 @@ function generateOrderConfirmationEmail(order: any) {
           </tfoot>
         </table>
         
-        <p>Пожалуйста, подтвердите ваш заказ, нажав на кнопку ниже:</p>
-        <a href="${publicSiteUrl}/functions/v1/order-confirmation?order_id=${id}" class="button" style="display: inline-block; background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px;">Подтвердить заказ</a>
+        <p><strong>Важно!</strong> Пожалуйста, подтвердите ваш заказ, нажав на кнопку ниже:</p>
+        <p style="text-align: center; margin: 30px 0;">
+          <a href="${confirmationUrl}" class="button" style="display: inline-block; background-color: #4CAF50; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-size: 16px;">ПОДТВЕРДИТЬ ЗАКАЗ</a>
+        </p>
+        
+        <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; color: #666; font-size: 14px;">
+          Если кнопка не работает, скопируйте и вставьте эту ссылку в браузер:<br>
+          <a href="${confirmationUrl}" style="color: #4CAF50; word-break: break-all;">${confirmationUrl}</a>
+        </p>
         
         <p>Если у вас возникли вопросы по заказу, пожалуйста, свяжитесь с нами.</p>
-        <p>С уважением,<br>Команда поддержки</p>
+        <p>С уважением,<br>Команда поддержки Gift Box Shop</p>
       </div>
     </body>
     </html>
@@ -216,6 +225,11 @@ function normalizeDeliveryValue(delivery: string | undefined): string {
 
 // Обработчик запросов
 serve(async (req) => {
+  console.log(`========== ORDER-PROCESSING ЗАПРОС ==========`);
+  console.log(`Метод: ${req.method}`);
+  console.log(`URL: ${req.url}`);
+  console.log(`============================================`);
+  
   // Обработка CORS preflight запросов
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -230,7 +244,7 @@ serve(async (req) => {
       const requestBody = await req.json();
       const { orderData } = requestBody;
       
-      console.log("Received order data:", orderData);
+      console.log("Получены данные заказа:", orderData);
       
       // Проверяем, что cart_items - это массив объектов, а не строка
       if (typeof orderData.cart_items === 'string') {
@@ -269,7 +283,7 @@ serve(async (req) => {
         throw error;
       }
       
-      console.log("Order created successfully:", order);
+      console.log("Заказ создан успешно, начинаем отправку уведомлений...");
       
       // Формируем детальный список товаров для Telegram с суммами
       const cartItemsDetails = order.cart_items.map((item: any) => {
@@ -300,30 +314,30 @@ ${order.comment ? `📝 *Комментарий:* ${order.comment}` : ''}
       const notificationPromises = [];
       
       try {
+        console.log("Добавляем в очередь Telegram уведомление...");
         notificationPromises.push(sendTelegramNotification(telegramMessage));
-        console.log("Telegram notification queued");
       } catch (telegramError) {
         console.error("Failed to queue Telegram notification:", telegramError);
       }
       
       try {
+        console.log("Добавляем в очередь обновление Google Sheets...");
         notificationPromises.push(updateGoogleSheets(order));
-        console.log("Google Sheets update queued");
       } catch (sheetsError) {
         console.error("Failed to queue Google Sheets update:", sheetsError);
       }
       
       try {
+        console.log("Добавляем в очередь отправку email подтверждения...");
         notificationPromises.push(sendOrderConfirmationEmail(order));
-        console.log("Confirmation email queued");
       } catch (emailError) {
         console.error("Failed to queue confirmation email:", emailError);
       }
       
       // Ждем завершения всех уведомлений
       const results = await Promise.allSettled(notificationPromises);
-      console.log("Notification results:", 
-        results.map((r, i) => `${i}: ${r.status === 'fulfilled' ? 'success' : r.reason}`));
+      console.log("Результаты уведомлений:", 
+        results.map((r, i) => `${i}: ${r.status === 'fulfilled' ? 'успех' : r.reason}`));
       
       return new Response(
         JSON.stringify({ 
@@ -339,7 +353,7 @@ ${order.comment ? `📝 *Комментарий:* ${order.comment}` : ''}
         }
       );
     } catch (error) {
-      console.error("Error processing order:", error);
+      console.error("Ошибка обработки заказа:", error);
       return new Response(
         JSON.stringify({ 
           success: false, 

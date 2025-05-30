@@ -311,10 +311,15 @@ async function updateGoogleSheets(order: any) {
 
 // Основной обработчик HTTP запросов
 serve(async (req) => {
-  console.log(`Получен ${req.method} запрос:`, req.url);
+  console.log(`========== НОВЫЙ ЗАПРОС ==========`);
+  console.log(`Метод: ${req.method}`);
+  console.log(`URL: ${req.url}`);
+  console.log(`Заголовки:`, Object.fromEntries(req.headers.entries()));
+  console.log(`=====================================`);
   
   // Обработка CORS preflight запросов
   if (req.method === "OPTIONS") {
+    console.log("Обработка CORS preflight запроса");
     return new Response(null, { headers: corsHeaders });
   }
 
@@ -324,10 +329,12 @@ serve(async (req) => {
       const url = new URL(req.url);
       const orderId = url.searchParams.get('order_id');
       
-      console.log("GET запрос на подтверждение заказа:", orderId);
+      console.log("=== GET ЗАПРОС НА ПОДТВЕРЖДЕНИЕ ЗАКАЗА ===");
+      console.log("Извлечённый order_id:", orderId);
+      console.log("Все параметры URL:", Object.fromEntries(url.searchParams.entries()));
       
       if (!orderId) {
-        console.error("Отсутствует order_id в GET параметрах");
+        console.error("ОШИБКА: Отсутствует order_id в GET параметрах");
         return new Response(
           generateErrorHTML("ID заказа не указан в ссылке"),
           { 
@@ -337,6 +344,7 @@ serve(async (req) => {
         );
       }
       
+      console.log("Поиск заказа в базе данных...");
       // Получаем заказ из базы данных
       const { data: order, error: fetchError } = await supabase
         .from('orders')
@@ -344,9 +352,11 @@ serve(async (req) => {
         .eq('id', orderId)
         .single();
         
+      console.log("Результат поиска заказа:", { order, fetchError });
+      
       // Проверяем успешность получения заказа
       if (fetchError || !order) {
-        console.error("Ошибка получения заказа:", fetchError);
+        console.error("ОШИБКА: Заказ не найден или ошибка получения:", fetchError);
         return new Response(
           generateErrorHTML("Заказ не найден в системе"),
           { 
@@ -355,6 +365,9 @@ serve(async (req) => {
           }
         );
       }
+      
+      console.log("Заказ найден:", order);
+      console.log("Текущий статус заказа:", order.order_status);
       
       // Проверяем, не подтверждён ли заказ уже
       if (order.order_status === 'confirmed') {
@@ -367,6 +380,7 @@ serve(async (req) => {
         );
       }
       
+      console.log("Обновление статуса заказа на 'confirmed'...");
       // Обновляем статус заказа на "confirmed"
       const confirmedAt = new Date().toISOString();
       const { data: updatedOrder, error: updateError } = await supabase
@@ -379,9 +393,11 @@ serve(async (req) => {
         .select()
         .single();
         
+      console.log("Результат обновления заказа:", { updatedOrder, updateError });
+      
       // Проверяем успешность обновления
       if (updateError) {
-        console.error("Ошибка обновления заказа:", updateError);
+        console.error("ОШИБКА: Не удалось обновить заказ:", updateError);
         return new Response(
           generateErrorHTML("Не удалось обновить статус заказа"),
           { 
@@ -394,6 +410,7 @@ serve(async (req) => {
       console.log("Заказ успешно подтверждён:", updatedOrder);
       
       // Отправляем уведомления асинхронно и логируем результаты
+      console.log("Начинаем отправку уведомлений...");
       Promise.allSettled([
         sendTelegramConfirmation(updatedOrder),
         updateGoogleSheets(updatedOrder)
@@ -419,7 +436,8 @@ serve(async (req) => {
       );
       
     } catch (error) {
-      console.error("Критическая ошибка в GET обработчике:", error);
+      console.error("КРИТИЧЕСКАЯ ОШИБКА в GET обработчике:", error);
+      console.error("Стек ошибки:", error.stack);
       return new Response(
         generateErrorHTML(`Системная ошибка: ${error.message}`),
         { 
@@ -433,14 +451,18 @@ serve(async (req) => {
   // Обработка POST запросов для подтверждения заказа (для совместимости)
   if (req.method === "POST") {
     try {
+      console.log("=== POST ЗАПРОС НА ПОДТВЕРЖДЕНИЕ ЗАКАЗА ===");
+      
       // Парсим JSON из тела запроса
       const requestBody = await req.json();
       const { orderId } = requestBody;
       
-      console.log("POST запрос на подтверждение заказа:", orderId);
+      console.log("POST запрос с данными:", requestBody);
+      console.log("Извлечённый orderId:", orderId);
       
       // Проверяем наличие ID заказа
       if (!orderId) {
+        console.error("ОШИБКА: orderId не указан в POST запросе");
         return new Response(
           JSON.stringify({ 
             success: false, 
@@ -463,9 +485,11 @@ serve(async (req) => {
         .eq('id', orderId)
         .single();
         
+      console.log("Результат поиска заказа в POST:", { order, fetchError });
+      
       // Проверяем успешность получения заказа
       if (fetchError || !order) {
-        console.error("Ошибка получения заказа:", fetchError);
+        console.error("ОШИБКА: Заказ не найден в POST запросе:", fetchError);
         return new Response(
           JSON.stringify({ 
             success: false, 
@@ -483,6 +507,7 @@ serve(async (req) => {
       
       // Проверяем, не подтверждён ли заказ уже
       if (order.order_status === 'confirmed') {
+        console.log("POST: Заказ уже был подтверждён:", order.id);
         return new Response(
           JSON.stringify({ 
             success: true, 
@@ -509,9 +534,11 @@ serve(async (req) => {
         .select()
         .single();
         
+      console.log("POST: Результат обновления заказа:", { updatedOrder, updateError });
+      
       // Проверяем успешность обновления
       if (updateError) {
-        console.error("Ошибка обновления заказа:", updateError);
+        console.error("POST: ОШИБКА обновления заказа:", updateError);
         return new Response(
           JSON.stringify({ 
             success: false, 
@@ -527,14 +554,14 @@ serve(async (req) => {
         );
       }
       
-      console.log("Заказ успешно подтверждён:", updatedOrder);
+      console.log("POST: Заказ успешно подтверждён:", updatedOrder);
       
       // Отправляем уведомления асинхронно
       Promise.allSettled([
         sendTelegramConfirmation(updatedOrder),
         updateGoogleSheets(updatedOrder)
       ]).then(results => {
-        console.log("Результаты уведомлений:", 
+        console.log("POST: Результаты уведомлений:", 
           results.map((r, i) => `${i}: ${r.status === 'fulfilled' ? 'успех' : r.reason}`));
       });
       
@@ -554,7 +581,8 @@ serve(async (req) => {
       );
       
     } catch (error) {
-      console.error("Ошибка обработки POST запроса:", error);
+      console.error("КРИТИЧЕСКАЯ ОШИБКА в POST обработчике:", error);
+      console.error("Стек ошибки:", error.stack);
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -572,6 +600,7 @@ serve(async (req) => {
   }
   
   // Обработка неподдерживаемых методов
+  console.log("Неподдерживаемый метод:", req.method);
   return new Response(
     generateErrorHTML("Метод не поддерживается"),
     { 
