@@ -53,7 +53,7 @@ export const ColorService = {
     const isSelected = selectedColor === color;
     
     if (isSelected) {
-      return 'border-blue-500'; // Синяя окантовка для активного цвета
+      return 'border-blue-500 border-4'; // Толще окантовка для выбранного цвета
     } else {
       return 'border-gray-300'; // Серая окантовка для неактивных цветов
     }
@@ -88,16 +88,16 @@ export const ColorService = {
     colorButtons.forEach(button => {
       const buttonColor = button.dataset.color;
       const isSelected = buttonColor === color;
-      const isLight = this.isLightColor(button.style.backgroundColor);
+      const hex = button.style.backgroundColor;
       
       // Удаляем все классы окантовки
-      button.classList.remove('border-blue-500', 'border-gray-300');
+      button.classList.remove('border-blue-500', 'border-gray-300', 'border-2', 'border-4');
       
       // Добавляем правильный класс окантовки
       if (isSelected) {
-        button.classList.add('border-blue-500');
+        button.classList.add('border-blue-500', 'border-4');
       } else {
-        button.classList.add('border-gray-300');
+        button.classList.add('border-gray-300', 'border-2');
       }
       
       // Обновляем атрибут data-active для отслеживания текущего активного цвета
@@ -118,11 +118,6 @@ export const ColorService = {
   handleColorChange(data) {
     const { productId, baseName, baseSize, chosenColor } = data;
     
-    // Если этот цвет уже выбран (повторный клик), вернем true, что значит "нужен редирект"
-    if (this.selectedColors[productId] === chosenColor) {
-      return true;
-    }
-    
     // Find the matching product
     const matchingProduct = this.findMatchingProduct(baseName, baseSize, chosenColor);
     
@@ -134,7 +129,6 @@ export const ColorService = {
     // Update button colors
     this.updateButtonColor(productId, chosenColor);
     
-    // Не нужен редирект при первом клике
-    return false;
+    return true;
   }
 };

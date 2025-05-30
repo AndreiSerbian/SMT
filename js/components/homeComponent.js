@@ -60,6 +60,8 @@ const HomeComponent = {
 
                     <button
                       data-product-id="${product.id}"
+                      data-base-name="${product.name}"
+                      data-base-size="${product.sizeType}"
                       class="view-all-btn w-full bg-blue-200 text-gray-800 px-4 py-2 rounded hover:bg-blue-300 transition duration-300"
                     >
                       Посмотреть все
@@ -82,18 +84,22 @@ const HomeComponent = {
       document.querySelectorAll('.view-all-btn').forEach(button => {
         button.addEventListener('click', function() {
           const productId = this.dataset.productId;
+          const baseName = this.dataset.baseName;
+          const baseSize = this.dataset.baseSize;
           
-          // Находим активную кнопку цвета
-          const activeColorButton = document.querySelector(`.color-button[data-product-id="${productId}"][data-active="true"]`);
+          // Получаем выбранный цвет для данного продукта
+          const selectedColor = ColorService.selectedColors[productId];
           
-          if (activeColorButton) {
-            // Переходим на страницу продукта с выбранным цветом
-            const matchingProductId = activeColorButton.dataset.productId;
-            window.location.href = `#product/${matchingProductId}`;
-            return;
+          if (selectedColor) {
+            // Находим соответствующий продукт по выбранному цвету
+            const matchingProduct = ColorService.findMatchingProduct(baseName, baseSize, selectedColor);
+            if (matchingProduct) {
+              window.location.href = `#product/${matchingProduct.id}`;
+              return;
+            }
           }
           
-          // Если активной кнопки нет, просто переходим к текущему продукту
+          // Если нет выбранного цвета, переходим к текущему продукту
           window.location.href = `#product/${productId}`;
         });
       });

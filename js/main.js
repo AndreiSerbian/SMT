@@ -4,7 +4,7 @@ import { eventBus } from './utils/eventBus.js';
 import { supabase } from '@/integrations/supabase/client';
 import { Toaster } from "@/components/ui/toaster";
 import { ColorService } from './services/colorService.js';
-import { products } from './data/products.js'; // Import products directly
+import { products } from './data/products.js';
 
 // Initialize all global event listeners and app state
 export function initApp() {
@@ -33,12 +33,12 @@ export function initApp() {
       const baseSize = e.target.dataset.baseSize;
       const chosenColor = e.target.dataset.color;
       
-      // Проверяем, выбран ли уже этот цвет
-      const isCurrentlySelected = ColorService.selectedColors[productId] === chosenColor;
+      // Получаем текущий выбранный цвет для данного продукта
+      const currentSelectedColor = ColorService.selectedColors[productId];
       
-      // Если кнопка уже выбрана (второй клик), переходим на страницу товара
-      if (isCurrentlySelected) {
-        // Найти соответствующий продукт и перейти на его страницу
+      // Если это второй клик по тому же цвету
+      if (currentSelectedColor === chosenColor) {
+        // Находим соответствующий продукт и переходим на его страницу
         const matchingProduct = ColorService.findMatchingProduct(baseName, baseSize, chosenColor);
         if (matchingProduct) {
           window.location.href = `#product/${matchingProduct.id}`;
@@ -46,21 +46,13 @@ export function initApp() {
         return;
       }
       
-      // Иначе просто вызываем событие смены цвета (обновление слайдера)
-      const needsRedirect = eventBus.emit('color-changed', {
+      // Первый клик - обновляем слайдер и сохраняем выбор
+      eventBus.emit('color-changed', {
         productId,
         baseName,
         baseSize,
         chosenColor
       });
-      
-      // Если функция обработки события вернула true, выполняем редирект
-      if (needsRedirect) {
-        const matchingProduct = ColorService.findMatchingProduct(baseName, baseSize, chosenColor);
-        if (matchingProduct) {
-          window.location.href = `#product/${matchingProduct.id}`;
-        }
-      }
     }
     
     // Проверяем клик по миниатюрам в карточке товара
