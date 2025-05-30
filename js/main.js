@@ -4,7 +4,7 @@ import { eventBus } from './utils/eventBus.js';
 import { supabase } from '@/integrations/supabase/client';
 import { Toaster } from "@/components/ui/toaster";
 import { ColorService } from './services/colorService.js';
-import { products } from './data/products.js';
+import { products } from './data/products.js'; // Import products directly
 
 // Initialize all global event listeners and app state
 export function initApp() {
@@ -33,12 +33,12 @@ export function initApp() {
       const baseSize = e.target.dataset.baseSize;
       const chosenColor = e.target.dataset.color;
       
-      // Получаем текущий выбранный цвет для данного продукта
-      const currentSelectedColor = ColorService.selectedColors[productId];
+      // Проверяем, выбран ли уже этот цвет
+      const isCurrentlySelected = ColorService.selectedColors[productId] === chosenColor;
       
-      // Если это второй клик по тому же цвету
-      if (currentSelectedColor === chosenColor) {
-        // Находим соответствующий продукт и переходим на его страницу
+      // Если кнопка уже выбрана (второй клик), переходим на страницу товара
+      if (isCurrentlySelected) {
+        // Найти соответствующий продукт и перейти на его страницу
         const matchingProduct = ColorService.findMatchingProduct(baseName, baseSize, chosenColor);
         if (matchingProduct) {
           window.location.href = `#product/${matchingProduct.id}`;
@@ -46,13 +46,21 @@ export function initApp() {
         return;
       }
       
-      // Первый клик - обновляем слайдер и сохраняем выбор
-      eventBus.emit('color-changed', {
+      // Иначе просто вызываем событие смены цвета (обновление слайдера)
+      const needsRedirect = eventBus.emit('color-changed', {
         productId,
         baseName,
         baseSize,
         chosenColor
       });
+      
+      // Если функция обработки события вернула true, выполняем редирект
+      if (needsRedirect) {
+        const matchingProduct = ColorService.findMatchingProduct(baseName, baseSize, chosenColor);
+        if (matchingProduct) {
+          window.location.href = `#product/${matchingProduct.id}`;
+        }
+      }
     }
     
     // Проверяем клик по миниатюрам в карточке товара
@@ -73,19 +81,12 @@ export function initApp() {
   
   // Listen for cart updates
   eventBus.subscribe('cart-updated', () => {
-    console.log('Cart updated event received');
     cartService.updateCartUI();
   });
   
   // Register cart toggle functionality
   window.toggleCart = () => {
     const modal = document.getElementById('cartModal');
-    if (!modal) {
-      console.error('Cart modal not found');
-      return;
-    }
-    
-    const isCurrentlyHidden = modal.classList.contains('hidden');
     modal.classList.toggle('hidden');
     
     const isOpen = !modal.classList.contains('hidden');
@@ -94,51 +95,33 @@ export function initApp() {
     document.body.style.overflow = isOpen ? 'hidden' : '';
     
     const transformEl = modal.querySelector('.transform');
-    if (transformEl) {
-      if (isOpen) {
-        transformEl.classList.add('translate-x-0');
-        transformEl.classList.remove('translate-x-full');
-        
-        // Initialize event listeners only once when cart opens for the first time
-        cartService.initCartEventListeners();
-      } else {
-        transformEl.classList.remove('translate-x-0');
-        transformEl.classList.add('translate-x-full');
-      }
+    if (isOpen) {
+      transformEl.classList.add('translate-x-0');
+      transformEl.classList.remove('translate-x-full');
+    } else {
+      transformEl.classList.remove('translate-x-0');
+      transformEl.classList.add('translate-x-full');
     }
   };
   
-  // Register add to cart functionality with color support
-  window.addToCart = (productId, quantity, color = null) => {
-    // Get current selected color for the product if no color specified
-    if (!color) {
-      const selectedColor = ColorService.selectedColors[productId];
-      const product = products.find(p => p.id === productId);
-      color = selectedColor || (product ? product.color : null);
-    }
-    
-    console.log('Adding to cart:', { productId, quantity, color });
-    cartService.addToCart(productId, quantity, color);
+  // Register add to cart functionality
+  window.addToCart = (productId, quantity) => {
+    cartService.addToCart(productId, quantity);
   };
   
   // Register remove from cart functionality
-  window.removeFromCart = (productId, color = null) => {
-    console.log('Removing from cart:', { productId, color });
-    cartService.removeFromCart(productId, color);
+  window.removeFromCart = (productId) => {
+    cartService.removeFromCart(productId);
   };
   
   // Register update cart quantity functionality
-  window.updateCartQuantity = (productId, newQuantity, color = null) => {
-    if (color) {
-      cartService.updateQuantity(productId, color, newQuantity);
-    } else {
-      // Fallback for legacy calls
-      const cart = cartService.getCart();
-      const item = cart.find(item => item.id === productId);
-      
-      if (item) {
-        cartService.updateQuantity(productId, item.color, newQuantity);
-      }
+  window.updateCartQuantity = (productId, newQuantity) => {
+    const cart = cartService.getCart();
+    const item = cart.find(item => item.id === productId);
+    
+    if (item) {
+      item.quantity = Math.max(1, newQuantity);
+      cartService.saveCart(cart);
     }
   };
   
