@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.css"/>
     <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>
   </head>
   <body class="bg-gray-50">
     <header id="header-container"></header>
@@ -21,19 +22,103 @@
     <script>
     // Загрузка и вставка header.html
     fetch('components/header.html')
-      .then(response => response.text())
-      .then(data => {
-        document.getElementById('header-container').innerHTML = data;
+      .then(response => {
+        if (!response.ok) {
+          console.warn('Header component not found, using fallback');
+          document.getElementById('header-container').innerHTML = `
+            <nav class="bg-white shadow-md">
+              <div class="container mx-auto px-6 py-3 flex justify-between items-center">
+                <a href="#" class="text-xl font-bold text-gray-800">Gift Box Shop</a>
+                <div class="flex space-x-4">
+                  <a href="#" class="text-gray-600 hover:text-gray-800">Главная</a>
+                  <a href="#order" class="text-gray-600 hover:text-gray-800">Оформление заказа</a>
+                </div>
+              </div>
+            </nav>
+          `;
+          return;
+        }
+        return response.text();
       })
-      .catch(error => console.error('Ошибка при загрузке header.html:', error));
+      .then(data => {
+        if (data) {
+          document.getElementById('header-container').innerHTML = data;
+        }
+      })
+      .catch(error => {
+        console.error('Ошибка при загрузке header.html:', error);
+        // Fallback header
+        document.getElementById('header-container').innerHTML = `
+          <nav class="bg-white shadow-md">
+            <div class="container mx-auto px-6 py-3 flex justify-between items-center">
+              <a href="#" class="text-xl font-bold text-gray-800">Gift Box Shop</a>
+              <div class="flex space-x-4">
+                <a href="#" class="text-gray-600 hover:text-gray-800">Главная</a>
+                <a href="#order" class="text-gray-600 hover:text-gray-800">Оформление заказа</a>
+              </div>
+            </div>
+          </nav>
+        `;
+      });
  
     // Загрузка и вставка footer.html
     fetch('components/footer.html')
-      .then(response => response.text())
-      .then(data => {
-        document.getElementById('footer-container').innerHTML = data;
+      .then(response => {
+        if (!response.ok) {
+          console.warn('Footer component not found, using fallback');
+          document.getElementById('footer-container').innerHTML = `
+            <footer class="bg-gray-800 text-white py-8 mt-12">
+              <div class="container mx-auto px-6">
+                <div class="flex flex-col md:flex-row justify-between">
+                  <div class="mb-6 md:mb-0">
+                    <h3 class="text-xl font-bold mb-4">Gift Box Shop</h3>
+                    <p class="text-gray-400">Красивые подарочные коробки для любого случая</p>
+                  </div>
+                  <div>
+                    <h4 class="text-lg font-semibold mb-3">Контакты</h4>
+                    <p class="text-gray-400">Телефон: +7 (XXX) XXX-XX-XX</p>
+                    <p class="text-gray-400">Email: info@giftboxshop.ru</p>
+                  </div>
+                </div>
+                <div class="border-t border-gray-700 mt-8 pt-6 text-center text-gray-400">
+                  <p>&copy; 2023 Gift Box Shop. Все права защищены.</p>
+                </div>
+              </div>
+            </footer>
+          `;
+          return;
+        }
+        return response.text();
       })
-      .catch(error => console.error('Ошибка при загрузке footer.html:', error));
+      .then(data => {
+        if (data) {
+          document.getElementById('footer-container').innerHTML = data;
+        }
+      })
+      .catch(error => {
+        console.error('Ошибка при загрузке footer.html:', error);
+        // Fallback footer
+        document.getElementById('footer-container').innerHTML = `
+          <footer class="bg-gray-800 text-white py-8 mt-12">
+            <div class="container mx-auto px-6">
+              <div class="flex flex-col md:flex-row justify-between">
+                <div class="mb-6 md:mb-0">
+                  <h3 class="text-xl font-bold mb-4">Gift Box Shop</h3>
+                  <p class="text-gray-400">Красивые подарочные коробки для любого случая</p>
+                </div>
+                <div>
+                  <h4 class="text-lg font-semibold mb-3">Контакты</h4>
+                  <p class="text-gray-400">Телефон: +7 (XXX) XXX-XX-XX</p>
+                  <p class="text-gray-400">Email: info@giftboxshop.ru</p>
+                </div>
+              </div>
+              <div class="border-t border-gray-700 mt-8 pt-6 text-center text-gray-400">
+                <p>&copy; 2023 Gift Box Shop. Все права защищены.</p>
+              </div>
+            </div>
+          </footer>
+        `;
+      });
     </script>  
     
     <script type="module" src="js/app.js"></script>
