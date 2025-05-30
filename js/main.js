@@ -99,10 +99,8 @@ export function initApp() {
         transformEl.classList.add('translate-x-0');
         transformEl.classList.remove('translate-x-full');
         
-        // Initialize event listeners when cart opens
-        setTimeout(() => {
-          cartService.initCartEventListeners();
-        }, 100);
+        // Initialize event listeners only once when cart opens for the first time
+        cartService.initCartEventListeners();
       } else {
         transformEl.classList.remove('translate-x-0');
         transformEl.classList.add('translate-x-full');

@@ -1,4 +1,3 @@
-
 import { products } from '../data/products.js';
 import { eventBus } from '../utils/eventBus.js';
 import { env } from '../utils/env.js';
@@ -113,7 +112,7 @@ export const cartService = {
     return this.getCartTotal() >= env.minOrderAmount;
   },
   
-  // Initialize cart event listeners with delegation
+  // Initialize cart event listeners with proper delegation
   initCartEventListeners() {
     const cartModal = document.getElementById('cartModal');
     if (!cartModal) {
@@ -121,19 +120,23 @@ export const cartService = {
       return;
     }
     
-    // Remove existing listeners to prevent duplicates
-    const newCartModal = cartModal.cloneNode(true);
-    cartModal.parentNode.replaceChild(newCartModal, cartModal);
+    console.log('Initializing cart event listeners');
     
-    // Use event delegation - single listener on the modal
-    newCartModal.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      
-      console.log('Click detected on:', e.target.className, e.target);
+    // Remove existing listeners by removing and re-adding the modal
+    // This ensures we don't have duplicate listeners
+    if (cartModal._cartListenersInitialized) {
+      return; // Already initialized
+    }
+    
+    // Use event delegation for clicks - single listener on the modal
+    cartModal.addEventListener('click', (e) => {
+      console.log('Click detected on:', e.target.className, e.target.tagName, e.target);
       
       // Handle quantity decrease button
       if (e.target.classList.contains('quantity-decrease')) {
+        e.preventDefault();
+        e.stopPropagation();
+        
         const productId = e.target.getAttribute('data-product-id');
         const color = e.target.getAttribute('data-color');
         const currentQuantity = parseInt(e.target.getAttribute('data-quantity'));
@@ -147,10 +150,14 @@ export const cartService = {
             this.removeFromCart(productId, color);
           }
         }
+        return;
       }
       
       // Handle quantity increase button
       if (e.target.classList.contains('quantity-increase')) {
+        e.preventDefault();
+        e.stopPropagation();
+        
         const productId = e.target.getAttribute('data-product-id');
         const color = e.target.getAttribute('data-color');
         const currentQuantity = parseInt(e.target.getAttribute('data-quantity'));
@@ -160,10 +167,14 @@ export const cartService = {
         if (productId && color) {
           this.updateQuantity(productId, color, currentQuantity + 1);
         }
+        return;
       }
       
       // Handle remove item button
       if (e.target.classList.contains('remove-item')) {
+        e.preventDefault();
+        e.stopPropagation();
+        
         const productId = e.target.getAttribute('data-product-id');
         const color = e.target.getAttribute('data-color');
         
@@ -172,15 +183,18 @@ export const cartService = {
         if (productId && color) {
           this.removeFromCart(productId, color);
         }
+        return;
       }
     });
     
     // Handle input field changes with delegation
-    newCartModal.addEventListener('input', (e) => {
+    cartModal.addEventListener('input', (e) => {
       if (e.target.classList.contains('quantity-input')) {
         const productId = e.target.getAttribute('data-product-id');
         const color = e.target.getAttribute('data-color');
         let newQuantity = parseInt(e.target.value);
+        
+        console.log('Input changed:', { productId, color, newQuantity, rawValue: e.target.value });
         
         // Validate input
         if (isNaN(newQuantity) || newQuantity < 1) {
@@ -188,14 +202,14 @@ export const cartService = {
           e.target.value = 1;
         }
         
-        console.log('Input changed:', { productId, color, newQuantity });
-        
         if (productId && color) {
           this.updateQuantity(productId, color, newQuantity);
         }
       }
     });
     
+    // Mark as initialized to prevent duplicate listeners
+    cartModal._cartListenersInitialized = true;
     console.log('Cart event listeners initialized successfully');
   },
   
@@ -290,6 +304,7 @@ export const cartService = {
                     data-product-id="${item.id}"
                     data-color="${item.color}"
                     data-quantity="${item.quantity}"
+                    type="button"
                   >-</button>
                   <input 
                     type="number" 
@@ -304,6 +319,7 @@ export const cartService = {
                     data-product-id="${item.id}"
                     data-color="${item.color}"
                     data-quantity="${item.quantity}"
+                    type="button"
                   >+</button>
                 </div>
               </div>
@@ -315,6 +331,7 @@ export const cartService = {
                   class="remove-item text-red-500 hover:text-red-700 text-sm mt-1"
                   data-product-id="${item.id}"
                   data-color="${item.color}"
+                  type="button"
                 >
                   Удалить
                 </button>
@@ -390,7 +407,6 @@ export const cartService = {
       console.log('Cart footer updated');
     }
     
-    // Re-initialize event listeners after content update
-    this.initCartEventListeners();
+    // Events are already delegated to the modal, no need to re-initialize
   }
 };
