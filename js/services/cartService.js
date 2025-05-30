@@ -1,4 +1,3 @@
-
 import { products } from '../data/products.js';
 import { eventBus } from '../utils/eventBus.js';
 import { env } from '../utils/env.js';
@@ -102,10 +101,10 @@ export const cartService = {
     }, 0);
   },
   
-  // Get total items count
+  // Get total unique items count (number of different products, not total quantity)
   getCartItemsCount() {
     const cart = this.getCart();
-    return cart.reduce((count, item) => count + item.quantity, 0);
+    return cart.length; // Возвращаем количество позиций, а не сумму quantity
   },
   
   // Check if order meets minimum amount
