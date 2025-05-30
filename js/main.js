@@ -3,8 +3,7 @@ import { cartService } from './services/cartService.js';
 import { eventBus } from './utils/eventBus.js';
 import { supabase } from '@/integrations/supabase/client';
 import { Toaster } from "@/components/ui/toaster";
-import { ColorService } from './services/colorService.js';
-import { products } from './data/products.js'; // Import products directly
+import { products } from './data/products.js';
 
 // Initialize all global event listeners and app state
 export function initApp() {
@@ -21,63 +20,8 @@ export function initApp() {
   toaster.innerHTML = '<div id="toaster"></div>';
   document.body.appendChild(toaster);
   
-  // Initialize global event listeners
-  document.addEventListener('click', (e) => {
-    // Проверяем, кликнули ли по элементу .color-button
-    if (e.target.matches('.color-button')) {
-      e.preventDefault();
-      
-      // Получаем атрибуты
-      const productId = e.target.dataset.productId; 
-      const baseName = e.target.dataset.baseName; 
-      const baseSize = e.target.dataset.baseSize;
-      const chosenColor = e.target.dataset.color;
-      
-      // Проверяем, выбран ли уже этот цвет
-      const isCurrentlySelected = ColorService.selectedColors[productId] === chosenColor;
-      
-      // Если кнопка уже выбрана (второй клик), переходим на страницу товара
-      if (isCurrentlySelected) {
-        // Найти соответствующий продукт и перейти на его страницу
-        const matchingProduct = ColorService.findMatchingProduct(baseName, baseSize, chosenColor);
-        if (matchingProduct) {
-          window.location.href = `#product/${matchingProduct.id}`;
-        }
-        return;
-      }
-      
-      // Иначе просто вызываем событие смены цвета (обновление слайдера)
-      const needsRedirect = eventBus.emit('color-changed', {
-        productId,
-        baseName,
-        baseSize,
-        chosenColor
-      });
-      
-      // Если функция обработки события вернула true, выполняем редирект
-      if (needsRedirect) {
-        const matchingProduct = ColorService.findMatchingProduct(baseName, baseSize, chosenColor);
-        if (matchingProduct) {
-          window.location.href = `#product/${matchingProduct.id}`;
-        }
-      }
-    }
-    
-    // Проверяем клик по миниатюрам в карточке товара
-    if (e.target.matches('.product-thumbnail')) {
-      e.preventDefault();
-      const mainImage = document.getElementById('main-product-image');
-      if (mainImage) {
-        mainImage.src = e.target.src;
-      }
-    }
-    
-    // Проверяем клик по основному изображению для открытия лайтбокса
-    if (e.target.matches('#main-product-image')) {
-      e.preventDefault();
-      openLightbox(e.target.src);
-    }
-  });
+  // Initialize cart event listeners
+  cartService.initCartEventListeners();
   
   // Listen for cart updates
   eventBus.subscribe('cart-updated', () => {
@@ -114,22 +58,29 @@ export function initApp() {
     cartService.removeFromCart(productId);
   };
   
-  // Register update cart quantity functionality
-  window.updateCartQuantity = (productId, newQuantity) => {
-    const cart = cartService.getCart();
-    const item = cart.find(item => item.id === productId);
-    
-    if (item) {
-      item.quantity = Math.max(1, newQuantity);
-      cartService.saveCart(cart);
-    }
-  };
-  
   // Register go to order page functionality
   window.goToOrderPage = () => {
     window.toggleCart();
     window.location.hash = '#order';
   };
+  
+  // Initialize global click handler for product thumbnails and main images
+  document.addEventListener('click', (e) => {
+    // Проверяем клик по миниатюрам в карточке товара
+    if (e.target.matches('.product-thumbnail')) {
+      e.preventDefault();
+      const mainImage = document.getElementById('main-product-image');
+      if (mainImage) {
+        mainImage.src = e.target.src;
+      }
+    }
+    
+    // Проверяем клик по основному изображению для открытия лайтбокса
+    if (e.target.matches('#main-product-image')) {
+      e.preventDefault();
+      openLightbox(e.target.src);
+    }
+  });
   
   // Функция для открытия лайтбокса
   window.openLightbox = (initialImage = null) => {
@@ -194,7 +145,6 @@ export function initApp() {
       // Находим все изображения в продукте
       const productId = window.location.hash.split('/')[1];
       
-      // Fix: Make sure products is accessible - use imported products variable
       if (productId && products) {
         const product = products.find(p => p.id === productId);
         

@@ -60,6 +60,8 @@ const HomeComponent = {
 
                     <button
                       data-product-id="${product.id}"
+                      data-base-name="${product.name}"
+                      data-base-size="${product.sizeType}"
                       class="view-all-btn w-full bg-blue-200 text-gray-800 px-4 py-2 rounded hover:bg-blue-300 transition duration-300"
                     >
                       Посмотреть все
@@ -78,26 +80,89 @@ const HomeComponent = {
     setTimeout(() => {
       SwiperService.initSwipers();
       
+      // Добавляем обработчики для кнопок цветов
+      this.initColorButtonHandlers();
+      
       // Добавляем обработчики для кнопок "Посмотреть все"
-      document.querySelectorAll('.view-all-btn').forEach(button => {
-        button.addEventListener('click', function() {
-          const productId = this.dataset.productId;
+      this.initViewAllButtonHandlers();
+    }, 100);
+  },
+
+  // Инициализация обработчиков цветовых кнопок
+  initColorButtonHandlers() {
+    document.addEventListener('click', (e) => {
+      if (e.target.matches('.color-button')) {
+        e.preventDefault();
+        
+        const productId = e.target.dataset.productId;
+        const baseName = e.target.dataset.baseName;
+        const baseSize = e.target.dataset.baseSize;
+        const chosenColor = e.target.dataset.color;
+        
+        // Проверяем, был ли уже выбран этот цвет
+        const wasAlreadySelected = e.target.dataset.active === 'true';
+        
+        if (wasAlreadySelected) {
+          // Второй клик - переходим на страницу товара
+          const matchingProduct = ColorService.findMatchingProduct(baseName, baseSize, chosenColor);
+          if (matchingProduct) {
+            window.location.href = `#product/${matchingProduct.id}`;
+          }
+          return;
+        }
+        
+        // Первый клик - обновляем слайдер и выделяем кнопку
+        const matchingProduct = ColorService.findMatchingProduct(baseName, baseSize, chosenColor);
+        if (matchingProduct) {
+          // Обновляем слайдер
+          SwiperService.updateSliderPhotos(productId, matchingProduct.photo);
           
-          // Находим активную кнопку цвета
-          const activeColorButton = document.querySelector(`.color-button[data-product-id="${productId}"][data-active="true"]`);
+          // Обновляем состояние кнопок цветов
+          ColorService.updateButtonColor(productId, chosenColor);
           
-          if (activeColorButton) {
-            // Переходим на страницу продукта с выбранным цветом
-            const matchingProductId = activeColorButton.dataset.productId;
-            window.location.href = `#product/${matchingProductId}`;
+          // Обновляем data-атрибуты для кнопки "Посмотреть все"
+          const viewAllBtn = document.querySelector(`.view-all-btn[data-product-id="${productId}"]`);
+          if (viewAllBtn) {
+            viewAllBtn.dataset.selectedProductId = matchingProduct.id;
+          }
+        }
+      }
+    });
+  },
+
+  // Инициализация обработчиков кнопок "Посмотреть все"
+  initViewAllButtonHandlers() {
+    document.addEventListener('click', (e) => {
+      if (e.target.matches('.view-all-btn')) {
+        e.preventDefault();
+        
+        const productId = e.target.dataset.productId;
+        const selectedProductId = e.target.dataset.selectedProductId;
+        const baseName = e.target.dataset.baseName;
+        const baseSize = e.target.dataset.baseSize;
+        
+        // Если есть выбранный продукт, переходим к нему
+        if (selectedProductId) {
+          window.location.href = `#product/${selectedProductId}`;
+          return;
+        }
+        
+        // Иначе ищем активную кнопку цвета
+        const activeColorButton = document.querySelector(`.color-button[data-product-id="${productId}"][data-active="true"]`);
+        
+        if (activeColorButton) {
+          const chosenColor = activeColorButton.dataset.color;
+          const matchingProduct = ColorService.findMatchingProduct(baseName, baseSize, chosenColor);
+          if (matchingProduct) {
+            window.location.href = `#product/${matchingProduct.id}`;
             return;
           }
-          
-          // Если активной кнопки нет, просто переходим к текущему продукту
-          window.location.href = `#product/${productId}`;
-        });
-      });
-    }, 100);
+        }
+        
+        // Если ничего не выбрано, переходим к продукту по умолчанию
+        window.location.href = `#product/${productId}`;
+      }
+    });
   }
 };
 
