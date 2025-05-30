@@ -14,45 +14,27 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   </head>
   <body class="bg-gray-50">
-    <header id="header-container">
-      <nav class="bg-white shadow-md">
-        <div class="container mx-auto px-6 py-3 flex justify-between items-center">
-          <a href="#" class="text-xl font-bold text-gray-800">
-            <span class="hidden sm:inline">Gift Box Shop</span>
-            <span class="sm:hidden">Gift Box</span>
-          </a>
-          
-          <!-- Навигационное меню -->
-          <div class="flex space-x-4">
-            <a href="#" class="text-gray-600 hover:text-gray-800">Главная</a>
-            <a href="#order" class="text-gray-600 hover:text-gray-800">Оформление заказа</a>
-          </div>
-        </div>
-      </nav>
-    </header>
-    
+    <header id="header-container"></header>
     <div id="app"></div>
+    <footer id="footer-container"></footer>
     
-    <footer id="footer-container">
-      <footer class="bg-gray-800 text-white py-8 mt-12">
-        <div class="container mx-auto px-6">
-          <div class="flex flex-col md:flex-row justify-between">
-            <div class="mb-6 md:mb-0">
-              <h3 class="text-xl font-bold mb-4">Gift Box Shop</h3>
-              <p class="text-gray-400">Красивые подарочные коробки для любого случая</p>
-            </div>
-            <div>
-              <h4 class="text-lg font-semibold mb-3">Контакты</h4>
-              <p class="text-gray-400">Телефон: +7 (XXX) XXX-XX-XX</p>
-              <p class="text-gray-400">Email: info@giftboxshop.ru</p>
-            </div>
-          </div>
-          <div class="border-t border-gray-700 mt-8 pt-6 text-center text-gray-400">
-            <p>&copy; 2023 Gift Box Shop. Все права защищены.</p>
-          </div>
-        </div>
-      </footer>
-    </footer>
+    <script>
+    // Загрузка и вставка header.html
+    fetch('components/header.html')
+      .then(response => response.text())
+      .then(data => {
+        document.getElementById('header-container').innerHTML = data;
+      })
+      .catch(error => console.error('Ошибка при загрузке header.html:', error));
+ 
+    // Загрузка и вставка footer.html
+    fetch('components/footer.html')
+      .then(response => response.text())
+      .then(data => {
+        document.getElementById('footer-container').innerHTML = data;
+      })
+      .catch(error => console.error('Ошибка при загрузке footer.html:', error));
+    </script>  
     
     <script type="module" src="js/app.js"></script>
   </body>

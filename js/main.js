@@ -133,6 +133,7 @@ export function initApp() {
   
   // Функция для открытия лайтбокса
   window.openLightbox = (initialImage = null) => {
+    // Создаем лайтбокс, если его еще нет
     let lightbox = document.getElementById('product-lightbox');
     
     if (!lightbox) {
