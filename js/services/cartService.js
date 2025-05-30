@@ -12,23 +12,46 @@ export const cartService = {
   // Save cart to localStorage
   saveCart(cart) {
     localStorage.setItem('cart', JSON.stringify(cart));
-    // Emit cart updated event
+    this.updateCartCounter();
     eventBus.emit('cart-updated', cart);
   },
   
   // Add item to cart
   addToCart(productId, quantity) {
     const cart = this.getCart();
-    const existingItem = cart.find(item => item.id === productId);
+    const product = products.find(p => p.id === productId);
+    
+    if (!product) return;
+    
+    const existingItem = cart.find(item => 
+      item.id === productId && item.color === product.color
+    );
     
     if (existingItem) {
       existingItem.quantity += quantity;
     } else {
-      cart.push({ id: productId, quantity });
+      cart.push({ 
+        id: productId, 
+        name: product.name,
+        color: product.color,
+        quantity: quantity 
+      });
     }
     
     this.saveCart(cart);
-    // No page reload needed
+    this.updateCartUI();
+  },
+  
+  // Update item quantity in cart
+  updateCartQuantity(productId, newQuantity) {
+    const cart = this.getCart();
+    const item = cart.find(item => item.id === productId);
+    
+    if (item && newQuantity > 0) {
+      item.quantity = newQuantity;
+      this.saveCart(cart);
+      this.updateCartUI();
+    }
   },
   
   // Remove item from cart
@@ -37,12 +60,13 @@ export const cartService = {
     const updatedCart = cart.filter(item => item.id !== productId);
     
     this.saveCart(updatedCart);
-    // No page reload needed
+    this.updateCartUI();
   },
   
   // Clear cart
   clearCart() {
     localStorage.removeItem('cart');
+    this.updateCartCounter();
     eventBus.emit('cart-updated', []);
   },
   
@@ -58,6 +82,72 @@ export const cartService = {
   // Check if order meets minimum amount
   meetsMinimumOrderAmount() {
     return this.getCartTotal() >= env.minOrderAmount;
+  },
+  
+  // Update cart counter
+  updateCartCounter() {
+    const cart = this.getCart();
+    const cartCount = cart.length;
+    
+    // Обновляем счетчик в иконке корзины
+    const cartButton = document.querySelector('button[onclick="toggleCart()"]');
+    if (cartButton) {
+      let countElement = cartButton.querySelector('.absolute');
+      
+      if (cartCount > 0) {
+        if (!countElement) {
+          countElement = document.createElement('span');
+          countElement.className = 'absolute -top-1 -right-1 bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs';
+          cartButton.appendChild(countElement);
+        }
+        countElement.textContent = cartCount;
+        countElement.style.display = 'flex';
+      } else {
+        if (countElement) {
+          countElement.style.display = 'none';
+        }
+      }
+    }
+  },
+  
+  // Initialize cart event listeners
+  initCartEventListeners() {
+    const cartModal = document.getElementById('cartModal');
+    if (!cartModal) return;
+    
+    // Делегирование событий для корзины
+    cartModal.addEventListener('click', (e) => {
+      // Кнопка увеличения количества
+      if (e.target.matches('[data-action="increase"]')) {
+        const productId = e.target.dataset.productId;
+        const currentQuantity = parseInt(e.target.dataset.quantity) || 1;
+        this.updateCartQuantity(productId, currentQuantity + 1);
+      }
+      
+      // Кнопка уменьшения количества
+      if (e.target.matches('[data-action="decrease"]')) {
+        const productId = e.target.dataset.productId;
+        const currentQuantity = parseInt(e.target.dataset.quantity) || 1;
+        if (currentQuantity > 1) {
+          this.updateCartQuantity(productId, currentQuantity - 1);
+        }
+      }
+      
+      // Кнопка удаления
+      if (e.target.matches('[data-action="remove"]')) {
+        const productId = e.target.dataset.productId;
+        this.removeFromCart(productId);
+      }
+    });
+    
+    // Обработка изменения количества через input
+    cartModal.addEventListener('input', (e) => {
+      if (e.target.matches('.quantity-input')) {
+        const productId = e.target.dataset.productId;
+        const newQuantity = parseInt(e.target.value) || 1;
+        this.updateCartQuantity(productId, Math.max(1, newQuantity));
+      }
+    });
   },
   
   // Render cart component
@@ -107,11 +197,10 @@ export const cartService = {
             </button>
           </div>
 
-          <!-- Контент, который прокручивается, если товаров много -->
           <div class="overflow-y-auto max-h-[80vh]">
             ${cart.length === 0 ? `
               <div class="text-center py-8">
-                <p class="text-gray-500">Your cart is empty</p>
+                <p class="text-gray-500">Ваша корзина пуста</p>
               </div>
             ` : `
               <div class="space-y-4 mb-6">
@@ -124,22 +213,26 @@ export const cartService = {
                            class="w-20 h-20 object-cover rounded">
                       <div class="flex-1">
                         <h3 class="font-semibold text-gray-800">${product.name}</h3>
-                        <p class="text-gray-600 text-sm">Цвет: ${product.color}</p>
+                        <p class="text-gray-600 text-sm">Цвет: ${item.color}</p>
                         <div class="flex items-center mt-1">
                           <button 
-                            onclick="updateCartQuantity('${item.id}', ${Math.max(1, item.quantity - 1)})"
+                            data-action="decrease"
+                            data-product-id="${item.id}"
+                            data-quantity="${item.quantity}"
                             class="px-3 py-1 h-8 border border-gray-300 bg-white text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-colors rounded-l"
                           >-</button>
                           <input 
                             type="number" 
                             value="${item.quantity}" 
                             min="1"
-                            class="w-16 h-8 text-center border-t border-b border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-300"
-                            onchange="updateCartQuantity('${item.id}', parseInt(this.value))"
+                            data-product-id="${item.id}"
+                            class="quantity-input w-16 h-8 text-center border-t border-b border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-300"
                           >
                           <button 
-                            onclick="updateCartQuantity('${item.id}', ${item.quantity + 1})"
-                            class="px-3 py-1 h-8 border border-gray-300 border-l border-gray-300 bg-white text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-colors rounded-r"
+                            data-action="increase"
+                            data-product-id="${item.id}"
+                            data-quantity="${item.quantity}"
+                            class="px-3 py-1 h-8 border border-gray-300 bg-white text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-colors rounded-r"
                           >+</button>
                         </div>
                       </div>
@@ -148,7 +241,8 @@ export const cartService = {
                           ₽${product.price * item.quantity}
                         </p>
                         <button 
-                          onclick="removeFromCart('${item.id}')"
+                          data-action="remove"
+                          data-product-id="${item.id}"
                           class="text-red-500 hover:text-red-700 text-sm"
                         >
                           Удалить
@@ -192,37 +286,22 @@ export const cartService = {
     `;
   },
 
-  // Update cart UI without re-rendering everything
+  // Update cart UI without full re-render
   updateCartUI() {
     const cart = this.getCart();
-    
-    // Update cart icon count
-    const cartCountElement = document.querySelector('.bg-blue-500.text-white.rounded-full');
-    if (cartCountElement) {
-      if (cart.length > 0) {
-        cartCountElement.textContent = cart.length;
-        cartCountElement.classList.remove('hidden');
-      } else {
-        cartCountElement.classList.add('hidden');
-      }
-    }
-    
-    // Update cart modal content
     const cartModalContent = document.querySelector('#cartModal .overflow-y-auto');
+    
     if (cartModalContent) {
       if (cart.length === 0) {
         cartModalContent.innerHTML = `
           <div class="text-center py-8">
-            <p class="text-gray-500">Your cart is empty</p>
+            <p class="text-gray-500">Ваша корзина пуста</p>
           </div>
         `;
       } else {
-        const total = cart.reduce((sum, item) => {
-          const product = products.find(p => p.id === item.id);
-          return sum + (product ? product.price * item.quantity : 0);
-        }, 0);
+        const total = this.getCartTotal();
+        const meetsMinimum = this.meetsMinimumOrderAmount();
         
-        // Update cart items
         const itemsHTML = cart.map(item => {
           const product = products.find(p => p.id === item.id);
           return product ? `
@@ -232,22 +311,26 @@ export const cartService = {
                    class="w-20 h-20 object-cover rounded">
               <div class="flex-1">
                 <h3 class="font-semibold text-gray-800">${product.name}</h3>
-                <p class="text-gray-600 text-sm">Цвет: ${product.color}</p>
+                <p class="text-gray-600 text-sm">Цвет: ${item.color}</p>
                 <div class="flex items-center mt-1">
                   <button 
-                    onclick="updateCartQuantity('${item.id}', ${Math.max(1, item.quantity - 1)})"
+                    data-action="decrease"
+                    data-product-id="${item.id}"
+                    data-quantity="${item.quantity}"
                     class="px-3 py-1 h-8 border border-gray-300 bg-white text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-colors rounded-l"
                   >-</button>
                   <input 
                     type="number" 
                     value="${item.quantity}" 
                     min="1"
-                    class="w-16 h-8 text-center border-t border-b border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-300"
-                    onchange="updateCartQuantity('${item.id}', parseInt(this.value))"
+                    data-product-id="${item.id}"
+                    class="quantity-input w-16 h-8 text-center border-t border-b border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-300"
                   >
                   <button 
-                    onclick="updateCartQuantity('${item.id}', ${item.quantity + 1})"
-                    class="px-3 py-1 h-8 border border-gray-300 border-l border-gray-300 bg-white text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-colors rounded-r"
+                    data-action="increase"
+                    data-product-id="${item.id}"
+                    data-quantity="${item.quantity}"
+                    class="px-3 py-1 h-8 border border-gray-300 bg-white text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-colors rounded-r"
                   >+</button>
                 </div>
               </div>
@@ -256,7 +339,8 @@ export const cartService = {
                   ₽${product.price * item.quantity}
                 </p>
                 <button 
-                  onclick="removeFromCart('${item.id}')"
+                  data-action="remove"
+                  data-product-id="${item.id}"
                   class="text-red-500 hover:text-red-700 text-sm"
                 >
                   Удалить
@@ -275,16 +359,34 @@ export const cartService = {
               <span class="font-semibold text-gray-800">Всего:</span>
               <span class="font-bold text-xl text-gray-800">₽${total}</span>
             </div>
-            <button
-              onclick="goToOrderPage()"
-              class="w-full bg-blue-200 text-gray-800 px-6 py-3 rounded-lg
+            ${meetsMinimum ? `
+              <button
+                onclick="goToOrderPage()"
+                class="w-full bg-blue-200 text-gray-800 px-6 py-3 rounded-lg
                      font-semibold hover:bg-blue-300 transition duration-300"
-            >
-              Перейти к оплате
-            </button>
+              >
+                Перейти к оплате
+              </button>
+            ` : `
+              <div class="text-orange-500 text-center mb-4">
+                Минимальная сумма заказа: ₽${env.minOrderAmount}
+              </div>
+              <button
+                class="w-full bg-gray-200 text-gray-500 px-6 py-3 rounded-lg
+                     font-semibold cursor-not-allowed"
+                disabled
+              >
+                Перейти к оплате
+              </button>
+            `}
           </div>
         `;
       }
+      
+      // Переинициализируем обработчики после обновления DOM
+      this.initCartEventListeners();
     }
+    
+    this.updateCartCounter();
   }
 };
