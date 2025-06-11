@@ -1,12 +1,10 @@
 
 import Router from './router.js';
-import { initApp as initMainApp } from './main.js';
+import { initApp } from './main.js';
 import { env } from './utils/env.js';
 
-// Main application initialization function
-export function initApp() {
-  console.log('Initializing main application...');
-  
+// Initialize the app when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
   // Log environment information in development mode
   if (env.isDev()) {
     console.log('Running in development mode');
@@ -16,29 +14,29 @@ export function initApp() {
   // Set up the router
   const router = new Router();
   
-  // Initialize the main application logic
-  initMainApp();
+  // Initialize the application
+  initApp();
   
-  // Initialize header scripts after header is loaded
-  initializeHeaderScripts();
-}
-
-function initializeHeaderScripts() {
-  // Wait a bit for the header DOM to be fully rendered
-  setTimeout(() => {
-    const headerContainer = document.getElementById('header-container');
-    if (headerContainer) {
-      // Execute any scripts in the header component
-      const scripts = headerContainer.querySelectorAll('script');
-      scripts.forEach(oldScript => {
-        const newScript = document.createElement('script');
-        Array.from(oldScript.attributes).forEach(attr => {
-          newScript.setAttribute(attr.name, attr.value);
-        });
-        newScript.textContent = oldScript.textContent;
-        oldScript.parentNode.replaceChild(newScript, oldScript);
-      });
-      console.log('Header scripts initialized');
-    }
-  }, 100);
-}
+  // Обеспечиваем инициализацию меню после загрузки header.html
+  const headerContainer = document.getElementById('header-container');
+  if (headerContainer) {
+    const observer = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+          // Запускаем повторную инициализацию скриптов в header
+          const scripts = headerContainer.querySelectorAll('script');
+          scripts.forEach(oldScript => {
+            const newScript = document.createElement('script');
+            Array.from(oldScript.attributes).forEach(attr => {
+              newScript.setAttribute(attr.name, attr.value);
+            });
+            newScript.textContent = oldScript.textContent;
+            oldScript.parentNode.replaceChild(newScript, oldScript);
+          });
+          observer.disconnect();
+        }
+      }
+    });
+    observer.observe(headerContainer, { childList: true });
+  }
+});
