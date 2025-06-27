@@ -9,7 +9,7 @@ const ProductComponent = {
     const product = products.find(p => p.id === productId);
     if (!product) return HomeComponent.render();
 
-    // Устанавливаем текущий продукт как выбранный цвет
+    // текущий продукт - выбранный цвет
     ColorService.selectedColors[productId] = product.color;
 
     const app = document.getElementById('app');

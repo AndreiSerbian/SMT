@@ -8,7 +8,7 @@ const OrderComponent = {
     const app = document.getElementById('app');
     const cart = cartService.getCart();
     
-    // Check minimum order value
+    // минимальное сумма рублей в заказе
     const subtotal = cartService.getCartTotal();
     
     if (subtotal < env.minOrderAmount) {
@@ -17,7 +17,6 @@ const OrderComponent = {
       return;
     }
     
-    // Calculate discount
     let discountRate = 0;
     if (subtotal >= 50000) {
       discountRate = 5;
@@ -32,7 +31,7 @@ const OrderComponent = {
     const discount = Math.floor((subtotal * discountRate) / 100);
     const total = subtotal - discount;
     
-    // Generate cart rows
+    // инфо товара
     const cartRows = cart.map(item => {
       const product = products.find(p => p.id === item.id);
       if (!product) return '';

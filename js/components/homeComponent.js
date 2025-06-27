@@ -7,7 +7,7 @@ import { ColorService } from '../services/colorService.js';
 const HomeComponent = {
   swipersById: {},
   
-  // Получение уникальных категорий
+  // получение категорий
   getCategories() {
     const categories = new Set();
     products.forEach(product => {
@@ -28,7 +28,7 @@ const HomeComponent = {
             const [name, sizeTypeRaw] = category.split(' (');
             const sizeType = (sizeTypeRaw || '').slice(0, -1);
             
-            // Находим "продукт по умолчанию" (первый цвет)
+            // первый цвет - продукт по умолчанию
             const product = products.find(p => p.name === name && p.sizeType === sizeType);
             if (!product) return '';
 
@@ -74,20 +74,20 @@ const HomeComponent = {
       ${cartService.renderCart()}
     `;
     
-    // Инициализируем все слайдеры
+    // инициализация слайдеров
     setTimeout(() => {
       SwiperService.initSwipers();
       
-      // Добавляем обработчики для кнопок "Посмотреть все"
+      //обработчики  "Посмотреть все"
       document.querySelectorAll('.view-all-btn').forEach(button => {
         button.addEventListener('click', function() {
           const productId = this.dataset.productId;
           
-          // Находим активную кнопку цвета
+          //активная кнопка цвета
           const activeColorButton = document.querySelector(`.color-button[data-product-id="${productId}"][data-active="true"]`);
           
           if (activeColorButton) {
-            // Переходим на страницу продукта с выбранным цветом
+            // переход на страницу продукта с выбранным цветом
             const matchingProductId = activeColorButton.dataset.productId;
             window.location.href = `#product/${matchingProductId}`;
             return;
