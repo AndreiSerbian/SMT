@@ -1,4 +1,3 @@
-
 import { products } from '../data/products.js';
 import { cartService } from '../services/cartService.js';
 import { env } from '../utils/env.js';
@@ -48,6 +47,21 @@ const OrderComponent = {
     }).join('');
     
     app.innerHTML = `
+    <nav class="bg-white shadow-md">
+      <div class="container mx-auto px-6 py-3 flex justify-between items-center">
+        <a href="#" class="text-xl font-bold text-gray-800">
+          <span class="hidden sm:inline">Gift Box Shop</span>
+          <span class="sm:hidden">Gift Box</span>
+        </a>
+        
+        <!-- Навигационное меню (одинаковое для всех устройств) -->
+        <div class="flex space-x-4">
+          <a href="#" class="text-gray-600 hover:text-gray-800">Главная</a>
+          <a href="#order" class="text-gray-600 hover:text-gray-800">Оформление заказа</a>
+        </div>
+      </div>
+    </nav>
+
     <main class="container mx-auto p-4">
       <h2 class="text-3xl font-bold mb-6">Корзина</h2>
       <div class="bg-white shadow rounded p-6">
@@ -164,6 +178,25 @@ const OrderComponent = {
         </button>
       </form>
     </main>
+    
+    <footer class="bg-gray-800 text-white py-8 mt-12">
+      <div class="container mx-auto px-6">
+        <div class="flex flex-col md:flex-row justify-between">
+          <div class="mb-6 md:mb-0">
+            <h3 class="text-xl font-bold mb-4">SMT Gift Box Shop</h3>
+            <p class="text-gray-400">Красивые подарочные коробки для любого случая</p>
+          </div>
+          <div>
+            <h4 class="text-lg font-semibold mb-3">Контакты</h4>
+            <p class="text-gray-400">Телефон: +79153474616</p>
+            <p class="text-gray-400">Email: smtpremiumbox@serbiyan.ru</p>
+          </div>
+        </div>
+        <div class="border-t border-gray-700 mt-8 pt-6 text-center text-gray-400">
+          <p>&copy; 2025 Gift Box Shop. Все права защищены.</p>
+        </div>
+      </div>
+    </footer>
     `;
     
     // Add input validation event listeners
