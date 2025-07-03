@@ -7,17 +7,35 @@ import ContactsComponent from './components/contactsComponent.js';
 class Router {
   constructor() {
     this.routes = {
-      '#': HomeComponent.render,
-      '#product': (id) => ProductComponent.render(id),
-      '#order': OrderComponent.render,
-      '#contacts': ContactsComponent.render
+      '#': () => HomeComponent.render(this.getMainContainer()),
+      '#product': (id) => ProductComponent.render(id, this.getMainContainer()),
+      '#order': () => OrderComponent.render(this.getMainContainer()),
+      '#contacts': () => ContactsComponent.render(this.getMainContainer())
     };
     
     window.addEventListener('hashchange', () => this.handleRouteChange());
     window.addEventListener('load', () => this.handleRouteChange());
   }
   
+  getMainContainer() {
+    return document.getElementById('app');
+  }
+  
+  clearContainer() {
+    const container = this.getMainContainer();
+    if (container) {
+      container.innerHTML = '';
+    }
+  }
+  
+  scrollToTop() {
+    window.scrollTo({ top: 0, behavior: 'auto' });
+  }
+  
   handleRouteChange() {
+    // Очищаем предыдущий контент
+    this.clearContainer();
+    
     const hash = window.location.hash || '#';
     
     if (hash === '#') {
@@ -30,11 +48,13 @@ class Router {
     } else if (hash === '#contacts') {
       this.routes['#contacts']();
     }
+    
+    // Скролл к верху страницы
+    this.scrollToTop();
   }
   
   navigate(hash) {
     window.location.hash = hash;
-    this.handleRouteChange();
   }
 }
 

@@ -3,8 +3,12 @@ import { cartService } from '../services/cartService.js';
 import { env } from '../utils/env.js';
 
 const OrderComponent = {
-  render() {
-    const app = document.getElementById('app');
+  render(container) {
+    if (!container) {
+      console.error('Container not provided to OrderComponent');
+      return;
+    }
+    
     const cart = cartService.getCart();
     
     // Check minimum order value
@@ -46,7 +50,7 @@ const OrderComponent = {
       `;
     }).join('');
     
-    app.innerHTML = `
+    container.innerHTML = `
     <nav class="bg-white shadow-md">
       <div class="container mx-auto px-6 py-3 flex justify-between items-center">
         <a href="#" class="text-xl font-bold text-gray-800">
@@ -200,12 +204,12 @@ const OrderComponent = {
     `;
     
     // Add input validation event listeners
-    const nameInput = document.getElementById('customerName');
-    const phoneInput = document.getElementById('phone');
-    const emailInput = document.getElementById('email');
+    const nameInput = container.querySelector('#customerName');
+    const phoneInput = container.querySelector('#phone');
+    const emailInput = container.querySelector('#email');
     
     nameInput.addEventListener('blur', () => {
-      const errorElem = document.getElementById('nameError');
+      const errorElem = container.querySelector('#nameError');
       if (!nameInput.value.trim()) {
         errorElem.classList.remove('hidden');
       } else {
@@ -214,7 +218,7 @@ const OrderComponent = {
     });
     
     phoneInput.addEventListener('blur', () => {
-      const errorElem = document.getElementById('phoneError');
+      const errorElem = container.querySelector('#phoneError');
       if (!phoneInput.value.trim() || !phoneInput.checkValidity()) {
         errorElem.classList.remove('hidden');
       } else {
@@ -223,7 +227,7 @@ const OrderComponent = {
     });
     
     emailInput.addEventListener('blur', () => {
-      const errorElem = document.getElementById('emailError');
+      const errorElem = container.querySelector('#emailError');
       if (!emailInput.value.trim() || !emailInput.checkValidity()) {
         errorElem.classList.remove('hidden');
       } else {
@@ -232,7 +236,7 @@ const OrderComponent = {
     });
     
     phoneInput.addEventListener('input', function() {
-      const errorElem = document.getElementById('phoneError');
+      const errorElem = container.querySelector('#phoneError');
       const cleanPhone = this.value.replace(/\D/g, '');
       
       if (cleanPhone.length !== 11) {
@@ -244,8 +248,8 @@ const OrderComponent = {
     });
     
     // Add form submission handler
-    const form = document.getElementById('orderForm');
-    form.addEventListener('submit', OrderComponent.submitOrder);
+    const form = container.querySelector('#orderForm');
+    form.addEventListener('submit', (event) => OrderComponent.submitOrder(event, container));
   },
   
   validateForm(form) {
@@ -255,32 +259,32 @@ const OrderComponent = {
     const email = form.email.value.trim();
     
     // Reset error messages
-    document.getElementById('nameError').classList.add('hidden');
-    document.getElementById('phoneError').classList.add('hidden');
-    document.getElementById('emailError').classList.add('hidden');
+    form.querySelector('#nameError').classList.add('hidden');
+    form.querySelector('#phoneError').classList.add('hidden');
+    form.querySelector('#emailError').classList.add('hidden');
     
     // Validate required fields
     let isValid = true;
     
     if (!name) {
-      document.getElementById('nameError').classList.remove('hidden');
+      form.querySelector('#nameError').classList.remove('hidden');
       isValid = false;
     }
     
     if (!phone || !/^(8|\+7)?[\d\s-]{10,15}$/.test(phone.replace(/\D/g, ''))) {
-      document.getElementById('phoneError').classList.remove('hidden');
+      form.querySelector('#phoneError').classList.remove('hidden');
       isValid = false;
     }
     
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      document.getElementById('emailError').classList.remove('hidden');
+      form.querySelector('#emailError').classList.remove('hidden');
       isValid = false;
     }
     
     return isValid;
   },
   
-  submitOrder(event) {
+  submitOrder(event, container) {
     event.preventDefault();
     
     // Get form
@@ -291,7 +295,6 @@ const OrderComponent = {
       return;
     }
     
-    // Сбор данных формы
     const name = form.customerName.value.trim();
     const phone = form.phone.value.trim();
     const email = form.email.value.trim();
@@ -382,13 +385,13 @@ const OrderComponent = {
         cartService.clearCart();
         
         // Показываем сообщение о подтверждении
-        document.getElementById('orderStatus').classList.remove('hidden');
+        container.querySelector('#orderStatus').classList.remove('hidden');
         
         // Меняем текст кнопки
         submitButton.innerHTML = 'Заказ отправлен';
         
         // Скроллим к статусу заказа
-        document.getElementById('orderStatus').scrollIntoView({ behavior: 'smooth' });
+        container.querySelector('#orderStatus').scrollIntoView({ behavior: 'smooth' });
         
         // Отключаем все поля формы
         const formInputs = form.querySelectorAll('input, textarea, button, select');

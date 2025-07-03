@@ -1,18 +1,27 @@
+
 import { products } from '../data/products.js';
 import { cartService } from '../services/cartService.js';
 import { colorMap } from '../data/products.js';
 import { ColorService } from '../services/colorService.js';
 
 const ProductComponent = {
-  render(productId) {
+  render(productId, container) {
+    if (!container) {
+      console.error('Container not provided to ProductComponent');
+      return;
+    }
+    
     const product = products.find(p => p.id === productId);
-    if (!product) return HomeComponent.render();
+    if (!product) {
+      // Если продукт не найден, перенаправляем на главную
+      window.location.href = '#';
+      return;
+    }
 
     // Устанавливаем текущий продукт как выбранный цвет
     ColorService.selectedColors[productId] = product.color;
 
-    const app = document.getElementById('app');
-    app.innerHTML = `
+    container.innerHTML = `
       <nav class="bg-white shadow-md">
         <div class="container mx-auto px-6 py-3 flex justify-between items-center">
           <a href="#" class="text-xl font-bold text-gray-800">
@@ -161,37 +170,55 @@ const ProductComponent = {
           </div>
         </div>
       </footer>
+    `;
+    
+    // Добавляем обработчики событий для изображений
+    setTimeout(() => {
+      const mainImage = container.querySelector('#main-product-image');
+      const thumbnails = container.querySelectorAll('.product-thumbnail');
       
-      <script>
-        // Обработчики для просмотра изображений
-        document.getElementById('main-product-image').addEventListener('click', function() {
+      if (mainImage) {
+        mainImage.addEventListener('click', function() {
           openImageModal(this.src);
         });
-        
-        document.querySelectorAll('.product-thumbnail').forEach(thumbnail => {
-          thumbnail.addEventListener('click', function() {
-            document.getElementById('main-product-image').src = this.src;
-            openImageModal(this.src);
-          });
+      }
+      
+      thumbnails.forEach(thumbnail => {
+        thumbnail.addEventListener('click', function() {
+          if (mainImage) {
+            mainImage.src = this.src;
+          }
+          openImageModal(this.src);
         });
-        
-        function openImageModal(imageSrc) {
-          document.getElementById('modalImage').src = imageSrc;
-          document.getElementById('imageModal').classList.remove('hidden');
+      });
+      
+      // Функции для модального окна
+      window.openImageModal = function(imageSrc) {
+        const modalImage = container.querySelector('#modalImage');
+        const imageModal = container.querySelector('#imageModal');
+        if (modalImage && imageModal) {
+          modalImage.src = imageSrc;
+          imageModal.classList.remove('hidden');
         }
-        
-        function closeImageModal() {
-          document.getElementById('imageModal').classList.add('hidden');
+      };
+      
+      window.closeImageModal = function() {
+        const imageModal = container.querySelector('#imageModal');
+        if (imageModal) {
+          imageModal.classList.add('hidden');
         }
-        
-        // Закрытие модального окна по клику на фон
-        document.getElementById('imageModal').addEventListener('click', function(e) {
+      };
+      
+      // Закрытие модального окна по клику на фон
+      const imageModal = container.querySelector('#imageModal');
+      if (imageModal) {
+        imageModal.addEventListener('click', function(e) {
           if (e.target === this) {
-            closeImageModal();
+            window.closeImageModal();
           }
         });
-      </script>
-    `;
+      }
+    }, 0);
   }
 };
 

@@ -2,10 +2,13 @@
 import { sendContactRequest } from '../services/contact-service.js';
 
 const ContactsComponent = {
-  render() {
-    const app = document.getElementById('app');
+  render(container) {
+    if (!container) {
+      console.error('Container not provided to ContactsComponent');
+      return;
+    }
     
-    app.innerHTML = `
+    container.innerHTML = `
       <nav class="bg-white shadow-md">
         <div class="container mx-auto px-6 py-3 flex justify-between items-center">
           <a href="#" class="text-xl font-bold text-gray-800">
@@ -65,7 +68,7 @@ const ContactsComponent = {
     `;
 
     // Добавляем обработчик формы с защитой от дублирования
-    const contactForm = document.getElementById('contact-form');
+    const contactForm = container.querySelector('#contact-form');
     if (contactForm && !contactForm.dataset.listenerAttached) {
       contactForm.addEventListener('submit', async (e) => {
         e.preventDefault();

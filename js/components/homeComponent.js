@@ -1,3 +1,4 @@
+
 import { products } from '../data/products.js';
 import { cartService } from '../services/cartService.js';
 import SwiperService from '../services/swiperService.js';
@@ -15,11 +16,15 @@ const HomeComponent = {
     return Array.from(categories);
   },
   
-  render() {
-    const app = document.getElementById('app');
+  render(container) {
+    if (!container) {
+      console.error('Container not provided to HomeComponent');
+      return;
+    }
+    
     const categories = HomeComponent.getCategories();
     
-    app.innerHTML = `
+    container.innerHTML = `
       <nav class="bg-white shadow-md">
         <div class="container mx-auto px-6 py-3 flex justify-between items-center">
           <a href="#" class="text-xl font-bold text-gray-800">
@@ -112,12 +117,12 @@ const HomeComponent = {
       SwiperService.initSwipers();
       
       // Добавляем обработчики для кнопок "Посмотреть все"
-      document.querySelectorAll('.view-all-btn').forEach(button => {
+      container.querySelectorAll('.view-all-btn').forEach(button => {
         button.addEventListener('click', function() {
           const productId = this.dataset.productId;
           
           // Находим активную кнопку цвета
-          const activeColorButton = document.querySelector(`.color-button[data-product-id="${productId}"][data-active="true"]`);
+          const activeColorButton = container.querySelector(`.color-button[data-product-id="${productId}"][data-active="true"]`);
           
           if (activeColorButton) {
             // Переходим на страницу продукта с выбранным цветом
