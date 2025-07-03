@@ -1,4 +1,3 @@
-
 import { products } from '../data/products.js';
 import { cartService } from '../services/cartService.js';
 import SwiperService from '../services/swiperService.js';
@@ -31,7 +30,7 @@ const HomeComponent = {
           <!-- Навигационное меню (одинаковое для всех устройств) -->
           <div class="flex space-x-4">
             <a href="#" class="text-gray-600 hover:text-gray-800">Главная</a>
-            <a href="#order" class="text-gray-600 hover:text-gray-800">Оформление заказа</a>
+            <a href="#contacts" class="text-gray-600 hover:text-gray-800">Контакты</a>
           </div>
         </div>
       </nav>

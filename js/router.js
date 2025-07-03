@@ -2,13 +2,15 @@
 import HomeComponent from './components/homeComponent.js';
 import ProductComponent from './components/productComponent.js';
 import OrderComponent from './components/orderComponent.js';
+import ContactsComponent from './components/contactsComponent.js';
 
 class Router {
   constructor() {
     this.routes = {
       '#': HomeComponent.render,
       '#product': (id) => ProductComponent.render(id),
-      '#order': OrderComponent.render
+      '#order': OrderComponent.render,
+      '#contacts': ContactsComponent.render
     };
     
     window.addEventListener('hashchange', () => this.handleRouteChange());
@@ -25,6 +27,8 @@ class Router {
       this.routes['#product'](productId);
     } else if (hash === '#order') {
       this.routes['#order']();
+    } else if (hash === '#contacts') {
+      this.routes['#contacts']();
     }
   }
   
