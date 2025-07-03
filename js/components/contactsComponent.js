@@ -64,36 +64,48 @@ const ContactsComponent = {
       </footer>
     `;
 
-    // Добавляем обработчик формы
-    setTimeout(() => {
-      const contactForm = document.getElementById('contact-form');
-      if (contactForm) {
-        contactForm.addEventListener('submit', async (e) => {
-          e.preventDefault();
-          
-          const formData = new FormData(contactForm);
-          const data = {
-            name: formData.get('name'),
-            phone: formData.get('phone'),
-            message: formData.get('message') || '',
-            created_at: new Date().toISOString()
-          };
+    // Добавляем обработчик формы с защитой от дублирования
+    const contactForm = document.getElementById('contact-form');
+    if (contactForm && !contactForm.dataset.listenerAttached) {
+      contactForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        // Блокируем кнопку отправки для предотвращения множественных отправок
+        const submitButton = contactForm.querySelector('button[type="submit"]');
+        const originalText = submitButton.textContent;
+        submitButton.disabled = true;
+        submitButton.textContent = 'Отправляется...';
+        
+        const formData = new FormData(contactForm);
+        const data = {
+          name: formData.get('name'),
+          phone: formData.get('phone'),
+          message: formData.get('message') || '',
+          created_at: new Date().toISOString()
+        };
 
-          try {
-            await sendContactRequest(data);
-            
-            // Показываем уведомление об успехе
-            alert('Спасибо! Мы свяжемся с вами в ближайшее время.');
-            
-            // Очищаем форму
-            contactForm.reset();
-          } catch (error) {
-            console.error('Ошибка при отправке:', error);
-            alert('Произошла ошибка при отправке. Попробуйте еще раз.');
-          }
-        });
-      }
-    }, 100);
+        try {
+          console.log('Отправка контактного запроса:', data);
+          await sendContactRequest(data);
+          
+          // Показываем уведомление об успехе
+          alert('Спасибо! Мы свяжемся с вами в ближайшее время.');
+          
+          // Очищаем форму
+          contactForm.reset();
+        } catch (error) {
+          console.error('Ошибка при отправке:', error);
+          alert('Произошла ошибка при отправке. Попробуйте еще раз.');
+        } finally {
+          // Восстанавливаем кнопку
+          submitButton.disabled = false;
+          submitButton.textContent = originalText;
+        }
+      });
+      
+      // Помечаем, что обработчик уже добавлен
+      contactForm.dataset.listenerAttached = 'true';
+    }
   }
 };
 
