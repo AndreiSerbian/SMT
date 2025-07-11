@@ -79,7 +79,7 @@ const HomeComponent = {
 
                     <button
                       data-product-id="${product.id}"
-                      class="view-all-btn w-1/2 center bg-blue-200 text-white-800 px-4 py-2 rounded hover:bg-blue-300 transition duration-300"
+                      class="view-all-btn w-full bg-blue-200 text-white-800 px-4 py-2 rounded hover:bg-blue-300 transition duration-300"
                     >
                       Подробно
                     </button>
@@ -92,7 +92,7 @@ const HomeComponent = {
       </div>
       ${cartService.renderCart()}
       
-      <footer class="bg-blue-800 text-white py-8 mt-12">
+      <footer class="bg-blue-950 text-white py-8 mt-12">
         <div class="container mx-auto px-6">
           <div class="flex flex-col md:flex-row justify-between">
             <div class="mb-6 md:mb-0">
@@ -106,7 +106,7 @@ const HomeComponent = {
             </div>
           </div>
           <div class="border-t border-gray-700 mt-8 pt-6 text-center text-white-400">
-            <p>&copy; 2025 Gift Box Shop. Все права защищены.</p>
+            <p>&copy; 2025 SMT Premium Box. Все права защищены.</p>
           </div>
         </div>
       </footer>
