@@ -170,7 +170,7 @@ export const cartService = {
                     class="w-full bg-blue-200 text-gray-800 px-6 py-3 rounded-lg
                          font-semibold hover:bg-blue-300 transition duration-300"
                   >
-                    Перейти к оплате
+                    Оформить предзаказ
                   </button>
                 ` : `
                   <div class="text-orange-500 text-center mb-4">
@@ -181,7 +181,7 @@ export const cartService = {
                          font-semibold cursor-not-allowed"
                     disabled
                   >
-                    Перейти к оплате
+                    Оформить предзаказ
                   </button>
                 `}
               </div>
@@ -280,7 +280,7 @@ export const cartService = {
               class="w-full bg-blue-200 text-gray-800 px-6 py-3 rounded-lg
                      font-semibold hover:bg-blue-300 transition duration-300"
             >
-              Перейти к оплате
+              Оформить предзаказ
             </button>
           </div>
         `;

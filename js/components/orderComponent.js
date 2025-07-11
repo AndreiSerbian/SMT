@@ -159,11 +159,11 @@ const OrderComponent = {
             </label>
             <label class="flex items-center">
               <input type="radio" name="delivery" value="pickup_moscow" style="accent-color: #00008b;" class="mr-2">
-              <span>Самовывоз – Москва, Производственная 12, к.2, подъезд 11</span>
+              <span>Самовывоз – Москва, Производственная 12, к.2</span>
             </label>
             <label class="flex items-center">
               <input type="radio" name="delivery" value="pickup_ershovo" style="accent-color: #00008b;" class="mr-2">
-              <span>Самовывоз – Московская область, Одинцовский район, д. Ершово, "Парк-отель Ершово"</span>
+              <span>Самовывоз – Московская область, Одинцовский район, д. Ершово</span>
             </label>
           </div>
         </div>
@@ -178,7 +178,7 @@ const OrderComponent = {
 
         <!-- Кнопка -->
         <button type="submit" id="submitButton" class="bg-blue-950 text-white px-4 py-2 rounded hover:bg-blue-800">
-          Оформить заказ
+          Оформить предзаказ
         </button>
       </form>
     </main>
