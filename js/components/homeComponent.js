@@ -79,7 +79,7 @@ const HomeComponent = {
 
                     <button
                       data-product-id="${product.id}"
-                      class="view-all-btn w-1/2 bg-blue-200 text-white-800 px-4 py-2 rounded hover:bg-blue-300 transition duration-300"
+                      class="view-all-btn w-1/2 center bg-blue-200 text-white-800 px-4 py-2 rounded hover:bg-blue-300 transition duration-300"
                     >
                       Подробно
                     </button>
