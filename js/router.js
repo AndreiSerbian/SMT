@@ -33,7 +33,7 @@ class Router {
   }
   
   handleRouteChange() {
-    // Очищаем предыдущий контент
+    // Очищаем предыдущий контент ПЕРЕД рендером нового
     this.clearContainer();
     
     const hash = window.location.hash || '#';
