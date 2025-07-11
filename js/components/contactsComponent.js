@@ -12,8 +12,8 @@ const ContactsComponent = {
       <nav class="bg-white shadow-md">
         <div class="container mx-auto px-6 py-3 flex justify-between items-center">
           <a href="#" class="text-xl font-bold text-gray-800">
-            <span class="hidden sm:inline">Gift Box Shop</span>
-            <span class="sm:hidden">Gift Box</span>
+            <span class="hidden sm:inline">SMT Premium Box</span>
+            <span class="sm:hidden">SMT Premium Box</span>
           </a>
           
           <!-- Навигационное меню (одинаковое для всех устройств) -->
