@@ -31,7 +31,7 @@ const ContactsComponent = {
 
           <form id="contact-form" class="space-y-4">
             <input type="text" name="name" placeholder="Ваше имя" required class="w-full border rounded p-2"/>
-            <input type="tel" name="phone" placeholder="+373 ..." required class="w-full border rounded p-2"/>
+            <input type="tel" name="phone" placeholder="+7 ..." required class="w-full border rounded p-2"/>
             <textarea name="message" rows="4" placeholder="Сообщение" class="w-full border rounded p-2"></textarea>
 
             <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition">
