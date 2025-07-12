@@ -3,6 +3,7 @@ import { products } from '../data/products.js';
 import { cartService } from '../services/cartService.js';
 import SwiperService from '../services/swiperService.js';
 import { ColorService } from '../services/colorService.js';
+import { eventBus } from '../utils/eventBus.js';
 
 const HomeComponent = {
   swipersById: {},
@@ -163,6 +164,35 @@ const HomeComponent = {
             
             const productId = this.dataset.productId;
             navigateToProduct(productId);
+          });
+        });
+        
+        // Добавляем обработчики для кнопок цвета
+        container.querySelectorAll('.color-button').forEach(button => {
+          button.addEventListener('click', function(e) {
+            e.stopPropagation(); // Предотвращаем всплытие события
+            
+            const productId = this.dataset.productId;
+            const baseName = this.dataset.baseName;
+            const baseSize = this.dataset.baseSize;
+            const chosenColor = this.dataset.color;
+            
+            // Публикуем событие изменения цвета
+            const needsRedirect = ColorService.handleColorChange({
+              productId,
+              baseName,
+              baseSize,
+              chosenColor
+            });
+            
+            // Если это второй клик по тому же цвету, переходим к товару
+            if (needsRedirect) {
+              // Находим соответствующий продукт с выбранным цветом
+              const matchingProduct = ColorService.findMatchingProduct(baseName, baseSize, chosenColor);
+              if (matchingProduct) {
+                window.location.href = `#product/${matchingProduct.id}`;
+              }
+            }
           });
         });
         
