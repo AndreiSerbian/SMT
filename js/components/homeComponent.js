@@ -1,9 +1,7 @@
-
 import { products } from '../data/products.js';
 import { cartService } from '../services/cartService.js';
 import SwiperService from '../services/swiperService.js';
 import { ColorService } from '../services/colorService.js';
-import Logo from '../public/images/logo.svg';
 
 const HomeComponent = {
   swipersById: {},

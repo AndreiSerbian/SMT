@@ -1,4 +1,3 @@
-
 import { sendContactRequest } from '../services/contact-service.js';
 
 const ContactsComponent = {
