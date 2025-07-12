@@ -6,6 +6,7 @@ import { ColorService } from '../services/colorService.js';
 
 const HomeComponent = {
   swipersById: {},
+  initialized: false, // Флаг для предотвращения повторной инициализации
   
   // получение категорий
   getCategories() {
@@ -21,6 +22,11 @@ const HomeComponent = {
       console.error('Container not provided to HomeComponent');
       return;
     }
+    
+    console.log('Рендеринг HomeComponent');
+    
+    // Сбрасываем флаг инициализации при новом рендере
+    this.initialized = false;
     
     const categories = HomeComponent.getCategories();
     
@@ -113,30 +119,34 @@ const HomeComponent = {
       </footer>
     `;
     
-    // инициализация слайдеров
-    setTimeout(() => {
-      SwiperService.initSwipers();
-      
-      // Добавляем обработчики для кнопок "Посмотреть все"
-      container.querySelectorAll('.view-all-btn').forEach(button => {
-        button.addEventListener('click', function() {
-          const productId = this.dataset.productId;
-          
-          // Находим активную кнопку цвета
-          const activeColorButton = container.querySelector(`.color-button[data-product-id="${productId}"][data-active="true"]`);
-          
-          if (activeColorButton) {
-            // переход на страницу продукта с выбранным цветом
-            const matchingProductId = activeColorButton.dataset.productId;
-            window.location.href = `#product/${matchingProductId}`;
-            return;
-          }
-          
-          // Если активной кнопки нет, просто переходим к текущему продукту
-          window.location.href = `#product/${productId}`;
+    // инициализация слайдеров и обработчиков событий
+    if (!this.initialized) {
+      setTimeout(() => {
+        SwiperService.initSwipers();
+        
+        // Добавляем обработчики для кнопок "Посмотреть все"
+        container.querySelectorAll('.view-all-btn').forEach(button => {
+          button.addEventListener('click', function() {
+            const productId = this.dataset.productId;
+            
+            // Находим активную кнопку цвета
+            const activeColorButton = container.querySelector(`.color-button[data-product-id="${productId}"][data-active="true"]`);
+            
+            if (activeColorButton) {
+              // переход на страницу продукта с выбранным цветом
+              const matchingProductId = activeColorButton.dataset.productId;
+              window.location.href = `#product/${matchingProductId}`;
+              return;
+            }
+            
+            // Если активной кнопки нет, просто переходим к текущему продукту
+            window.location.href = `#product/${productId}`;
+          });
         });
-      });
-    }, 100);
+        
+        this.initialized = true;
+      }, 100);
+    }
   }
 };
 
