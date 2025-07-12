@@ -59,7 +59,7 @@ const HomeComponent = {
             if (!product) return '';
 
             return `
-              <div class="bg-white rounded-lg shadow-lg overflow-hidden transform transition duration-300 hover:scale-110">
+              <div class="product-card bg-white rounded-lg shadow-lg overflow-hidden transform transition duration-300 hover:scale-110 cursor-pointer" data-product-id="${product.id}">
                 <div class="relative">
                   <div id="product-slider-${product.id}" class="swiper">
                     <div class="swiper-wrapper">
@@ -124,23 +124,45 @@ const HomeComponent = {
       setTimeout(() => {
         SwiperService.initSwipers();
         
-        // Добавляем обработчики для кнопок "Посмотреть все"
+        // Функция для перехода к продукту
+        const navigateToProduct = (productId) => {
+          // Находим активную кнопку цвета
+          const activeColorButton = container.querySelector(`.color-button[data-product-id="${productId}"][data-active="true"]`);
+          
+          if (activeColorButton) {
+            // переход на страницу продукта с выбранным цветом
+            const matchingProductId = activeColorButton.dataset.productId;
+            window.location.href = `#product/${matchingProductId}`;
+            return;
+          }
+          
+          // Если активной кнопки нет, просто переходим к текущему продукту
+          window.location.href = `#product/${productId}`;
+        };
+        
+        // Добавляем обработчики для кнопок "Подробно"
         container.querySelectorAll('.view-all-btn').forEach(button => {
-          button.addEventListener('click', function() {
+          button.addEventListener('click', function(e) {
+            e.stopPropagation(); // Предотвращаем всплытие события
             const productId = this.dataset.productId;
-            
-            // Находим активную кнопку цвета
-            const activeColorButton = container.querySelector(`.color-button[data-product-id="${productId}"][data-active="true"]`);
-            
-            if (activeColorButton) {
-              // переход на страницу продукта с выбранным цветом
-              const matchingProductId = activeColorButton.dataset.productId;
-              window.location.href = `#product/${matchingProductId}`;
+            navigateToProduct(productId);
+          });
+        });
+        
+        // Добавляем обработчики двойного клика для карточек товаров
+        container.querySelectorAll('.product-card').forEach(card => {
+          card.addEventListener('dblclick', function(e) {
+            // Проверяем, что клик не был по кнопке или элементам управления
+            if (e.target.closest('.view-all-btn') || 
+                e.target.closest('.color-button') || 
+                e.target.closest('.swiper-button-prev') || 
+                e.target.closest('.swiper-button-next') || 
+                e.target.closest('.swiper-pagination')) {
               return;
             }
             
-            // Если активной кнопки нет, просто переходим к текущему продукту
-            window.location.href = `#product/${productId}`;
+            const productId = this.dataset.productId;
+            navigateToProduct(productId);
           });
         });
         
