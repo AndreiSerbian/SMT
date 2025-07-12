@@ -6,6 +6,8 @@ import { ColorService } from '../services/colorService.js';
 
 const HomeComponent = {
   swipersById: {},
+  eventListeners: [],
+  timeouts: [],
   
   // Получение уникальных категорий
   getCategories() {
@@ -14,6 +16,31 @@ const HomeComponent = {
       categories.add(`${product.name} (${product.sizeType})`);
     });
     return Array.from(categories);
+  },
+  
+  destroy(container) {
+    // Очищаем таймеры
+    this.timeouts.forEach(timeoutId => clearTimeout(timeoutId));
+    this.timeouts = [];
+    
+    // Очищаем слушатели событий
+    this.eventListeners.forEach(({ element, event, handler }) => {
+      if (element && element.removeEventListener) {
+        element.removeEventListener(event, handler);
+      }
+    });
+    this.eventListeners = [];
+    
+    // Очищаем слайдеры
+    if (SwiperService && SwiperService.destroyAll) {
+      SwiperService.destroyAll();
+    }
+    this.swipersById = {};
+  },
+  
+  addEventListenerWithCleanup(element, event, handler) {
+    element.addEventListener(event, handler);
+    this.eventListeners.push({ element, event, handler });
   },
   
   render(container) {
@@ -114,7 +141,7 @@ const HomeComponent = {
     `;
     
     // Инициализируем все слайдеры
-    setTimeout(() => {
+    const timeoutId = setTimeout(() => {
       SwiperService.initSwipers();
       
       // Добавляем обработчики для кнопок цветов
@@ -122,7 +149,7 @@ const HomeComponent = {
         let clickCount = 0;
         let clickTimer = null;
         
-        button.addEventListener('click', function(e) {
+        const clickHandler = function(e) {
           e.preventDefault();
           e.stopPropagation();
           
@@ -179,12 +206,14 @@ const HomeComponent = {
             
             clickCount = 0;
           }
-        });
+        };
+        
+        HomeComponent.addEventListenerWithCleanup(button, 'click', clickHandler);
       });
       
       // Добавляем обработчики для кнопок "Подробно"
       container.querySelectorAll('.view-all-btn').forEach(button => {
-        button.addEventListener('click', function() {
+        const clickHandler = function() {
           const productId = this.dataset.productId;
           
           // Находим активную кнопку цвета
@@ -211,9 +240,13 @@ const HomeComponent = {
           
           // Если активной кнопки нет, просто переходим к текущему продукту
           window.location.href = `#product/${productId}`;
-        });
+        };
+        
+        HomeComponent.addEventListenerWithCleanup(button, 'click', clickHandler);
       });
     }, 100);
+    
+    this.timeouts.push(timeoutId);
   }
 };
 

@@ -1,6 +1,25 @@
 import { sendContactRequest } from '../services/contact-service.js';
 
 const ContactsComponent = {
+  eventListeners: [],
+  
+  destroy(container) {
+    // Очищаем слушатели событий
+    this.eventListeners.forEach(({ element, event, handler }) => {
+      if (element && element.removeEventListener) {
+        element.removeEventListener(event, handler);
+      }
+    });
+    this.eventListeners = [];
+  },
+  
+  addEventListenerWithCleanup(element, event, handler) {
+    if (element && element.addEventListener) {
+      element.addEventListener(event, handler);
+      this.eventListeners.push({ element, event, handler });
+    }
+  },
+  
   render(container) {
     if (!container) {
       console.error('Container not provided to ContactsComponent');
@@ -70,7 +89,7 @@ const ContactsComponent = {
     // Добавляем обработчик формы с защитой от дублирования
     const contactForm = container.querySelector('#contact-form');
     if (contactForm && !contactForm.dataset.listenerAttached) {
-      contactForm.addEventListener('submit', async (e) => {
+      const submitHandler = async (e) => {
         e.preventDefault();
         
         // Блокируем кнопку отправки для предотвращения множественных отправок
@@ -104,7 +123,9 @@ const ContactsComponent = {
           submitButton.disabled = false;
           submitButton.textContent = originalText;
         }
-      });
+      };
+      
+      ContactsComponent.addEventListenerWithCleanup(contactForm, 'submit', submitHandler);
       
       // Помечаем, что обработчик уже добавлен
       contactForm.dataset.listenerAttached = 'true';

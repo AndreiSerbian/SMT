@@ -3,6 +3,25 @@ import { cartService } from '../services/cartService.js';
 import { env } from '../utils/env.js';
 
 const OrderComponent = {
+  eventListeners: [],
+  
+  destroy(container) {
+    // Очищаем слушатели событий
+    this.eventListeners.forEach(({ element, event, handler }) => {
+      if (element && element.removeEventListener) {
+        element.removeEventListener(event, handler);
+      }
+    });
+    this.eventListeners = [];
+  },
+  
+  addEventListenerWithCleanup(element, event, handler) {
+    if (element && element.addEventListener) {
+      element.addEventListener(event, handler);
+      this.eventListeners.push({ element, event, handler });
+    }
+  },
+  
   render(container) {
     if (!container) {
       console.error('Container not provided to OrderComponent');
@@ -208,48 +227,62 @@ const OrderComponent = {
     const phoneInput = container.querySelector('#phone');
     const emailInput = container.querySelector('#email');
     
-    nameInput.addEventListener('blur', () => {
-      const errorElem = container.querySelector('#nameError');
-      if (!nameInput.value.trim()) {
-        errorElem.classList.remove('hidden');
-      } else {
-        errorElem.classList.add('hidden');
-      }
-    });
+    if (nameInput) {
+      const nameBlurHandler = () => {
+        const errorElem = container.querySelector('#nameError');
+        if (!nameInput.value.trim()) {
+          errorElem.classList.remove('hidden');
+        } else {
+          errorElem.classList.add('hidden');
+        }
+      };
+      OrderComponent.addEventListenerWithCleanup(nameInput, 'blur', nameBlurHandler);
+    }
     
-    phoneInput.addEventListener('blur', () => {
-      const errorElem = container.querySelector('#phoneError');
-      if (!phoneInput.value.trim() || !phoneInput.checkValidity()) {
-        errorElem.classList.remove('hidden');
-      } else {
-        errorElem.classList.add('hidden');
-      }
-    });
-    
-    emailInput.addEventListener('blur', () => {
-      const errorElem = container.querySelector('#emailError');
-      if (!emailInput.value.trim() || !emailInput.checkValidity()) {
-        errorElem.classList.remove('hidden');
-      } else {
-        errorElem.classList.add('hidden');
-      }
-    });
-    
-    phoneInput.addEventListener('input', function() {
-      const errorElem = container.querySelector('#phoneError');
-      const cleanPhone = this.value.replace(/\D/g, '');
+    if (phoneInput) {
+      const phoneBlurHandler = () => {
+        const errorElem = container.querySelector('#phoneError');
+        if (!phoneInput.value.trim() || !phoneInput.checkValidity()) {
+          errorElem.classList.remove('hidden');
+        } else {
+          errorElem.classList.add('hidden');
+        }
+      };
       
-      if (cleanPhone.length !== 11) {
-        errorElem.textContent = 'Пожалуйста, введите 11 цифр номера телефона';
-        errorElem.classList.remove('hidden');
-      } else {
-        errorElem.classList.add('hidden');
-      }
-    });
+      const phoneInputHandler = function() {
+        const errorElem = container.querySelector('#phoneError');
+        const cleanPhone = this.value.replace(/\D/g, '');
+        
+        if (cleanPhone.length !== 11) {
+          errorElem.textContent = 'Пожалуйста, введите 11 цифр номера телефона';
+          errorElem.classList.remove('hidden');
+        } else {
+          errorElem.classList.add('hidden');
+        }
+      };
+      
+      OrderComponent.addEventListenerWithCleanup(phoneInput, 'blur', phoneBlurHandler);
+      OrderComponent.addEventListenerWithCleanup(phoneInput, 'input', phoneInputHandler);
+    }
+    
+    if (emailInput) {
+      const emailBlurHandler = () => {
+        const errorElem = container.querySelector('#emailError');
+        if (!emailInput.value.trim() || !emailInput.checkValidity()) {
+          errorElem.classList.remove('hidden');
+        } else {
+          errorElem.classList.add('hidden');
+        }
+      };
+      OrderComponent.addEventListenerWithCleanup(emailInput, 'blur', emailBlurHandler);
+    }
     
     // Add form submission handler
     const form = container.querySelector('#orderForm');
-    form.addEventListener('submit', (event) => OrderComponent.submitOrder(event, container));
+    if (form) {
+      const formSubmitHandler = (event) => OrderComponent.submitOrder(event, container);
+      OrderComponent.addEventListenerWithCleanup(form, 'submit', formSubmitHandler);
+    }
   },
   
   validateForm(form) {

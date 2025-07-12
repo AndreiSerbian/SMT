@@ -6,6 +6,7 @@ import ContactsComponent from './components/contactsComponent.js';
 
 class Router {
   constructor() {
+    this.currentComponent = null;
     this.routes = {
       '#': () => HomeComponent.render(this.getMainContainer()),
       '#product': (id) => ProductComponent.render(id, this.getMainContainer()),
@@ -24,7 +25,12 @@ class Router {
   clearContainer() {
     const container = this.getMainContainer();
     if (container) {
-      container.innerHTML = '';
+      // Вызываем destroy у текущего компонента перед очисткой
+      if (this.currentComponent && this.currentComponent.destroy) {
+        this.currentComponent.destroy(container);
+      }
+      // Полностью очищаем контейнер
+      container.replaceChildren();
     }
   }
   
@@ -39,13 +45,17 @@ class Router {
     const hash = window.location.hash || '#';
     
     if (hash === '#') {
+      this.currentComponent = HomeComponent;
       this.routes['#']();
     } else if (hash.startsWith('#product/')) {
       const productId = hash.slice(9);
+      this.currentComponent = ProductComponent;
       this.routes['#product'](productId);
     } else if (hash === '#order') {
+      this.currentComponent = OrderComponent;
       this.routes['#order']();
     } else if (hash === '#contacts') {
+      this.currentComponent = ContactsComponent;
       this.routes['#contacts']();
     }
     

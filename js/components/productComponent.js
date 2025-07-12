@@ -5,6 +5,35 @@ import { colorMap } from '../data/products.js';
 import { ColorService } from '../services/colorService.js';
 
 const ProductComponent = {
+  eventListeners: [],
+  timeouts: [],
+  
+  destroy(container) {
+    // Очищаем таймеры
+    this.timeouts.forEach(timeoutId => clearTimeout(timeoutId));
+    this.timeouts = [];
+    
+    // Очищаем слушатели событий
+    this.eventListeners.forEach(({ element, event, handler }) => {
+      if (element && element.removeEventListener) {
+        element.removeEventListener(event, handler);
+      }
+    });
+    this.eventListeners = [];
+    
+    // Очищаем глобальные функции
+    if (window.openImageModal) delete window.openImageModal;
+    if (window.closeImageModal) delete window.closeImageModal;
+    if (window.quantityInput) delete window.quantityInput;
+  },
+  
+  addEventListenerWithCleanup(element, event, handler) {
+    if (element && element.addEventListener) {
+      element.addEventListener(event, handler);
+      this.eventListeners.push({ element, event, handler });
+    }
+  },
+
   render(productId, container) {
     if (!container) {
       console.error('Container not provided to ProductComponent');
@@ -39,8 +68,7 @@ const ProductComponent = {
 
       <div class="container mx-auto px-4 py-8">
          <button 
-          onclick="window.location.href='#'"
-          class="mb-8 text-gray-600 hover:text-gray-800 flex items-center"
+          class="back-button mb-8 text-gray-600 hover:text-gray-800 flex items-center"
         >
           <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
@@ -141,8 +169,7 @@ const ProductComponent = {
         <div id="imageModal" class="fixed inset-0 bg-black bg-opacity-75 hidden z-50 flex items-center justify-center">
           <div class="relative max-w-4xl max-h-full p-4">
             <button 
-              onclick="closeImageModal()"
-              class="absolute top-2 right-2 text-red-500 hover:text-red-700 text-4xl font-bold z-10"
+              class="close-modal-btn absolute top-2 right-2 text-red-500 hover:text-red-700 text-4xl font-bold z-10"
             >
               ×
             </button>
@@ -173,27 +200,21 @@ const ProductComponent = {
     `;
     
     // Добавляем обработчики событий для изображений
-    setTimeout(() => {
+    const timeoutId = setTimeout(() => {
       const mainImage = container.querySelector('#main-product-image');
       const thumbnails = container.querySelectorAll('.product-thumbnail');
+      const backButton = container.querySelector('.back-button');
+      const closeModalBtn = container.querySelector('.close-modal-btn');
+      const imageModal = container.querySelector('#imageModal');
       
-      if (mainImage) {
-        mainImage.addEventListener('click', function() {
-          openImageModal(this.src);
-        });
+      // Обработчик кнопки "Назад"
+      if (backButton) {
+        const backHandler = () => window.location.href = '#';
+        ProductComponent.addEventListenerWithCleanup(backButton, 'click', backHandler);
       }
       
-      thumbnails.forEach(thumbnail => {
-        thumbnail.addEventListener('click', function() {
-          if (mainImage) {
-            mainImage.src = this.src;
-          }
-          openImageModal(this.src);
-        });
-      });
-      
       // Функции для модального окна
-      window.openImageModal = function(imageSrc) {
+      const openImageModal = (imageSrc) => {
         const modalImage = container.querySelector('#modalImage');
         const imageModal = container.querySelector('#imageModal');
         if (modalImage && imageModal) {
@@ -202,23 +223,49 @@ const ProductComponent = {
         }
       };
       
-      window.closeImageModal = function() {
+      const closeImageModal = () => {
         const imageModal = container.querySelector('#imageModal');
         if (imageModal) {
           imageModal.classList.add('hidden');
         }
       };
       
-      // Закрытие модального окна по клику на фон
-      const imageModal = container.querySelector('#imageModal');
-      if (imageModal) {
-        imageModal.addEventListener('click', function(e) {
-          if (e.target === this) {
-            window.closeImageModal();
-          }
-        });
+      if (mainImage) {
+        const mainImageHandler = function() {
+          openImageModal(this.src);
+        };
+        ProductComponent.addEventListenerWithCleanup(mainImage, 'click', mainImageHandler);
       }
+      
+      thumbnails.forEach(thumbnail => {
+        const thumbnailHandler = function() {
+          if (mainImage) {
+            mainImage.src = this.src;
+          }
+          openImageModal(this.src);
+        };
+        ProductComponent.addEventListenerWithCleanup(thumbnail, 'click', thumbnailHandler);
+      });
+      
+      if (closeModalBtn) {
+        ProductComponent.addEventListenerWithCleanup(closeModalBtn, 'click', closeImageModal);
+      }
+      
+      // Закрытие модального окна по клику на фон
+      if (imageModal) {
+        const modalBackgroundHandler = function(e) {
+          if (e.target === this) {
+            closeImageModal();
+          }
+        };
+        ProductComponent.addEventListenerWithCleanup(imageModal, 'click', modalBackgroundHandler);
+      }
+      
+      // Сохраняем ссылку на quantityInput
+      window.quantityInput = container.querySelector('#quantityInput');
     }, 0);
+    
+    this.timeouts.push(timeoutId);
   }
 };
 
