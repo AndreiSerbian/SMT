@@ -1,3 +1,4 @@
+
 import { products } from '../data/products.js';
 import { cartService } from '../services/cartService.js';
 import SwiperService from '../services/swiperService.js';
@@ -27,7 +28,7 @@ const HomeComponent = {
       <nav class="bg-white shadow-md">
         <div class="container mx-auto px-6 py-3 flex justify-between items-center">
           <a href="#" class="flex items-center space-x-2 text-xl font-bold text-gray-800">
-            <img src="/public/images/logo.svg" alt="Logo" class="w-8 h-8" />
+            <img src="/public/images/gptLogo.png" alt="Logo" class="w-8 h-8" />
             <span class="hidden sm:inline">SMT Premium Box</span>
             <span class="sm:hidden">SMT Premium Box</span>
           </a>
@@ -116,7 +117,72 @@ const HomeComponent = {
     setTimeout(() => {
       SwiperService.initSwipers();
       
-      // Добавляем обработчики для кнопок "Посмотреть все"
+      // Добавляем обработчики для кнопок цветов
+      container.querySelectorAll('.color-button').forEach(button => {
+        let clickCount = 0;
+        let clickTimer = null;
+        
+        button.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          
+          clickCount++;
+          
+          if (clickCount === 1) {
+            clickTimer = setTimeout(() => {
+              // Первый клик - меняем изображения
+              const productId = this.dataset.productId;
+              const baseName = this.dataset.baseName;
+              const baseSize = this.dataset.baseSize;
+              const chosenColor = this.dataset.color;
+              
+              console.log('First click on color:', chosenColor, 'for product:', productId);
+              
+              // Находим соответствующий продукт с выбранным цветом
+              const matchingProduct = products.find(p =>
+                p.name === baseName &&
+                p.sizeType === baseSize &&
+                p.color === chosenColor
+              );
+              
+              if (matchingProduct) {
+                // Обновляем изображения в слайдере
+                SwiperService.updateSliderPhotos(productId, matchingProduct.photo);
+                
+                // Обновляем активную кнопку цвета
+                ColorService.updateButtonColor(productId, chosenColor);
+              }
+              
+              clickCount = 0;
+            }, 300);
+          } else if (clickCount === 2) {
+            // Второй клик - переходим к товару
+            clearTimeout(clickTimer);
+            
+            const productId = this.dataset.productId;
+            const baseName = this.dataset.baseName;
+            const baseSize = this.dataset.baseSize;
+            const chosenColor = this.dataset.color;
+            
+            console.log('Second click on color:', chosenColor, 'navigating to product');
+            
+            // Находим соответствующий продукт с выбранным цветом
+            const matchingProduct = products.find(p =>
+              p.name === baseName &&
+              p.sizeType === baseSize &&
+              p.color === chosenColor
+            );
+            
+            if (matchingProduct) {
+              window.location.href = `#product/${matchingProduct.id}`;
+            }
+            
+            clickCount = 0;
+          }
+        });
+      });
+      
+      // Добавляем обработчики для кнопок "Подробно"
       container.querySelectorAll('.view-all-btn').forEach(button => {
         button.addEventListener('click', function() {
           const productId = this.dataset.productId;
@@ -125,10 +191,22 @@ const HomeComponent = {
           const activeColorButton = container.querySelector(`.color-button[data-product-id="${productId}"][data-active="true"]`);
           
           if (activeColorButton) {
-            // Переходим на страницу продукта с выбранным цветом
-            const matchingProductId = activeColorButton.dataset.productId;
-            window.location.href = `#product/${matchingProductId}`;
-            return;
+            // Получаем данные о выбранном цвете
+            const baseName = activeColorButton.dataset.baseName;
+            const baseSize = activeColorButton.dataset.baseSize;
+            const chosenColor = activeColorButton.dataset.color;
+            
+            // Находим соответствующий продукт с выбранным цветом
+            const matchingProduct = products.find(p =>
+              p.name === baseName &&
+              p.sizeType === baseSize &&
+              p.color === chosenColor
+            );
+            
+            if (matchingProduct) {
+              window.location.href = `#product/${matchingProduct.id}`;
+              return;
+            }
           }
           
           // Если активной кнопки нет, просто переходим к текущему продукту
