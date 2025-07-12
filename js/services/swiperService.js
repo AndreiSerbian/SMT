@@ -1,8 +1,9 @@
 
+// Service for managing Swiper sliders
 const SwiperService = {
   swipersById: {},
   
-  // инициализация всех слайдеров
+  // Инициализация всех слайдеров
   initSwipers() {
     const allSwiperContainers = document.querySelectorAll('.swiper');
     allSwiperContainers.forEach(swiperEl => {
@@ -28,20 +29,20 @@ const SwiperService = {
     });
   },
   
-  // обновление фото в слайдере
+  // Обновление фото в слайдере
   updateSliderPhotos(productId, newPhotos) {
     const swiper = this.swipersById[productId];
     if (!swiper) return;
     
-    // Сохранение высоты и ширины слайдов
+    // Сохраняем текущие высоту и ширину слайдов
     const slideHeight = swiper.slides[0]?.querySelector('img')?.style.height;
     const slideWidth = swiper.slides[0]?.querySelector('img')?.style.width;
     const slideClass = swiper.slides[0]?.querySelector('img')?.className;
     
-    // удаление старые слайды
+    // Удаляем старые слайды
     swiper.removeAllSlides();
     
-    // добавляем новые
+    // Добавляем новые
     newPhotos.forEach(image => {
       swiper.appendSlide(`
         <div class="swiper-slide">
@@ -50,7 +51,7 @@ const SwiperService = {
       `);
     });
     
-    // принение сохраненных размеров к новым слайдам
+    // Применяем сохраненные размеры к новым слайдам
     if (slideHeight && slideWidth) {
       swiper.slides.forEach(slide => {
         const img = slide.querySelector('img');
@@ -61,7 +62,7 @@ const SwiperService = {
       });
     }
     
-    // обновление Swiper
+    // Обновляем Swiper
     swiper.update();
   }
 };

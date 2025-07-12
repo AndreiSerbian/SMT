@@ -18,7 +18,7 @@ const ProductComponent = {
       return;
     }
 
-    // текущий продукт - выбранный цвет
+    // Устанавливаем текущий продукт как выбранный цвет
     ColorService.selectedColors[productId] = product.color;
 
     container.innerHTML = `

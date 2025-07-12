@@ -1,15 +1,12 @@
-
 import { products } from '../data/products.js';
 import { cartService } from '../services/cartService.js';
 import SwiperService from '../services/swiperService.js';
 import { ColorService } from '../services/colorService.js';
-import { eventBus } from '../utils/eventBus.js';
 
 const HomeComponent = {
   swipersById: {},
-  initialized: false, // Флаг для предотвращения повторной инициализации
   
-  // получение категорий
+  // Получение уникальных категорий
   getCategories() {
     const categories = new Set();
     products.forEach(product => {
@@ -24,18 +21,13 @@ const HomeComponent = {
       return;
     }
     
-    console.log('Рендеринг HomeComponent');
-    
-    // Сбрасываем флаг инициализации при новом рендере
-    this.initialized = false;
-    
     const categories = HomeComponent.getCategories();
     
     container.innerHTML = `
       <nav class="bg-white shadow-md">
         <div class="container mx-auto px-6 py-3 flex justify-between items-center">
           <a href="#" class="flex items-center space-x-2 text-xl font-bold text-gray-800">
-            <img src="public/images/gptLogo.png" alt="Logo" class="w-8 h-8" />
+            <img src="/public/images/logo.svg" alt="Logo" class="w-8 h-8" />
             <span class="hidden sm:inline">SMT Premium Box</span>
             <span class="sm:hidden">SMT Premium Box</span>
           </a>
@@ -55,12 +47,12 @@ const HomeComponent = {
             const [name, sizeTypeRaw] = category.split(' (');
             const sizeType = (sizeTypeRaw || '').slice(0, -1);
             
-            // первый цвет - продукт по умолчанию
+            // Находим "продукт по умолчанию" (первый цвет)
             const product = products.find(p => p.name === name && p.sizeType === sizeType);
             if (!product) return '';
 
             return `
-              <div class="product-card bg-white rounded-lg shadow-lg overflow-hidden transform transition duration-300 hover:scale-110 cursor-pointer" data-product-id="${product.id}">
+              <div class="bg-white rounded-lg shadow-lg overflow-hidden transform transition duration-300 hover:scale-110">
                 <div class="relative">
                   <div id="product-slider-${product.id}" class="swiper">
                     <div class="swiper-wrapper">
@@ -120,18 +112,20 @@ const HomeComponent = {
       </footer>
     `;
     
-    // инициализация слайдеров и обработчиков событий
-    if (!this.initialized) {
-      setTimeout(() => {
-        SwiperService.initSwipers();
-        
-        // Функция для перехода к продукту
-        const navigateToProduct = (productId) => {
+    // Инициализируем все слайдеры
+    setTimeout(() => {
+      SwiperService.initSwipers();
+      
+      // Добавляем обработчики для кнопок "Посмотреть все"
+      container.querySelectorAll('.view-all-btn').forEach(button => {
+        button.addEventListener('click', function() {
+          const productId = this.dataset.productId;
+          
           // Находим активную кнопку цвета
           const activeColorButton = container.querySelector(`.color-button[data-product-id="${productId}"][data-active="true"]`);
           
           if (activeColorButton) {
-            // переход на страницу продукта с выбранным цветом
+            // Переходим на страницу продукта с выбранным цветом
             const matchingProductId = activeColorButton.dataset.productId;
             window.location.href = `#product/${matchingProductId}`;
             return;
@@ -139,66 +133,9 @@ const HomeComponent = {
           
           // Если активной кнопки нет, просто переходим к текущему продукту
           window.location.href = `#product/${productId}`;
-        };
-        
-        // Добавляем обработчики для кнопок "Подробно"
-        container.querySelectorAll('.view-all-btn').forEach(button => {
-          button.addEventListener('click', function(e) {
-            e.stopPropagation(); // Предотвращаем всплытие события
-            const productId = this.dataset.productId;
-            navigateToProduct(productId);
-          });
         });
-        
-        // Добавляем обработчики двойного клика для карточек товаров
-        container.querySelectorAll('.product-card').forEach(card => {
-          card.addEventListener('dblclick', function(e) {
-            // Проверяем, что клик не был по кнопке или элементам управления
-            if (e.target.closest('.view-all-btn') || 
-                e.target.closest('.color-button') || 
-                e.target.closest('.swiper-button-prev') || 
-                e.target.closest('.swiper-button-next') || 
-                e.target.closest('.swiper-pagination')) {
-              return;
-            }
-            
-            const productId = this.dataset.productId;
-            navigateToProduct(productId);
-          });
-        });
-        
-        // Добавляем обработчики для кнопок цвета
-        container.querySelectorAll('.color-button').forEach(button => {
-          button.addEventListener('click', function(e) {
-            e.stopPropagation(); // Предотвращаем всплытие события
-            
-            const productId = this.dataset.productId;
-            const baseName = this.dataset.baseName;
-            const baseSize = this.dataset.baseSize;
-            const chosenColor = this.dataset.color;
-            
-            // Публикуем событие изменения цвета
-            const needsRedirect = ColorService.handleColorChange({
-              productId,
-              baseName,
-              baseSize,
-              chosenColor
-            });
-            
-            // Если это второй клик по тому же цвету, переходим к товару
-            if (needsRedirect) {
-              // Находим соответствующий продукт с выбранным цветом
-              const matchingProduct = ColorService.findMatchingProduct(baseName, baseSize, chosenColor);
-              if (matchingProduct) {
-                window.location.href = `#product/${matchingProduct.id}`;
-              }
-            }
-          });
-        });
-        
-        this.initialized = true;
-      }, 100);
-    }
+      });
+    }, 100);
   }
 };
 

@@ -1,4 +1,3 @@
-
 import { sendContactRequest } from '../services/contact-service.js';
 
 const ContactsComponent = {
@@ -12,7 +11,7 @@ const ContactsComponent = {
       <nav class="bg-white shadow-md">
         <div class="container mx-auto px-6 py-3 flex justify-between items-center">
           <a href="#" class="flex items-center space-x-2 text-xl font-bold text-gray-800">
-            <img src="/public/images/gptLogo.png" alt="Logo" class="w-8 h-8" />
+            <img src="/public/images/logo.svg" alt="Logo" class="w-8 h-8" />
             <span class="hidden sm:inline">SMT Premium Box</span>
             <span class="sm:hidden">SMT Premium Box</span>
           </a>

@@ -13,8 +13,6 @@ class Router {
       '#contacts': () => ContactsComponent.render(this.getMainContainer())
     };
     
-    this.currentRoute = null; // Добавляем отслеживание текущего маршрута
-    
     window.addEventListener('hashchange', () => this.handleRouteChange());
     window.addEventListener('load', () => this.handleRouteChange());
   }
@@ -26,19 +24,7 @@ class Router {
   clearContainer() {
     const container = this.getMainContainer();
     if (container) {
-      // Удаляем все обработчики событий
-      const elementsWithListeners = container.querySelectorAll('*');
-      elementsWithListeners.forEach(element => {
-        element.replaceWith(element.cloneNode(true));
-      });
-      
-      // Полностью очищаем контейнер
       container.innerHTML = '';
-      
-      // Очищаем глобальные переменные
-      if (window.quantityInput) {
-        window.quantityInput = null;
-      }
     }
   }
   
@@ -47,20 +33,10 @@ class Router {
   }
   
   handleRouteChange() {
-    const hash = window.location.hash || '#';
-    
-    // Проверяем, не находимся ли мы уже на этом маршруте
-    if (this.currentRoute === hash) {
-      return;
-    }
-    
-    console.log('Маршрут изменился с', this.currentRoute, 'на', hash);
-    
     // Очищаем предыдущий контент ПЕРЕД рендером нового
     this.clearContainer();
     
-    // Обновляем текущий маршрут
-    this.currentRoute = hash;
+    const hash = window.location.hash || '#';
     
     if (hash === '#') {
       this.routes['#']();
@@ -78,12 +54,6 @@ class Router {
   }
   
   navigate(hash) {
-    // Проверяем, не пытаемся ли мы перейти на тот же маршрут
-    if (this.currentRoute === hash) {
-      console.log('Попытка перехода на тот же маршрут:', hash);
-      return;
-    }
-    
     window.location.hash = hash;
   }
 }
