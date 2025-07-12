@@ -5,15 +5,38 @@ import { colorMap } from '../data/products.js';
 import { ColorService } from '../services/colorService.js';
 
 const ProductComponent = {
-  render(productId) {
+  render(productId, container) {
+    if (!container) {
+      console.error('Container not provided to ProductComponent');
+      return;
+    }
+    
     const product = products.find(p => p.id === productId);
-    if (!product) return HomeComponent.render();
+    if (!product) {
+      // Если продукт не найден, перенаправляем на главную
+      window.location.href = '#';
+      return;
+    }
 
     // текущий продукт - выбранный цвет
     ColorService.selectedColors[productId] = product.color;
 
-    const app = document.getElementById('app');
-    app.innerHTML = `
+    container.innerHTML = `
+      <nav class="bg-white shadow-md">
+        <div class="container mx-auto px-6 py-3 flex justify-between items-center">
+          <a href="#" class="text-xl font-bold text-gray-800">
+            <span class="hidden sm:inline">Gift Box Shop</span>
+            <span class="sm:hidden">Gift Box</span>
+          </a>
+          
+          <!-- Навигационное меню (одинаковое для всех устройств) -->
+          <div class="flex space-x-4">
+            <a href="#" class="text-gray-600 hover:text-gray-800">Главная</a>
+            <a href="#contacts" class="text-gray-600 hover:text-gray-800">Контакты</a>
+          </div>
+        </div>
+      </nav>
+
       <div class="container mx-auto px-4 py-8">
          <button 
           onclick="window.location.href='#'"
@@ -129,36 +152,73 @@ const ProductComponent = {
       </div>
       ${cartService.renderCart()}
       
-      <script>
-        // Обработчики для просмотра изображений
-        document.getElementById('main-product-image').addEventListener('click', function() {
+     <footer class="bg-blue-950 text-white py-8 mt-12">
+        <div class="container mx-auto px-6">
+          <div class="flex flex-col md:flex-row justify-between">
+            <div class="mb-6 md:mb-0">
+              <h3 class="text-xl font-bold mb-4">SMT Premium Box</h3>
+              <p class="text-gray-400">Красивые подарочные коробки оптом</p>
+            </div>
+            <div>
+              <h4 class="text-lg font-semibold mb-3">Контакты</h4>
+              <p class="text-white-400">Телефон: +79153474616</p>
+              <p class="text-white-400">Email: smtpremiumbox@serbiyan.ru</p>
+            </div>
+          </div>
+          <div class="border-t border-gray-700 mt-8 pt-6 text-center text-white-400">
+            <p>&copy; 2025 SMT Premium Box. Все права защищены.</p>
+          </div>
+        </div>
+      </footer>
+    `;
+    
+    // Добавляем обработчики событий для изображений
+    setTimeout(() => {
+      const mainImage = container.querySelector('#main-product-image');
+      const thumbnails = container.querySelectorAll('.product-thumbnail');
+      
+      if (mainImage) {
+        mainImage.addEventListener('click', function() {
           openImageModal(this.src);
         });
-        
-        document.querySelectorAll('.product-thumbnail').forEach(thumbnail => {
-          thumbnail.addEventListener('click', function() {
-            document.getElementById('main-product-image').src = this.src;
-            openImageModal(this.src);
-          });
+      }
+      
+      thumbnails.forEach(thumbnail => {
+        thumbnail.addEventListener('click', function() {
+          if (mainImage) {
+            mainImage.src = this.src;
+          }
+          openImageModal(this.src);
         });
-        
-        function openImageModal(imageSrc) {
-          document.getElementById('modalImage').src = imageSrc;
-          document.getElementById('imageModal').classList.remove('hidden');
+      });
+      
+      // Функции для модального окна
+      window.openImageModal = function(imageSrc) {
+        const modalImage = container.querySelector('#modalImage');
+        const imageModal = container.querySelector('#imageModal');
+        if (modalImage && imageModal) {
+          modalImage.src = imageSrc;
+          imageModal.classList.remove('hidden');
         }
-        
-        function closeImageModal() {
-          document.getElementById('imageModal').classList.add('hidden');
+      };
+      
+      window.closeImageModal = function() {
+        const imageModal = container.querySelector('#imageModal');
+        if (imageModal) {
+          imageModal.classList.add('hidden');
         }
-        
-        // Закрытие модального окна по клику на фон
-        document.getElementById('imageModal').addEventListener('click', function(e) {
+      };
+      
+      // Закрытие модального окна по клику на фон
+      const imageModal = container.querySelector('#imageModal');
+      if (imageModal) {
+        imageModal.addEventListener('click', function(e) {
           if (e.target === this) {
-            closeImageModal();
+            window.closeImageModal();
           }
         });
-      </script>
-    `;
+      }
+    }, 0);
   }
 };
 

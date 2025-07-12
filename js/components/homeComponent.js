@@ -16,13 +16,33 @@ const HomeComponent = {
     return Array.from(categories);
   },
   
-  render() {
-    const app = document.getElementById('app');
+  render(container) {
+    if (!container) {
+      console.error('Container not provided to HomeComponent');
+      return;
+    }
+    
     const categories = HomeComponent.getCategories();
     
-    app.innerHTML = `
+    container.innerHTML = `
+      <nav class="bg-white shadow-md">
+        <div class="container mx-auto px-6 py-3 flex justify-between items-center">
+          <a href="#" class="flex items-center space-x-2 text-xl font-bold text-gray-800">
+            <img src="public/images/gptLogo.png" alt="Logo" class="w-8 h-8" />
+            <span class="hidden sm:inline">SMT Premium Box</span>
+            <span class="sm:hidden">SMT Premium Box</span>
+          </a>
+          
+          <!-- Навигационное меню (одинаковое для всех устройств) -->
+          <div class="flex space-x-4">
+            <a href="#" class="text-gray-600 hover:text-gray-800">Главная</a>
+            <a href="#contacts" class="text-gray-600 hover:text-gray-800">Контакты</a>
+          </div>
+        </div>
+      </nav>
+
       <div class="container mx-auto px-4 py-8">
-        <h1 class="text-4xl font-bold text-center mb-12 text-gray-800">Gift Box Collection</h1>
+        <h1 class="text-4xl font-bold text-center mb-12 text-gray-800">Коллекция подарочных упаковок</h1>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           ${categories.map(category => {
             const [name, sizeTypeRaw] = category.split(' (');
@@ -60,9 +80,9 @@ const HomeComponent = {
 
                     <button
                       data-product-id="${product.id}"
-                      class="view-all-btn w-full bg-blue-200 text-gray-800 px-4 py-2 rounded hover:bg-blue-300 transition duration-300"
+                      class="view-all-btn w-full bg-blue-200 text-white-800 px-4 py-2 rounded hover:bg-blue-300 transition duration-300"
                     >
-                      Посмотреть все
+                      Подробно
                     </button>
                   </div>
                 </div>
@@ -72,19 +92,38 @@ const HomeComponent = {
         </div>
       </div>
       ${cartService.renderCart()}
+      
+      <footer class="bg-blue-950 text-white py-8 mt-12">
+        <div class="container mx-auto px-6">
+          <div class="flex flex-col md:flex-row justify-between">
+            <div class="mb-6 md:mb-0">
+              <h3 class="text-xl font-bold mb-4">SMT Premium Box</h3>
+              <p class="text-gray-400">Красивые подарочные коробки оптом</p>
+            </div>
+            <div>
+              <h4 class="text-lg font-semibold mb-3">Контакты</h4>
+              <p class="text-white-400">Телефон: +79153474616</p>
+              <p class="text-white-400">Email: smtpremiumbox@serbiyan.ru</p>
+            </div>
+          </div>
+          <div class="border-t border-gray-700 mt-8 pt-6 text-center text-white-400">
+            <p>&copy; 2025 SMT Premium Box. Все права защищены.</p>
+          </div>
+        </div>
+      </footer>
     `;
     
     // инициализация слайдеров
     setTimeout(() => {
       SwiperService.initSwipers();
       
-      //обработчики  "Посмотреть все"
-      document.querySelectorAll('.view-all-btn').forEach(button => {
+      // Добавляем обработчики для кнопок "Посмотреть все"
+      container.querySelectorAll('.view-all-btn').forEach(button => {
         button.addEventListener('click', function() {
           const productId = this.dataset.productId;
           
-          //активная кнопка цвета
-          const activeColorButton = document.querySelector(`.color-button[data-product-id="${productId}"][data-active="true"]`);
+          // Находим активную кнопку цвета
+          const activeColorButton = container.querySelector(`.color-button[data-product-id="${productId}"][data-active="true"]`);
           
           if (activeColorButton) {
             // переход на страницу продукта с выбранным цветом

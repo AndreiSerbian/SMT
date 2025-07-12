@@ -1,11 +1,14 @@
-
 import { products } from '../data/products.js';
 import { cartService } from '../services/cartService.js';
 import { env } from '../utils/env.js';
 
 const OrderComponent = {
-  render() {
-    const app = document.getElementById('app');
+  render(container) {
+    if (!container) {
+      console.error('Container not provided to OrderComponent');
+      return;
+    }
+    
     const cart = cartService.getCart();
     
     // минимальное сумма рублей в заказе
@@ -46,7 +49,22 @@ const OrderComponent = {
       `;
     }).join('');
     
-    app.innerHTML = `
+    container.innerHTML = `
+    <nav class="bg-white shadow-md">
+      <div class="container mx-auto px-6 py-3 flex justify-between items-center">
+        <a href="#" class="text-xl font-bold text-gray-800">
+          <span class="hidden sm:inline">Gift Box Shop</span>
+          <span class="sm:hidden">Gift Box</span>
+        </a>
+        
+        <!-- Навигационное меню (одинаковое для всех устройств) -->
+        <div class="flex space-x-4">
+          <a href="#" class="text-gray-600 hover:text-gray-800">Главная</a>
+          <a href="#order" class="text-gray-600 hover:text-gray-800">Оформление заказа</a>
+        </div>
+      </div>
+    </nav>
+
     <main class="container mx-auto p-4">
       <h2 class="text-3xl font-bold mb-6">Корзина</h2>
       <div class="bg-white shadow rounded p-6">
@@ -140,11 +158,11 @@ const OrderComponent = {
             </label>
             <label class="flex items-center">
               <input type="radio" name="delivery" value="pickup_moscow" style="accent-color: #00008b;" class="mr-2">
-              <span>Самовывоз – Москва, Производственная 12, к.2, подъезд 11</span>
+              <span>Самовывоз – Москва, Производственная 12, к.2</span>
             </label>
             <label class="flex items-center">
               <input type="radio" name="delivery" value="pickup_ershovo" style="accent-color: #00008b;" class="mr-2">
-              <span>Самовывоз – Московская область, Одинцовский район, д. Ершово, "Парк-отель Ершово"</span>
+              <span>Самовывоз – Московская область, Одинцовский район, д. Ершово</span>
             </label>
           </div>
         </div>
@@ -159,19 +177,38 @@ const OrderComponent = {
 
         <!-- Кнопка -->
         <button type="submit" id="submitButton" class="bg-blue-950 text-white px-4 py-2 rounded hover:bg-blue-800">
-          Оформить заказ
+          Оформить предзаказ
         </button>
       </form>
     </main>
+    
+    <footer class="bg-blue-950 text-white py-8 mt-12">
+        <div class="container mx-auto px-6">
+          <div class="flex flex-col md:flex-row justify-between">
+            <div class="mb-6 md:mb-0">
+              <h3 class="text-xl font-bold mb-4">SMT Premium Box</h3>
+              <p class="text-gray-400">Красивые подарочные коробки оптом</p>
+            </div>
+            <div>
+              <h4 class="text-lg font-semibold mb-3">Контакты</h4>
+              <p class="text-white-400">Телефон: +79153474616</p>
+              <p class="text-white-400">Email: smtpremiumbox@serbiyan.ru</p>
+            </div>
+          </div>
+          <div class="border-t border-gray-700 mt-8 pt-6 text-center text-white-400">
+            <p>&copy; 2025 SMT Premium Box. Все права защищены.</p>
+          </div>
+        </div>
+      </footer>
     `;
     
     // Add input validation event listeners
-    const nameInput = document.getElementById('customerName');
-    const phoneInput = document.getElementById('phone');
-    const emailInput = document.getElementById('email');
+    const nameInput = container.querySelector('#customerName');
+    const phoneInput = container.querySelector('#phone');
+    const emailInput = container.querySelector('#email');
     
     nameInput.addEventListener('blur', () => {
-      const errorElem = document.getElementById('nameError');
+      const errorElem = container.querySelector('#nameError');
       if (!nameInput.value.trim()) {
         errorElem.classList.remove('hidden');
       } else {
@@ -180,7 +217,7 @@ const OrderComponent = {
     });
     
     phoneInput.addEventListener('blur', () => {
-      const errorElem = document.getElementById('phoneError');
+      const errorElem = container.querySelector('#phoneError');
       if (!phoneInput.value.trim() || !phoneInput.checkValidity()) {
         errorElem.classList.remove('hidden');
       } else {
@@ -189,7 +226,7 @@ const OrderComponent = {
     });
     
     emailInput.addEventListener('blur', () => {
-      const errorElem = document.getElementById('emailError');
+      const errorElem = container.querySelector('#emailError');
       if (!emailInput.value.trim() || !emailInput.checkValidity()) {
         errorElem.classList.remove('hidden');
       } else {
@@ -198,7 +235,7 @@ const OrderComponent = {
     });
     
     phoneInput.addEventListener('input', function() {
-      const errorElem = document.getElementById('phoneError');
+      const errorElem = container.querySelector('#phoneError');
       const cleanPhone = this.value.replace(/\D/g, '');
       
       if (cleanPhone.length !== 11) {
@@ -210,8 +247,8 @@ const OrderComponent = {
     });
     
     // Add form submission handler
-    const form = document.getElementById('orderForm');
-    form.addEventListener('submit', OrderComponent.submitOrder);
+    const form = container.querySelector('#orderForm');
+    form.addEventListener('submit', (event) => OrderComponent.submitOrder(event, container));
   },
   
   validateForm(form) {
@@ -221,32 +258,32 @@ const OrderComponent = {
     const email = form.email.value.trim();
     
     // Reset error messages
-    document.getElementById('nameError').classList.add('hidden');
-    document.getElementById('phoneError').classList.add('hidden');
-    document.getElementById('emailError').classList.add('hidden');
+    form.querySelector('#nameError').classList.add('hidden');
+    form.querySelector('#phoneError').classList.add('hidden');
+    form.querySelector('#emailError').classList.add('hidden');
     
     // Validate required fields
     let isValid = true;
     
     if (!name) {
-      document.getElementById('nameError').classList.remove('hidden');
+      form.querySelector('#nameError').classList.remove('hidden');
       isValid = false;
     }
     
     if (!phone || !/^(8|\+7)?[\d\s-]{10,15}$/.test(phone.replace(/\D/g, ''))) {
-      document.getElementById('phoneError').classList.remove('hidden');
+      form.querySelector('#phoneError').classList.remove('hidden');
       isValid = false;
     }
     
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      document.getElementById('emailError').classList.remove('hidden');
+      form.querySelector('#emailError').classList.remove('hidden');
       isValid = false;
     }
     
     return isValid;
   },
   
-  submitOrder(event) {
+  submitOrder(event, container) {
     event.preventDefault();
     
     // Get form
@@ -257,7 +294,6 @@ const OrderComponent = {
       return;
     }
     
-    // Сбор данных формы
     const name = form.customerName.value.trim();
     const phone = form.phone.value.trim();
     const email = form.email.value.trim();
@@ -348,13 +384,13 @@ const OrderComponent = {
         cartService.clearCart();
         
         // Показываем сообщение о подтверждении
-        document.getElementById('orderStatus').classList.remove('hidden');
+        container.querySelector('#orderStatus').classList.remove('hidden');
         
         // Меняем текст кнопки
         submitButton.innerHTML = 'Заказ отправлен';
         
         // Скроллим к статусу заказа
-        document.getElementById('orderStatus').scrollIntoView({ behavior: 'smooth' });
+        container.querySelector('#orderStatus').scrollIntoView({ behavior: 'smooth' });
         
         // Отключаем все поля формы
         const formInputs = form.querySelectorAll('input, textarea, button, select');
