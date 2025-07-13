@@ -54,7 +54,7 @@ const HomeComponent = {
       <nav class="bg-white shadow-md">
         <div class="container mx-auto px-6 py-3 flex justify-between items-center">
           <a href="#" class="flex items-center space-x-2 text-xl font-bold text-gray-800">
-           <link rel="icon" href="/assets/logo-B0ADOiza.svg" type="image/png" class="h-8 w-8">
+           <img src="https://giftboxopt.ru/assets/logo-B0ADOiza.svg" alt="Logo" className="w-8 h-8" />
             <span class="hidden sm:inline">SMT Premium Box</span>
             <span class="sm:hidden">SMT Premium Box</span>
           </a>
