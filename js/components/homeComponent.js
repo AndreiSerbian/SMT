@@ -52,17 +52,39 @@ const HomeComponent = {
     const categories = HomeComponent.getCategories();
     
     container.innerHTML = `
-      <nav class="bg-white shadow-md">
-        <div class="container mx-auto px-6 py-3 flex justify-between items-center">
-       <a href="#" class="text-xl font-bold text-gray-800">
-         <img src="https://giftboxopt.ru/assets/logo-B0ADOiza.svg" alt="Logo" class="w-8 h-8" />
-          <span class="inline">SMT Premium Box</span>
-        </a>
-          
-          <!-- Навигационное меню (одинаковое для всех устройств) -->
-          <div class="flex space-x-4">
-            <a href="#" class="text-gray-600 hover:text-gray-800">Главная</a>
-            <a href="#contacts" class="text-gray-600 hover:text-gray-800">Контакты</a>
+      <nav class="bg-white shadow-md relative">
+        <div class="container mx-auto px-6 py-3">
+          <div class="flex justify-between items-center">
+            <a href="#" class="flex items-center text-xl font-bold text-gray-800">
+              <img src="https://giftboxopt.ru/assets/logo-B0ADOiza.svg" alt="Logo" class="w-8 h-8 mr-2" />
+              <span>SMT Premium Box</span>
+            </a>
+            
+            <!-- Десктопное меню -->
+            <div class="hidden md:flex space-x-4">
+              <a href="#" class="text-gray-600 hover:text-gray-800">Главная</a>
+              <a href="#contacts" class="text-gray-600 hover:text-gray-800">Контакты</a>
+            </div>
+            
+            <!-- Мобильный бургер -->
+            <button class="md:hidden text-2xl text-gray-800" id="mobile-menu-toggle">
+              <span id="burger-icon">☰</span>
+            </button>
+          </div>
+        </div>
+        
+        <!-- Мобильное меню -->
+        <div id="mobile-menu" class="fixed inset-0 bg-white z-50 hidden md:hidden">
+          <div class="flex justify-between items-center p-6 border-b">
+            <a href="#" class="flex items-center text-xl font-bold text-gray-800">
+              <img src="https://giftboxopt.ru/assets/logo-B0ADOiza.svg" alt="Logo" class="w-8 h-8 mr-2" />
+              <span>SMT Premium Box</span>
+            </a>
+            <button class="text-2xl text-gray-800" id="mobile-menu-close">✕</button>
+          </div>
+          <div class="flex flex-col p-6 space-y-4">
+            <a href="#" class="text-xl text-gray-800 py-2 border-b" id="mobile-home">Главная</a>
+            <a href="#contacts" class="text-xl text-gray-800 py-2 border-b" id="mobile-contacts">Контакты</a>
           </div>
         </div>
       </nav>
@@ -138,6 +160,45 @@ const HomeComponent = {
         </div>
       </footer>
     `;
+    
+    // Добавляем обработчики для мобильного меню
+    const mobileMenuToggle = container.querySelector('#mobile-menu-toggle');
+    const mobileMenu = container.querySelector('#mobile-menu');
+    const mobileMenuClose = container.querySelector('#mobile-menu-close');
+    const mobileHome = container.querySelector('#mobile-home');
+    const mobileContacts = container.querySelector('#mobile-contacts');
+    
+    const openMobileMenu = () => {
+      mobileMenu.classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+    };
+    
+    const closeMobileMenu = () => {
+      mobileMenu.classList.add('hidden');
+      document.body.style.overflow = '';
+    };
+    
+    if (mobileMenuToggle) {
+      HomeComponent.addEventListenerWithCleanup(mobileMenuToggle, 'click', openMobileMenu);
+    }
+    
+    if (mobileMenuClose) {
+      HomeComponent.addEventListenerWithCleanup(mobileMenuClose, 'click', closeMobileMenu);
+    }
+    
+    if (mobileHome) {
+      HomeComponent.addEventListenerWithCleanup(mobileHome, 'click', () => {
+        closeMobileMenu();
+        window.location.href = '#';
+      });
+    }
+    
+    if (mobileContacts) {
+      HomeComponent.addEventListenerWithCleanup(mobileContacts, 'click', () => {
+        closeMobileMenu();
+        window.location.href = '#contacts';
+      });
+    }
     
     // Инициализируем все слайдеры
     const timeoutId = setTimeout(() => {
