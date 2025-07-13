@@ -1,26 +1,41 @@
 
-import HomeComponent from './components/homeComponent.js';
-import ProductComponent from './components/productComponent.js';
-import OrderComponent from './components/orderComponent.js';
-import { cartService } from './services/cartService.js';
-import { eventBus } from './utils/eventBus.js';
+// Глобальная функция для добавления товара в корзину
+window.addToCart = function(productId, quantity = 1) {
+  console.log(`Добавляем в корзину: товар ${productId}, количество ${quantity}`);
+  cartService.addToCart(productId, quantity);
+  
+  // Показываем уведомление
+  notificationService.show(`Товар добавлен в корзину (${quantity} шт.)`);
+};
 
-// Инициализация корзины при загрузке страницы
-document.addEventListener('DOMContentLoaded', () => {
-  // Render initial cart
-  const appContainer = document.getElementById('app');
-  if (appContainer) {
-    appContainer.insertAdjacentHTML('beforeend', cartService.renderCart());
+// Глобальная функция для обновления количества в корзине
+window.updateQuantity = function(productId, quantity) {
+  console.log(`Обновляем количество: товар ${productId}, новое количество ${quantity}`);
+  if (quantity <= 0) {
+    cartService.removeFromCart(productId);
+  } else {
+    cartService.updateQuantity(productId, quantity);
   }
+};
 
-  // Update cart UI
-  cartService.updateCartUI();
-});
+// Глобальная переменная для доступа к полю количества
+window.quantityInput = null;
 
-// Слушаем событие обновления корзины
-eventBus.on('cart-updated', (cart) => {
-  cartService.updateCartUI();
-});
+// Глобальная функция для очистки корзины
+window.clearCart = function() {
+  console.log('Очищаем корзину');
+  cartService.clearCart();
+};
 
-// Импортируем глобальные функции корзины
-import './utils/globalCartFunctions.js';
+// Инициализация приложения
+export function initApp() {
+  console.log('Инициализация приложения');
+  
+  // Устанавливаем quantityInput после загрузки DOM
+  document.addEventListener('DOMContentLoaded', () => {
+    const quantityInput = document.getElementById('quantityInput');
+    if (quantityInput) {
+      window.quantityInput = quantityInput;
+    }
+  });
+}
