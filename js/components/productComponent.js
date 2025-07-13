@@ -54,9 +54,9 @@ const ProductComponent = {
       <nav class="bg-white shadow-md">
         <div class="container mx-auto px-6 py-3 flex justify-between items-center">
           <a href="#" class="text-xl font-bold text-gray-800">
-            <span class="hidden sm:inline">Gift Box Shop</span>
-            <span class="sm:hidden">Gift Box</span>
-          </a>
+         <img src="https://giftboxopt.ru/assets/logo-B0ADOiza.svg" alt="Logo" class="w-8 h-8" />
+          <span>SMT Premium Box</span>
+        </a>
           
           <!-- Навигационное меню (одинаковое для всех устройств) -->
           <div class="flex space-x-4">
