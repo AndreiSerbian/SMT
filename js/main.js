@@ -18,6 +18,46 @@ window.updateQuantity = function(productId, quantity) {
   }
 };
 
+// Глобальная функция для переключения отображения корзины
+window.toggleCart = function() {
+  const cartModal = document.getElementById('cartModal');
+  const cartSlide = cartModal.querySelector('.fixed.right-0');
+  
+  if (cartModal.classList.contains('hidden')) {
+    cartModal.classList.remove('hidden');
+    cartSlide.classList.remove('translate-x-full');
+    document.body.style.overflow = 'hidden';
+  } else {
+    cartSlide.classList.add('translate-x-full');
+    document.body.style.overflow = '';
+    setTimeout(() => {
+      cartModal.classList.add('hidden');
+    }, 300);
+  }
+};
+
+// Глобальная функция для обновления количества товара в корзине
+window.updateCartQuantity = function(productId, quantity) {
+  console.log(`Обновляем количество в корзине: товар ${productId}, количество ${quantity}`);
+  if (quantity <= 0) {
+    cartService.removeFromCart(productId);
+  } else {
+    cartService.updateQuantity(productId, quantity);
+  }
+};
+
+// Глобальная функция для удаления товара из корзины
+window.removeFromCart = function(productId) {
+  console.log(`Удаляем из корзины: товар ${productId}`);
+  cartService.removeFromCart(productId);
+};
+
+// Глобальная функция для перехода на страницу заказа
+window.goToOrderPage = function() {
+  console.log('Переходим на страницу заказа');
+  window.location.href = '#order';
+};
+
 // Глобальная переменная для доступа к полю количества
 window.quantityInput = null;
 
