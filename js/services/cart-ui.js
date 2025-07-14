@@ -10,9 +10,14 @@ export const cartUI = {
    * Рендерит содержимое корзины
    */
   render() {
+    console.log('Рендерим содержимое корзины');
     const container = document.getElementById('cart-items');
     const totalElement = document.getElementById('cart-total');
     const checkoutBtn = document.getElementById('checkout-btn');
+    
+    console.log('Container:', container);
+    console.log('Total element:', totalElement);
+    console.log('Checkout btn:', checkoutBtn);
     
     if (!container) {
       console.error('Контейнер #cart-items не найден');
@@ -21,6 +26,7 @@ export const cartUI = {
 
     // Если корзина пуста
     if (cart.isEmpty()) {
+      console.log('Корзина пуста');
       container.innerHTML = '<p class="text-center text-gray-500 py-8">Корзина пуста</p>';
       if (totalElement) totalElement.textContent = '0';
       if (checkoutBtn) checkoutBtn.style.display = 'none';
@@ -34,9 +40,16 @@ export const cartUI = {
     let html = '';
     let total = 0;
 
+    console.log('Данные корзины:', cart.data);
+
     Object.entries(cart.data).forEach(([categoryId, quantity]) => {
       const product = products.find(p => p.id === categoryId);
-      if (!product) return;
+      if (!product) {
+        console.warn(`Продукт с ID ${categoryId} не найден`);
+        return;
+      }
+
+      console.log(`Рендерим товар: ${product.name}, количество: ${quantity}`);
 
       const itemTotal = product.price * quantity;
       total += itemTotal;
@@ -68,12 +81,15 @@ export const cartUI = {
       `;
     });
 
+    console.log('Готовый HTML:', html.substring(0, 200) + '...');
     container.innerHTML = html;
     
     // Обновляем итоговую сумму
     if (totalElement) {
       totalElement.textContent = total.toLocaleString();
     }
+
+    console.log('Итоговая сумма:', total);
 
     // Навешиваем обработчики событий после рендера
     this.attachEventListeners();
@@ -83,15 +99,15 @@ export const cartUI = {
    * Навешивает обработчики событий на элементы корзины
    */
   attachEventListeners() {
+    console.log('Навешиваем обработчики на элементы корзины');
     const container = document.getElementById('cart-items');
-    if (!container) return;
+    if (!container) {
+      console.error('Контейнер cart-items не найден для навешивания обработчиков');
+      return;
+    }
 
-    // Удаляем старые обработчики
-    const oldContainer = container.cloneNode(true);
-    container.parentNode.replaceChild(oldContainer, container);
-    
     // Используем делегирование событий для динамически создаваемых элементов
-    oldContainer.addEventListener('click', (e) => {
+    container.addEventListener('click', (e) => {
       const categoryId = e.target.dataset.category;
       if (!categoryId) return;
 
@@ -102,13 +118,13 @@ export const cartUI = {
 
       if (e.target.classList.contains('qty-btn-plus')) {
         const currentQty = cart.data[categoryId] || 0;
-        cart.setQuantity(categoryId, currentQty + 1);
         console.log('Увеличиваем количество:', categoryId, currentQty + 1);
+        cart.setQuantity(categoryId, currentQty + 1);
       } else if (e.target.classList.contains('qty-btn-minus')) {
         const currentQty = cart.data[categoryId] || 0;
         if (currentQty > 1) {
-          cart.setQuantity(categoryId, currentQty - 1);
           console.log('Уменьшаем количество:', categoryId, currentQty - 1);
+          cart.setQuantity(categoryId, currentQty - 1);
         }
       } else if (e.target.classList.contains('btn-remove-category')) {
         console.log('Удаляем категорию:', categoryId);
@@ -117,7 +133,7 @@ export const cartUI = {
     });
 
     // Обработчики для input полей
-    oldContainer.addEventListener('input', (e) => {
+    container.addEventListener('input', (e) => {
       if (e.target.classList.contains('qty-input')) {
         const categoryId = e.target.dataset.category;
         let value = parseInt(e.target.value);
@@ -136,7 +152,7 @@ export const cartUI = {
     });
 
     // Обработчик для корректировки значения при потере фокуса  
-    oldContainer.addEventListener('blur', (e) => {
+    container.addEventListener('blur', (e) => {
       if (e.target.classList.contains('qty-input')) {
         const categoryId = e.target.dataset.category;
         let value = parseInt(e.target.value);
@@ -146,5 +162,7 @@ export const cartUI = {
         }
       }
     }, true);
+
+    console.log('Обработчики навешены на контейнер');
   }
 };
