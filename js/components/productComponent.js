@@ -1,3 +1,4 @@
+
 import { products } from '../data/products.js';
 import { cartService } from '../services/cartService.js';
 import { colorMap } from '../data/products.js';
@@ -50,39 +51,17 @@ const ProductComponent = {
     ColorService.selectedColors[productId] = product.color;
 
     container.innerHTML = `
-      <nav class="bg-white shadow-md relative">
-        <div class="container mx-auto px-6 py-3">
-          <div class="flex justify-between items-center">
-            <a href="#" class="flex items-center text-xl font-bold text-gray-800">
-              <img src="https://giftboxopt.ru/assets/logo-B0ADOiza.svg" alt="Logo" class="w-8 h-8 mr-2" />
-              <span>SMT Premium Box</span>
-            </a>
-            
-            <!-- Десктопное меню -->
-            <div class="hidden md:flex space-x-4">
-              <a href="#" class="text-gray-600 hover:text-gray-800">Главная</a>
-              <a href="#contacts" class="text-gray-600 hover:text-gray-800">Контакты</a>
-            </div>
-            
-            <!-- Мобильный бургер -->
-            <button class="md:hidden text-2xl text-gray-800" id="mobile-menu-toggle">
-              <span id="burger-icon">☰</span>
-            </button>
-          </div>
-        </div>
-        
-        <!-- Мобильное меню -->
-        <div id="mobile-menu" class="fixed inset-0 bg-white z-50 hidden md:hidden">
-          <div class="flex justify-between items-center p-6 border-b">
-            <a href="#" class="flex items-center text-xl font-bold text-gray-800">
-              <img src="https://giftboxopt.ru/assets/logo-B0ADOiza.svg" alt="Logo" class="w-8 h-8 mr-2" />
-              <span>SMT Premium Box</span>
-            </a>
-            <button class="text-2xl text-gray-800" id="mobile-menu-close">✕</button>
-          </div>
-          <div class="flex flex-col p-6 space-y-4">
-            <a href="#" class="text-xl text-gray-800 py-2 border-b" id="mobile-home">Главная</a>
-            <a href="#contacts" class="text-xl text-gray-800 py-2 border-b" id="mobile-contacts">Контакты</a>
+      <nav class="bg-white shadow-md">
+        <div class="container mx-auto px-6 py-3 flex justify-between items-center">
+          <a href="#" class="text-xl font-bold text-gray-800">
+         <img src="https://giftboxopt.ru/assets/logo-B0ADOiza.svg" alt="Logo" class="w-8 h-8" />
+          <span class="inline">SMT Premium Box</span>
+        </a>
+          
+          <!-- Навигационное меню (одинаковое для всех устройств) -->
+          <div class="flex space-x-4">
+            <a href="#" class="text-gray-600 hover:text-gray-800">Главная</a>
+            <a href="#contacts" class="text-gray-600 hover:text-gray-800">Контакты</a>
           </div>
         </div>
       </nav>
@@ -219,45 +198,6 @@ const ProductComponent = {
         </div>
       </footer>
     `;
-    
-    // Добавляем обработчики для мобильного меню
-    const mobileMenuToggle = container.querySelector('#mobile-menu-toggle');
-    const mobileMenu = container.querySelector('#mobile-menu');
-    const mobileMenuClose = container.querySelector('#mobile-menu-close');
-    const mobileHome = container.querySelector('#mobile-home');
-    const mobileContacts = container.querySelector('#mobile-contacts');
-    
-    const openMobileMenu = () => {
-      mobileMenu.classList.remove('hidden');
-      document.body.style.overflow = 'hidden';
-    };
-    
-    const closeMobileMenu = () => {
-      mobileMenu.classList.add('hidden');
-      document.body.style.overflow = '';
-    };
-    
-    if (mobileMenuToggle) {
-      ProductComponent.addEventListenerWithCleanup(mobileMenuToggle, 'click', openMobileMenu);
-    }
-    
-    if (mobileMenuClose) {
-      ProductComponent.addEventListenerWithCleanup(mobileMenuClose, 'click', closeMobileMenu);
-    }
-    
-    if (mobileHome) {
-      ProductComponent.addEventListenerWithCleanup(mobileHome, 'click', () => {
-        closeMobileMenu();
-        window.location.href = '#';
-      });
-    }
-    
-    if (mobileContacts) {
-      ProductComponent.addEventListenerWithCleanup(mobileContacts, 'click', () => {
-        closeMobileMenu();
-        window.location.href = '#contacts';
-      });
-    }
     
     // Добавляем обработчики событий для изображений
     const timeoutId = setTimeout(() => {

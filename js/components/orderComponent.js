@@ -70,161 +70,139 @@ const OrderComponent = {
     }).join('');
     
     container.innerHTML = `
-      <nav class="bg-white shadow-md relative">
-        <div class="container mx-auto px-6 py-3">
-          <div class="flex justify-between items-center">
-            <a href="#" class="flex items-center text-xl font-bold text-gray-800">
-              <img src="https://giftboxopt.ru/assets/logo-B0ADOiza.svg" alt="Logo" class="w-8 h-8 mr-2" />
-              <span>SMT Premium Box</span>
-            </a>
-            
-            <!-- Десктопное меню -->
-            <div class="hidden md:flex space-x-4">
-              <a href="#" class="text-gray-600 hover:text-gray-800">Главная</a>
-              <a href="#order" class="text-gray-600 hover:text-gray-800">Оформление заказа</a>
-            </div>
-            
-            <!-- Мобильный бургер -->
-            <button class="md:hidden text-2xl text-gray-800" id="mobile-menu-toggle">
-              <span id="burger-icon">☰</span>
-            </button>
-          </div>
-        </div>
+    <nav class="bg-white shadow-md">
+      <div class="container mx-auto px-6 py-3 flex justify-between items-center">
+        <a href="#" class="text-xl font-bold text-gray-800">
+         <img src="https://giftboxopt.ru/assets/logo-B0ADOiza.svg" alt="Logo" class="w-8 h-8" />
+          <span class="inline">SMT Premium Box</span>
+        </a>
         
-        <!-- Мобильное меню -->
-        <div id="mobile-menu" class="fixed inset-0 bg-white z-50 hidden md:hidden">
-          <div class="flex justify-between items-center p-6 border-b">
-            <a href="#" class="flex items-center text-xl font-bold text-gray-800">
-              <img src="https://giftboxopt.ru/assets/logo-B0ADOiza.svg" alt="Logo" class="w-8 h-8 mr-2" />
-              <span>SMT Premium Box</span>
-            </a>
-            <button class="text-2xl text-gray-800" id="mobile-menu-close">✕</button>
-          </div>
-          <div class="flex flex-col p-6 space-y-4">
-            <a href="#" class="text-xl text-gray-800 py-2 border-b" id="mobile-home">Главная</a>
-            <a href="#order" class="text-xl text-gray-800 py-2 border-b" id="mobile-order">Оформление заказа</a>
+        <!-- Навигационное меню (одинаковое для всех устройств) -->
+        <div class="flex space-x-4">
+          <a href="#" class="text-gray-600 hover:text-gray-800">Главная</a>
+          <a href="#order" class="text-gray-600 hover:text-gray-800">Оформление заказа</a>
+        </div>
+      </div>
+    </nav>
+
+    <main class="container mx-auto p-4">
+      <h2 class="text-3xl font-bold mb-6">Корзина</h2>
+      <div class="bg-white shadow rounded p-6">
+        <!-- Таблица товаров -->
+        <table class="w-full text-left">
+          <thead>
+            <tr>
+              <th class="border-b p-2">Товар</th>
+              <th class="border-b p-2">Количество</th>
+              <th class="border-b p-2">Цена</th>
+              <th class="border-b p-2">Сумма</th>
+            </tr>
+          </thead>
+          <tbody id="cart-items">
+            ${cartRows}
+          </tbody>
+        </table>
+
+        <!-- Итоги -->
+        <div class="mt-6 text-right">
+          <p class="mb-2">Подытог: <span id="subtotal" class="font-semibold">${subtotal} ₽</span></p>
+          <p class="mb-2">Скидка (${discountRate}%): <span id="discount" class="font-semibold">${discount} ₽</span></p>
+          <p class="text-xl font-bold">Итого: <span id="total">${total} ₽</span></p>
+        </div>
+      </div>
+
+      <h3 class="text-2xl font-bold mt-8 mb-4">Оформление заказа</h3>
+      <p class="mb-2">Для оформления заказа заполните форму ниже. Мы свяжемся с вами для уточнения деталей.</p>
+
+      <!-- Форма -->
+      <form id="orderForm" class="grid grid-cols-1 md:grid-cols-2 space-4 mb-6 gap-4 md:gap-8">
+        <div>
+          <label class="block font-semibold mb-1" for="customerName">Имя <span class="text-red-500">*</span></label>
+          <input type="text" id="customerName" name="customerName" required
+            class="w-full border border-gray-300 px-3 py-2 rounded focus:outline-none focus:ring">
+          <p id="nameError" class="text-red-500 text-sm mt-1 hidden">Пожалуйста, укажите ваше имя</p>
+        </div>
+
+        <div>
+          <label class="block font-semibold mb-1" for="phone">Телефон <span class="text-red-500">*</span></label>
+          <input type="tel" id="phone" name="phone" required 
+            class="w-full border border-gray-300 px-3 py-2 rounded focus:outline-none focus:ring"
+            placeholder="+7 (XXX) XXX-XX-XX" 
+            maxlength="18"
+          >
+          <p id="phoneError" class="text-red-500 text-sm mt-1 hidden">Пожалуйста, введите 11 цифр номера телефона</p>
+        </div>
+
+        <div>
+          <label class="block font-semibold mb-1" for="email">Электронная почта <span class="text-red-500">*</span></label>
+          <input type="email" id="email" name="email" required
+            class="w-full border border-gray-300 px-3 py-2 rounded focus:outline-none focus:ring">
+          <p id="emailError" class="text-red-500 text-sm mt-1 hidden">Пожалуйста, укажите корректный email</p>
+        </div>
+
+        <div>
+          <label class="block font-semibold mb-1" for="yandexAddress">Ближайший к Вам адрес ПВЗ Яндекс</label>
+          <input type="text" id="yandexAddress" name="yandexAddress"
+            class="w-full border border-gray-300 px-3 py-2 rounded focus:outline-none focus:ring"
+            placeholder="Например, ул. Ленина, д. 10">
+        </div>
+
+        <div class="col-span-1 md:col-span-2">
+          <label class="block font-semibold mb-1" for="comment">Комментарий к заказу</label>
+          <textarea id="comment" name="comment" rows="3"
+            class="w-full border border-gray-300 px-3 py-2 rounded focus:outline-none focus:ring"
+            placeholder="Любые пожелания по заказу"></textarea>
+        </div>
+
+        <!-- Оплата -->
+        <div>
+          <span class="block font-semibold mb-1">Способ оплаты <span class="text-red-500">*</span></span>
+          
+          <label class="inline-flex items-center mr-4">
+            <input type="radio" name="payment" value="cash" style="accent-color: #00008b;" class="mr-2" checked>
+            <span>Оплата наличными</span>
+          </label>
+          <label class="inline-flex items-center">
+            <input type="radio" name="payment" value="transfer" style="accent-color: #00008b;" class="mr-2">
+            <span>Оплата переводом</span>
+          </label>
+        </div>
+
+        <!-- Доставка / Самовывоз - обновленная секция -->
+        <div>
+          <span class="block font-semibold mb-1">Доставка / Самовывоз <span class="text-red-500">*</span></span>
+          <div class="space-y-2">
+            <label class="flex items-center">
+              <input type="radio" name="delivery" value="delivery" style="accent-color: #00008b;" class="mr-2" checked>
+              <span>Доставка</span>
+            </label>
+            <label class="flex items-center">
+              <input type="radio" name="delivery" value="pickup_moscow" style="accent-color: #00008b;" class="mr-2">
+              <span>Самовывоз – Москва, Производственная 12, к.2</span>
+            </label>
+            <label class="flex items-center">
+              <input type="radio" name="delivery" value="pickup_ershovo" style="accent-color: #00008b;" class="mr-2">
+              <span>Самовывоз – Московская область, Одинцовский район, д. Ершово</span>
+            </label>
           </div>
         </div>
-      </nav>
 
-      <main class="container mx-auto p-4">
-        <h2 class="text-3xl font-bold mb-6">Корзина</h2>
-        <div class="bg-white shadow rounded p-6">
-          <!-- Таблица товаров -->
-          <table class="w-full text-left">
-            <thead>
-              <tr>
-                <th class="border-b p-2">Товар</th>
-                <th class="border-b p-2">Количество</th>
-                <th class="border-b p-2">Цена</th>
-                <th class="border-b p-2">Сумма</th>
-              </tr>
-            </thead>
-            <tbody id="cart-items">
-              ${cartRows}
-            </tbody>
-          </table>
-
-          <!-- Итоги -->
-          <div class="mt-6 text-right">
-            <p class="mb-2">Подытог: <span id="subtotal" class="font-semibold">${subtotal} ₽</span></p>
-            <p class="mb-2">Скидка (${discountRate}%): <span id="discount" class="font-semibold">${discount} ₽</span></p>
-            <p class="text-xl font-bold">Итого: <span id="total">${total} ₽</span></p>
+        <!-- Сообщение о состоянии -->
+        <div id="orderStatus" class="col-span-1 md:col-span-2 hidden">
+          <div class="bg-blue-100 text-blue-800 p-4 rounded my-4">
+            <p class="font-semibold">Заказ отправлен. Подтвердите его по email.</p>
+            <p class="text-sm mt-2">На указанный вами адрес электронной почты было отправлено письмо для подтверждения заказа.</p>
           </div>
         </div>
 
-        <h3 class="text-2xl font-bold mt-8 mb-4">Оформление заказа</h3>
-        <p class="mb-2">Для оформления заказа заполните форму ниже. Мы свяжемся с вами для уточнения деталей.</p>
-
-        <!-- Форма -->
-        <form id="orderForm" class="grid grid-cols-1 md:grid-cols-2 space-4 mb-6 gap-4 md:gap-8">
-          <div>
-            <label class="block font-semibold mb-1" for="customerName">Имя <span class="text-red-500">*</span></label>
-            <input type="text" id="customerName" name="customerName" required
-              class="w-full border border-gray-300 px-3 py-2 rounded focus:outline-none focus:ring">
-            <p id="nameError" class="text-red-500 text-sm mt-1 hidden">Пожалуйста, укажите ваше имя</p>
-          </div>
-
-          <div>
-            <label class="block font-semibold mb-1" for="phone">Телефон <span class="text-red-500">*</span></label>
-            <input type="tel" id="phone" name="phone" required 
-              class="w-full border border-gray-300 px-3 py-2 rounded focus:outline-none focus:ring"
-              placeholder="+7 (XXX) XXX-XX-XX" 
-              maxlength="18"
-            >
-            <p id="phoneError" class="text-red-500 text-sm mt-1 hidden">Пожалуйста, введите 11 цифр номера телефона</p>
-          </div>
-
-          <div>
-            <label class="block font-semibold mb-1" for="email">Электронная почта <span class="text-red-500">*</span></label>
-            <input type="email" id="email" name="email" required
-              class="w-full border border-gray-300 px-3 py-2 rounded focus:outline-none focus:ring">
-            <p id="emailError" class="text-red-500 text-sm mt-1 hidden">Пожалуйста, укажите корректный email</p>
-          </div>
-
-          <div>
-            <label class="block font-semibold mb-1" for="yandexAddress">Ближайший к Вам адрес ПВЗ Яндекс</label>
-            <input type="text" id="yandexAddress" name="yandexAddress"
-              class="w-full border border-gray-300 px-3 py-2 rounded focus:outline-none focus:ring"
-              placeholder="Например, ул. Ленина, д. 10">
-          </div>
-
-          <div class="col-span-1 md:col-span-2">
-            <label class="block font-semibold mb-1" for="comment">Комментарий к заказу</label>
-            <textarea id="comment" name="comment" rows="3"
-              class="w-full border border-gray-300 px-3 py-2 rounded focus:outline-none focus:ring"
-              placeholder="Любые пожелания по заказу"></textarea>
-          </div>
-
-          <!-- Оплата -->
-          <div>
-            <span class="block font-semibold mb-1">Способ оплаты <span class="text-red-500">*</span></span>
-            
-            <label class="inline-flex items-center mr-4">
-              <input type="radio" name="payment" value="cash" style="accent-color: #00008b;" class="mr-2" checked>
-              <span>Оплата наличными</span>
-            </label>
-            <label class="inline-flex items-center">
-              <input type="radio" name="payment" value="transfer" style="accent-color: #00008b;" class="mr-2">
-              <span>Оплата переводом</span>
-            </label>
-          </div>
-
-          <!-- Доставка / Самовывоз - обновленная секция -->
-          <div>
-            <span class="block font-semibold mb-1">Доставка / Самовывоз <span class="text-red-500">*</span></span>
-            <div class="space-y-2">
-              <label class="flex items-center">
-                <input type="radio" name="delivery" value="delivery" style="accent-color: #00008b;" class="mr-2" checked>
-                <span>Доставка</span>
-              </label>
-              <label class="flex items-center">
-                <input type="radio" name="delivery" value="pickup_moscow" style="accent-color: #00008b;" class="mr-2">
-                <span>Самовывоз – Москва, Производственная 12, к.2</span>
-              </label>
-              <label class="flex items-center">
-                <input type="radio" name="delivery" value="pickup_ershovo" style="accent-color: #00008b;" class="mr-2">
-                <span>Самовывоз – Московская область, Одинцовский район, д. Ершово</span>
-              </label>
-            </div>
-          </div>
-
-          <!-- Сообщение о состоянии -->
-          <div id="orderStatus" class="col-span-1 md:col-span-2 hidden">
-            <div class="bg-blue-100 text-blue-800 p-4 rounded my-4">
-              <p class="font-semibold">Заказ отправлен. Подтвердите его по email.</p>
-              <p class="text-sm mt-2">На указанный вами адрес электронной почты было отправлено письмо для подтверждения заказа.</p>
-            </div>
-          </div>
-
-          <!-- Кнопка -->
-          <button type="submit" id="submitButton" class="bg-blue-950 text-white px-4 py-2 rounded hover:bg-blue-800">
-            Оформить предзаказ
-          </button>
-        </form>
-      </main>
-      
-      <footer class="bg-blue-950 text-white py-8 mt-12">
+        <!-- Кнопка -->
+        <button type="submit" id="submitButton" class="bg-blue-950 text-white px-4 py-2 rounded hover:bg-blue-800">
+          Оформить предзаказ
+        </button>
+      </form>
+    </main>
+    
+    <footer class="bg-blue-950 text-white py-8 mt-12">
         <div class="container mx-auto px-6">
           <div class="flex flex-col md:flex-row justify-between">
             <div class="mb-6 md:mb-0">
@@ -243,45 +221,6 @@ const OrderComponent = {
         </div>
       </footer>
     `;
-    
-    // Добавляем обработчики для мобильного меню
-    const mobileMenuToggle = container.querySelector('#mobile-menu-toggle');
-    const mobileMenu = container.querySelector('#mobile-menu');
-    const mobileMenuClose = container.querySelector('#mobile-menu-close');
-    const mobileHome = container.querySelector('#mobile-home');
-    const mobileOrder = container.querySelector('#mobile-order');
-    
-    const openMobileMenu = () => {
-      mobileMenu.classList.remove('hidden');
-      document.body.style.overflow = 'hidden';
-    };
-    
-    const closeMobileMenu = () => {
-      mobileMenu.classList.add('hidden');
-      document.body.style.overflow = '';
-    };
-    
-    if (mobileMenuToggle) {
-      OrderComponent.addEventListenerWithCleanup(mobileMenuToggle, 'click', openMobileMenu);
-    }
-    
-    if (mobileMenuClose) {
-      OrderComponent.addEventListenerWithCleanup(mobileMenuClose, 'click', closeMobileMenu);
-    }
-    
-    if (mobileHome) {
-      OrderComponent.addEventListenerWithCleanup(mobileHome, 'click', () => {
-        closeMobileMenu();
-        window.location.href = '#';
-      });
-    }
-    
-    if (mobileOrder) {
-      OrderComponent.addEventListenerWithCleanup(mobileOrder, 'click', () => {
-        closeMobileMenu();
-        window.location.href = '#order';
-      });
-    }
     
     // Add input validation event listeners
     const nameInput = container.querySelector('#customerName');
