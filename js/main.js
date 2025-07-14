@@ -1,4 +1,7 @@
 
+import { cartService } from './services/cartService.js';
+import { notificationService } from './services/notificationService.js';
+
 // Глобальная функция для добавления товара в корзину
 window.addToCart = function(productId, quantity = 1) {
   console.log(`Добавляем в корзину: товар ${productId}, количество ${quantity}`);
@@ -71,11 +74,17 @@ window.clearCart = function() {
 export function initApp() {
   console.log('Инициализация приложения');
   
+  // Подписываемся на события обновления корзины
+  cartService.getCart(); // Инициализируем корзину
+  
   // Устанавливаем quantityInput после загрузки DOM
   document.addEventListener('DOMContentLoaded', () => {
     const quantityInput = document.getElementById('quantityInput');
     if (quantityInput) {
       window.quantityInput = quantityInput;
     }
+    
+    // Инициализируем UI корзины
+    cartService.updateCartUI();
   });
 }

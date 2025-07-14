@@ -13,8 +13,11 @@ const SwiperService = {
       
       const productId = swiperEl.id.replace('product-slider-', '');
       
+      // Подсчитываем количество слайдов
+      const slidesCount = swiperEl.querySelectorAll('.swiper-slide').length;
+      
       const swiperInstance = new Swiper(swiperEl, {
-        loop: true,
+        loop: slidesCount > 1, // Включаем loop только если больше одного слайда
         pagination: {
           el: swiperEl.querySelector('.swiper-pagination'),
           clickable: true,

@@ -28,22 +28,35 @@ export const cartService = {
     }
     
     this.saveCart(cart);
-    // No page reload needed
+    this.updateCartUI();
   },
   
+  // Update quantity of item in cart
+  updateQuantity(productId, quantity) {
+    const cart = this.getCart();
+    const existingItem = cart.find(item => item.id === productId);
+    
+    if (existingItem && quantity > 0) {
+      existingItem.quantity = quantity;
+      this.saveCart(cart);
+      this.updateCartUI();
+    }
+  },
+
   // Remove item from cart
   removeFromCart(productId) {
     const cart = this.getCart();
     const updatedCart = cart.filter(item => item.id !== productId);
     
     this.saveCart(updatedCart);
-    // No page reload needed
+    this.updateCartUI();
   },
   
   // Clear cart
   clearCart() {
     localStorage.removeItem('cart');
     eventBus.emit('cart-updated', []);
+    this.updateCartUI();
   },
   
   // Get cart total
@@ -125,11 +138,12 @@ export const cartService = {
                       <div class="flex-1">
                         <h3 class="font-semibold text-gray-800">${product.name}</h3>
                         <p class="text-gray-600 text-sm">Цвет: ${product.color}</p>
-                        <div class="flex items-center mt-1">
-                          <button 
-                            onclick="updateCartQuantity('${item.id}', ${Math.max(1, item.quantity - 1)})"
-                            class="px-3 py-1 h-8 border border-gray-300 bg-white text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-colors rounded-l"
-                          >-</button>
+                         <div class="flex items-center mt-1">
+                           <button 
+                             onclick="updateCartQuantity('${item.id}', ${Math.max(1, item.quantity - 1)})"
+                             class="px-3 py-1 h-8 border border-gray-300 bg-white text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-colors rounded-l ${item.quantity <= 1 ? 'opacity-50 cursor-not-allowed' : ''}"
+                             ${item.quantity <= 1 ? 'disabled' : ''}
+                           >-</button>
                           <input 
                             type="number" 
                             value="${item.quantity}" 
@@ -233,11 +247,12 @@ export const cartService = {
               <div class="flex-1">
                 <h3 class="font-semibold text-gray-800">${product.name}</h3>
                 <p class="text-gray-600 text-sm">Цвет: ${product.color}</p>
-                <div class="flex items-center mt-1">
-                  <button 
-                    onclick="updateCartQuantity('${item.id}', ${Math.max(1, item.quantity - 1)})"
-                    class="px-3 py-1 h-8 border border-gray-300 bg-white text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-colors rounded-l"
-                  >-</button>
+                 <div class="flex items-center mt-1">
+                   <button 
+                     onclick="updateCartQuantity('${item.id}', ${Math.max(1, item.quantity - 1)})"
+                     class="px-3 py-1 h-8 border border-gray-300 bg-white text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-colors rounded-l ${item.quantity <= 1 ? 'opacity-50 cursor-not-allowed' : ''}"
+                     ${item.quantity <= 1 ? 'disabled' : ''}
+                   >-</button>
                   <input 
                     type="number" 
                     value="${item.quantity}" 

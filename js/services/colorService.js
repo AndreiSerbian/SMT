@@ -85,10 +85,21 @@ export const ColorService = {
     this.selectedColors[productId] = color;
     
     const colorButtons = document.querySelectorAll(`.color-button[data-product-id="${productId}"]`);
+    if (colorButtons.length === 0) return; // Выходим если кнопки не найдены
+    
     colorButtons.forEach(button => {
       const buttonColor = button.dataset.color;
       const isSelected = buttonColor === color;
-      const isLight = this.isLightColor(button.style.backgroundColor);
+      
+      // Проверяем наличие style.backgroundColor перед проверкой яркости
+      let isLight = false;
+      if (button.style.backgroundColor) {
+        try {
+          isLight = this.isLightColor(button.style.backgroundColor);
+        } catch (e) {
+          console.warn('Ошибка при определении яркости цвета:', e);
+        }
+      }
       
       // Удаляем все классы окантовки
       button.classList.remove('border-blue-500', 'border-gray-300');
