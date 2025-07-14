@@ -14,7 +14,10 @@ export const cartUI = {
     const totalElement = document.getElementById('cart-total');
     const checkoutBtn = document.getElementById('checkout-btn');
     
-    if (!container) return;
+    if (!container) {
+      console.error('Контейнер #cart-items не найден');
+      return;
+    }
 
     // Если корзина пуста
     if (cart.isEmpty()) {
@@ -72,7 +75,7 @@ export const cartUI = {
       totalElement.textContent = total.toLocaleString();
     }
 
-    // Навешиваем обработчики событий
+    // Навешиваем обработчики событий после рендера
     this.attachEventListeners();
   },
 
@@ -83,32 +86,43 @@ export const cartUI = {
     const container = document.getElementById('cart-items');
     if (!container) return;
 
+    // Удаляем старые обработчики
+    const oldContainer = container.cloneNode(true);
+    container.parentNode.replaceChild(oldContainer, container);
+    
     // Используем делегирование событий для динамически создаваемых элементов
-    container.addEventListener('click', (e) => {
+    oldContainer.addEventListener('click', (e) => {
       const categoryId = e.target.dataset.category;
       if (!categoryId) return;
 
       e.preventDefault();
       e.stopPropagation();
 
+      console.log('Клик по элементу корзины:', e.target.className, 'categoryId:', categoryId);
+
       if (e.target.classList.contains('qty-btn-plus')) {
         const currentQty = cart.data[categoryId] || 0;
         cart.setQuantity(categoryId, currentQty + 1);
+        console.log('Увеличиваем количество:', categoryId, currentQty + 1);
       } else if (e.target.classList.contains('qty-btn-minus')) {
         const currentQty = cart.data[categoryId] || 0;
         if (currentQty > 1) {
           cart.setQuantity(categoryId, currentQty - 1);
+          console.log('Уменьшаем количество:', categoryId, currentQty - 1);
         }
       } else if (e.target.classList.contains('btn-remove-category')) {
+        console.log('Удаляем категорию:', categoryId);
         cart.removeCategory(categoryId);
       }
     });
 
     // Обработчики для input полей
-    container.addEventListener('input', (e) => {
+    oldContainer.addEventListener('input', (e) => {
       if (e.target.classList.contains('qty-input')) {
         const categoryId = e.target.dataset.category;
         let value = parseInt(e.target.value);
+        
+        console.log('Изменение input:', categoryId, value);
         
         // Валидация введённого значения
         if (!value || value < 1) {
@@ -121,8 +135,8 @@ export const cartUI = {
       }
     });
 
-    // Обработчик для корректировки значения при потере фокуса
-    container.addEventListener('blur', (e) => {
+    // Обработчик для корректировки значения при потере фокуса  
+    oldContainer.addEventListener('blur', (e) => {
       if (e.target.classList.contains('qty-input')) {
         const categoryId = e.target.dataset.category;
         let value = parseInt(e.target.value);

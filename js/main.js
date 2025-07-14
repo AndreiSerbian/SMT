@@ -14,6 +14,16 @@ window.addToCart = function(productId, quantity = 1) {
   }
 };
 
+// Глобальная функция для переключения корзины
+window.toggleCart = function() {
+  console.log('Переключаем корзину');
+  if (cartPopup.isOpen()) {
+    cartPopup.close();
+  } else {
+    cartPopup.open();
+  }
+};
+
 // Глобальная функция для очистки корзины
 window.clearCart = function() {
   console.log('Очищаем корзину');

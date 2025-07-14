@@ -27,14 +27,16 @@ export const cartPopup = {
    * Навешивает обработчики событий
    */
   attachEventListeners() {
-    // Открытие корзины
-    const toggleBtn = document.getElementById('cart-toggle');
-    if (toggleBtn) {
-      toggleBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        this.open();
-      });
-    }
+    // Открытие корзины - используем как ID, так и класс для совместимости
+    const toggleBtns = document.querySelectorAll('#cart-toggle, .cart-toggle');
+    toggleBtns.forEach(btn => {
+      if (btn) {
+        // Удаляем старые обработчики если есть
+        btn.removeEventListener('click', this.handleToggleClick);
+        // Добавляем новый обработчик
+        btn.addEventListener('click', this.handleToggleClick.bind(this));
+      }
+    });
 
     // Закрытие по клику на overlay
     if (this.overlay) {
@@ -62,11 +64,22 @@ export const cartPopup = {
   },
 
   /**
+   * Обработчик клика по кнопке переключения корзины
+   */
+  handleToggleClick(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    this.open();
+  },
+
+  /**
    * Открывает pop-up корзины
    */
   open() {
     if (!this.popup) return;
 
+    console.log('Открываем корзину');
+    
     // Рендерим содержимое корзины
     cartUI.render();
 
@@ -86,6 +99,8 @@ export const cartPopup = {
    */
   close() {
     if (!this.popup) return;
+
+    console.log('Закрываем корзину');
 
     // Анимация закрытия
     this.popup.classList.add('scale-95');
