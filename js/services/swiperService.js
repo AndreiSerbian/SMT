@@ -13,8 +13,12 @@ const SwiperService = {
       
       const productId = swiperEl.id.replace('product-slider-', '');
       
+      // Проверяем количество слайдов
+      const slides = swiperEl.querySelectorAll('.swiper-slide');
+      const shouldUseLoop = slides.length > 1;
+      
       const swiperInstance = new Swiper(swiperEl, {
-        loop: true,
+        loop: shouldUseLoop, // Включаем loop только если слайдов больше 1
         pagination: {
           el: swiperEl.querySelector('.swiper-pagination'),
           clickable: true,
@@ -23,6 +27,20 @@ const SwiperService = {
           nextEl: swiperEl.querySelector('.swiper-button-next'),
           prevEl: swiperEl.querySelector('.swiper-button-prev'),
         },
+        // Скрываем навигацию если слайд один
+        on: {
+          init: function() {
+            if (slides.length <= 1) {
+              const nextBtn = swiperEl.querySelector('.swiper-button-next');
+              const prevBtn = swiperEl.querySelector('.swiper-button-prev');
+              const pagination = swiperEl.querySelector('.swiper-pagination');
+              
+              if (nextBtn) nextBtn.style.display = 'none';
+              if (prevBtn) prevBtn.style.display = 'none';
+              if (pagination) pagination.style.display = 'none';
+            }
+          }
+        }
       });
       
       this.swipersById[productId] = swiperInstance;
@@ -34,7 +52,7 @@ const SwiperService = {
     const swiper = this.swipersById[productId];
     if (!swiper) return;
     
-    // Сохраняем текущие высоту и ширину слайдов
+    // Сохраняем текущие настройки слайдов
     const slideHeight = swiper.slides[0]?.querySelector('img')?.style.height;
     const slideWidth = swiper.slides[0]?.querySelector('img')?.style.width;
     const slideClass = swiper.slides[0]?.querySelector('img')?.className;
@@ -60,6 +78,32 @@ const SwiperService = {
           if (slideWidth) img.style.width = slideWidth;
         }
       });
+    }
+    
+    // Обновляем настройки loop в зависимости от количества слайдов
+    const shouldUseLoop = newPhotos.length > 1;
+    if (swiper.params.loop !== shouldUseLoop) {
+      swiper.params.loop = shouldUseLoop;
+      swiper.loopDestroy();
+      if (shouldUseLoop) {
+        swiper.loopCreate();
+      }
+    }
+    
+    // Показываем/скрываем навигацию
+    const swiperEl = swiper.el;
+    const nextBtn = swiperEl.querySelector('.swiper-button-next');
+    const prevBtn = swiperEl.querySelector('.swiper-button-prev');
+    const pagination = swiperEl.querySelector('.swiper-pagination');
+    
+    if (newPhotos.length <= 1) {
+      if (nextBtn) nextBtn.style.display = 'none';
+      if (prevBtn) prevBtn.style.display = 'none';
+      if (pagination) pagination.style.display = 'none';
+    } else {
+      if (nextBtn) nextBtn.style.display = 'block';
+      if (prevBtn) prevBtn.style.display = 'block';
+      if (pagination) pagination.style.display = 'block';
     }
     
     // Обновляем Swiper

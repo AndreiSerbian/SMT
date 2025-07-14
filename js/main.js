@@ -8,16 +8,6 @@ window.addToCart = function(productId, quantity = 1) {
   notificationService.show(`Товар добавлен в корзину (${quantity} шт.)`);
 };
 
-// Глобальная функция для обновления количества в корзине
-window.updateQuantity = function(productId, quantity) {
-  console.log(`Обновляем количество: товар ${productId}, новое количество ${quantity}`);
-  if (quantity <= 0) {
-    cartService.removeFromCart(productId);
-  } else {
-    cartService.updateQuantity(productId, quantity);
-  }
-};
-
 // Глобальная функция для переключения отображения корзины
 window.toggleCart = function() {
   const cartModal = document.getElementById('cartModal');
