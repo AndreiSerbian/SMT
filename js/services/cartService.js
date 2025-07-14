@@ -211,13 +211,13 @@ export const cartService = {
     const cart = this.getCart();
     
     // Update cart icon count
-    const cartCountElement = document.querySelector('.bg-blue-500.text-white.rounded-full');
+    const cartCountElement = document.getElementById('cart-count');
     if (cartCountElement) {
       if (cart.length > 0) {
         cartCountElement.textContent = cart.length;
-        cartCountElement.classList.remove('hidden');
+        cartCountElement.style.display = 'inline-block';
       } else {
-        cartCountElement.classList.add('hidden');
+        cartCountElement.style.display = 'none';
       }
     }
     
