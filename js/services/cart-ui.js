@@ -83,10 +83,13 @@ export const cartUI = {
     const container = document.getElementById('cart-items');
     if (!container) return;
 
-    // Обработчики для кнопок + и -
+    // Используем делегирование событий для динамически создаваемых элементов
     container.addEventListener('click', (e) => {
       const categoryId = e.target.dataset.category;
       if (!categoryId) return;
+
+      e.preventDefault();
+      e.stopPropagation();
 
       if (e.target.classList.contains('qty-btn-plus')) {
         const currentQty = cart.data[categoryId] || 0;
