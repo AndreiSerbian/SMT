@@ -210,12 +210,12 @@ export const cartService = {
   updateCartUI() {
     const cart = this.getCart();
     
-    // Update cart icon count
-    const cartCountElement = document.getElementById('cart-count');
+    // Update cart icon count - ищем правильный элемент счетчика
+    const cartCountElement = document.querySelector('.absolute.-top-1.-right-1.bg-blue-500');
     if (cartCountElement) {
+      cartCountElement.textContent = cart.length;
       if (cart.length > 0) {
-        cartCountElement.textContent = cart.length;
-        cartCountElement.style.display = 'inline-block';
+        cartCountElement.style.display = 'flex';
       } else {
         cartCountElement.style.display = 'none';
       }

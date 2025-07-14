@@ -258,7 +258,12 @@ const OrderComponent = {
     
     const closeMobileMenu = () => {
       mobileMenu.classList.add('hidden');
-      document.body.style.overflow = '';
+      // Не блокируем скролл на странице заказа - только убираем блокировку из меню
+      if (window.location.hash === '#order') {
+        document.body.style.overflow = '';
+      } else {
+        document.body.style.overflow = '';
+      }
     };
     
     if (mobileMenuToggle) {

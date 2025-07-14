@@ -139,11 +139,19 @@ export const ColorService = {
     
     if (!matchingProduct) return false;
     
+    // Запоминаем текущее положение скролла перед обновлением
+    const currentScrollY = window.scrollY;
+    
     // Update slider photos
     SwiperService.updateSliderPhotos(productId, matchingProduct.photo);
     
     // Update button colors
     this.updateButtonColor(productId, chosenColor);
+    
+    // Восстанавливаем положение скролла после обновления DOM
+    requestAnimationFrame(() => {
+      window.scrollTo(0, currentScrollY);
+    });
     
     // Не нужен редирект при первом клике
     return false;
