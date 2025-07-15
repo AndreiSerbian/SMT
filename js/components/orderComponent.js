@@ -253,7 +253,10 @@ const OrderComponent = {
     
     const openMobileMenu = () => {
       mobileMenu.classList.remove('hidden');
-      document.body.style.overflow = 'hidden';
+      // Не блокируем скролл на странице заказа
+      if (window.location.hash !== '#order') {
+        document.body.style.overflow = 'hidden';
+      }
     };
     
     const closeMobileMenu = () => {
