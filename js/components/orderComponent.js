@@ -252,21 +252,20 @@ const OrderComponent = {
     const mobileOrder = container.querySelector('#mobile-order');
     
     const openMobileMenu = () => {
-      mobileMenu.classList.remove('hidden');
-      // Не блокируем скролл на странице заказа
-      if (window.location.hash !== '#order') {
+      // Проверяем что это действительно мобильное устройство и не блокируем скролл на странице заказа
+      if (window.innerWidth < 768 && window.location.hash !== '#order') {
+        mobileMenu.classList.remove('hidden');
         document.body.style.overflow = 'hidden';
+      } else if (window.innerWidth < 768) {
+        // На странице заказа показываем меню но не блокируем скролл
+        mobileMenu.classList.remove('hidden');
       }
     };
     
     const closeMobileMenu = () => {
       mobileMenu.classList.add('hidden');
-      // Не блокируем скролл на странице заказа - только убираем блокировку из меню
-      if (window.location.hash === '#order') {
-        document.body.style.overflow = '';
-      } else {
-        document.body.style.overflow = '';
-      }
+      // Всегда восстанавливаем скролл при закрытии меню
+      document.body.style.overflow = '';
     };
     
     if (mobileMenuToggle) {

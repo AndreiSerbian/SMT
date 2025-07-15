@@ -169,8 +169,11 @@ const HomeComponent = {
     const mobileContacts = container.querySelector('#mobile-contacts');
     
     const openMobileMenu = () => {
-      mobileMenu.classList.remove('hidden');
-      document.body.style.overflow = 'hidden';
+      // Проверяем что это действительно мобильное устройство
+      if (window.innerWidth < 768) {
+        mobileMenu.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+      }
     };
     
     const closeMobileMenu = () => {
