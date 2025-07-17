@@ -64,10 +64,10 @@ export class AdminComponent {
   renderAdminPanel() {
     return `
       <div class="min-h-screen bg-gray-100 p-6">
-        <div class="max-w-6xl mx-auto">
+        <div class="max-w-4xl mx-auto">
           <div class="bg-white rounded-lg shadow-lg p-6">
             <div class="flex justify-between items-center mb-6">
-              <h1 class="text-3xl font-bold text-gray-800">⚙️ Админ-панель SMT Premium Box</h1>
+              <h1 class="text-2xl font-bold text-gray-800">⚙️ Админ-панель</h1>
               <button 
                 id="admin-logout" 
                 class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors"
@@ -77,41 +77,27 @@ export class AdminComponent {
             </div>
 
             <!-- Режим технических работ -->
-            <div class="mb-8 p-4 border rounded-lg ${this.maintenanceMode ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'}">
+            <div class="mb-6 p-4 border rounded-lg ${this.maintenanceMode ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'}">
               <div class="flex justify-between items-center">
                 <div>
-                  <h3 class="text-lg font-semibold">🛠 Технические работы</h3>
-                  <p class="text-sm text-gray-600">
-                    Статус: ${this.maintenanceMode ? 'Активен' : 'Отключен'}
-                  </p>
+                  <span class="text-lg font-medium">🛠 Технические работы</span>
+                  <span class="ml-2 text-sm ${this.maintenanceMode ? 'text-red-600' : 'text-green-600'}">
+                    (${this.maintenanceMode ? 'Активны' : 'Отключены'})
+                  </span>
                 </div>
                 <button 
                   id="toggle-maintenance" 
                   class="px-4 py-2 rounded-md text-white transition-colors ${this.maintenanceMode ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}"
                 >
-                  ${this.maintenanceMode ? 'Отключить' : 'Включить'}
+                  ${this.maintenanceMode ? 'Отключить' : 'Начать технические работы'}
                 </button>
               </div>
             </div>
 
             <!-- Управление товарами -->
-            <div class="mb-8">
-              <h2 class="text-2xl font-semibold mb-4">📦 Управление товарами</h2>
-              <div class="overflow-x-auto">
-                <table class="w-full bg-white border border-gray-200">
-                  <thead class="bg-gray-50">
-                    <tr>
-                      <th class="px-4 py-3 text-left text-sm font-medium text-gray-900">Название</th>
-                      <th class="px-4 py-3 text-left text-sm font-medium text-gray-900">Текущая цена</th>
-                      <th class="px-4 py-3 text-left text-sm font-medium text-gray-900">Новая цена</th>
-                      <th class="px-4 py-3 text-left text-sm font-medium text-gray-900">Действие</th>
-                    </tr>
-                  </thead>
-                  <tbody id="admin-products-table">
-                    ${this.renderProductsTable()}
-                  </tbody>
-                </table>
-              </div>
+            <div>
+              <h2 class="text-xl font-semibold mb-4">📦 Товары</h2>
+              ${this.renderProductsCards()}
             </div>
           </div>
         </div>
@@ -119,43 +105,47 @@ export class AdminComponent {
     `;
   }
 
-  renderProductsTable() {
-    console.log('Rendering products table. Products count:', products ? products.length : 0);
-    console.log('Products:', products);
+  renderProductsCards() {
+    console.log('Rendering products cards. Products count:', products ? products.length : 0);
     
     if (!products || products.length === 0) {
-      return `
-        <tr class="border-t border-gray-200">
-          <td colspan="4" class="px-4 py-3 text-center text-gray-500">Товары не найдены</td>
-        </tr>
-      `;
+      return `<div class="text-center text-gray-500 py-8">Товары не найдены</div>`;
     }
 
-    return products.map(product => {
-      const currentPrice = this.productPrices[product.id] || product.price;
-      return `
-        <tr class="border-t border-gray-200">
-          <td class="px-4 py-3 text-sm text-gray-900">${product.name} (${product.color})</td>
-          <td class="px-4 py-3 text-sm text-gray-900">${currentPrice} ₽</td>
-          <td class="px-4 py-3">
-            <input 
-              type="number" 
-              id="price-${product.id}" 
-              value="${currentPrice}"
-              class="w-24 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-          </td>
-          <td class="px-4 py-3">
-            <button 
-              onclick="window.adminComponent.updatePrice('${product.id}')"
-              class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 transition-colors"
-            >
-              Сохранить
-            </button>
-          </td>
-        </tr>
-      `;
-    }).join('');
+    return `
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        ${products.map(product => {
+          const currentPrice = this.productPrices[product.id] || product.price;
+          return `
+            <div class="bg-gray-50 rounded-lg p-4 border">
+              <div class="mb-3">
+                <div class="text-xs text-gray-500 font-mono">ID: ${product.id}</div>
+                <div class="font-medium text-gray-900">${product.name}</div>
+                <div class="text-sm text-gray-600">${product.color}</div>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-sm text-gray-600">Цена:</span>
+                <input 
+                  type="number" 
+                  id="price-${product.id}" 
+                  value="${currentPrice}"
+                  class="w-20 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  min="0"
+                  step="100"
+                >
+                <span class="text-sm text-gray-600">₽</span>
+                <button 
+                  onclick="window.adminComponent.updatePrice('${product.id}')"
+                  class="ml-2 bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700 transition-colors"
+                >
+                  ✓
+                </button>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
   }
 
   async mount(container) {
@@ -230,7 +220,7 @@ export class AdminComponent {
       await this.sendTelegramNotification(login);
       
       // Перерендериваем компонент
-      const container = document.querySelector('main');
+      const container = document.getElementById('app');
       if (container) {
         await this.mount(container);
       }
@@ -308,10 +298,7 @@ export class AdminComponent {
           value: this.productPrices
         });
       
-      // Обновляем отображение в таблице
-      const currentPriceCell = priceInput.closest('tr').children[1];
-      currentPriceCell.textContent = `${newPrice} ₽`;
-      
+      // Успешно обновлено
       alert('Цена успешно обновлена');
       
     } catch (error) {
@@ -333,7 +320,7 @@ export class AdminComponent {
         });
       
       // Перерендериваем компонент
-      const container = document.querySelector('main');
+      const container = document.getElementById('app');
       if (container) {
         await this.mount(container);
       }
