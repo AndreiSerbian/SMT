@@ -1,4 +1,4 @@
-import { supabase } from '../utils/env.js';
+import { supabase } from '../utils/supabase.js';
 import { products } from '../data/products.js';
 import { NotificationService } from '../services/notificationService.js';
 
