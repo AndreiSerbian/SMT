@@ -5,6 +5,32 @@
 
 import { products } from '../data/products.js';
 
+export const NotificationService = {
+  async sendTelegramMessage(message, isAdminNotification = false) {
+    try {
+      const functionName = isAdminNotification ? 'admin-notify' : 'contact-notify';
+      const response = await fetch(`https://bsndismiessofvhglzrv.supabase.co/functions/v1/${functionName}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzbmRpc21pZXNzb2Z2aGdsenJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzg2ODYyNTIsImV4cCI6MjA1NDI2MjI1Mn0.4pumjrK8SV79xaegTEZaJMmi6lnp-_5uhSytvWpoZHY'
+        },
+        body: JSON.stringify({ message })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      return result;
+    } catch (error) {
+      console.error('Error sending Telegram message:', error);
+      throw error;
+    }
+  }
+};
+
 export const notificationService = {
   // Отправка уведомления в Телеграм
   sendTelegramNotification(order) {

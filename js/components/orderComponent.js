@@ -28,6 +28,11 @@ const OrderComponent = {
       return;
     }
     
+    // Принудительно сбрасываем стили прокрутки при загрузке
+    document.body.style.overflow = '';
+    document.body.style.position = '';
+    document.documentElement.style.overflow = '';
+    
     const cart = cartService.getCart();
     
     // Check minimum order value
@@ -54,16 +59,36 @@ const OrderComponent = {
     const discount = Math.floor((subtotal * discountRate) / 100);
     const total = subtotal - discount;
     
+    // Calculate total weight
+    const totalWeightGrams = cart.reduce((total, item) => {
+      const product = products.find(p => p.id === item.id);
+      if (!product) return total;
+      return total + (product.weight * 1000 * item.quantity); // Convert kg to grams
+    }, 0);
+    
+    const formatWeight = (weightInGrams) => {
+      if (weightInGrams >= 1000) {
+        return `${(weightInGrams / 1000).toFixed(1)} кг`;
+      }
+      return `${weightInGrams} г`;
+    };
+
     // Generate cart rows
     const cartRows = cart.map(item => {
       const product = products.find(p => p.id === item.id);
       if (!product) return '';
-      const itemSum = product.price * item.quantity;
+      // Получаем актуальную цену (если есть админская цена, используем её)
+      const actualPrice = window.adminComponent?.productPrices[product.id] || product.price;
+      const itemSum = actualPrice * item.quantity;
+      const itemWeightGrams = product.weight * 1000 * item.quantity;
       return `
         <tr>
-          <td class="border-b p-2">${product.name} (${product.color})</td>
+          <td class="border-b p-2">
+            <div>${product.name} (${product.color})</div>
+            <div class="text-sm text-gray-600">Вес: ${formatWeight(itemWeightGrams)}</div>
+          </td>
           <td class="border-b p-2">${item.quantity}</td>
-          <td class="border-b p-2">₽${product.price}</td>
+          <td class="border-b p-2">₽${actualPrice}</td>
           <td class="border-b p-2">₽${itemSum}</td>
         </tr>
       `;
@@ -129,6 +154,7 @@ const OrderComponent = {
           <div class="mt-6 text-right">
             <p class="mb-2">Подытог: <span id="subtotal" class="font-semibold">${subtotal} ₽</span></p>
             <p class="mb-2">Скидка (${discountRate}%): <span id="discount" class="font-semibold">${discount} ₽</span></p>
+            <p class="mb-2">Общий вес: <span id="total-weight" class="font-semibold">${formatWeight(totalWeightGrams)}</span></p>
             <p class="text-xl font-bold">Итого: <span id="total">${total} ₽</span></p>
           </div>
         </div>

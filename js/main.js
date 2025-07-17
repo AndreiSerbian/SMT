@@ -78,7 +78,12 @@ export function initApp() {
   cartService.getCart(); // Инициализируем корзину
   
   // Устанавливаем quantityInput после загрузки DOM
-  document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('DOMContentLoaded', async () => {
+    // Принудительно сбрасываем стили прокрутки при загрузке приложения
+    document.body.style.overflow = '';
+    document.body.style.position = '';
+    document.documentElement.style.overflow = '';
+    
     const quantityInput = document.getElementById('quantityInput');
     if (quantityInput) {
       window.quantityInput = quantityInput;
@@ -86,5 +91,18 @@ export function initApp() {
     
     // Инициализируем UI корзины
     cartService.updateCartUI();
+    
+    // Проверяем режим технических работ при загрузке
+    if (window.adminComponent) {
+      await window.adminComponent.loadSettings();
+      window.adminComponent.checkMaintenanceMode();
+    }
   });
 }
+
+// Добавляем обработчик изменения хеша для проверки режима технических работ
+window.addEventListener('hashchange', () => {
+  if (window.adminComponent) {
+    window.adminComponent.checkMaintenanceMode();
+  }
+});

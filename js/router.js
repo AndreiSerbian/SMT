@@ -3,15 +3,18 @@ import HomeComponent from './components/homeComponent.js';
 import ProductComponent from './components/productComponent.js';
 import OrderComponent from './components/orderComponent.js';
 import ContactsComponent from './components/contactsComponent.js';
+import { AdminComponent } from './components/adminComponent.js';
 
 class Router {
   constructor() {
     this.currentComponent = null;
+    this.adminComponent = new AdminComponent();
     this.routes = {
       '#': () => HomeComponent.render(this.getMainContainer()),
       '#product': (id) => ProductComponent.render(id, this.getMainContainer()),
       '#order': () => OrderComponent.render(this.getMainContainer()),
-      '#contacts': () => ContactsComponent.render(this.getMainContainer())
+      '#contacts': () => ContactsComponent.render(this.getMainContainer()),
+      '#admin': () => this.adminComponent.mount(this.getMainContainer())
     };
     
     window.addEventListener('hashchange', () => this.handleRouteChange());
@@ -57,6 +60,9 @@ class Router {
     } else if (hash === '#contacts') {
       this.currentComponent = ContactsComponent;
       this.routes['#contacts']();
+    } else if (hash === '#admin') {
+      this.currentComponent = this.adminComponent;
+      this.routes['#admin']();
     }
     
     // Скролл к верху страницы
