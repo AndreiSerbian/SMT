@@ -120,11 +120,22 @@ export class AdminComponent {
   }
 
   renderProductsTable() {
+    console.log('Rendering products table. Products count:', products ? products.length : 0);
+    console.log('Products:', products);
+    
+    if (!products || products.length === 0) {
+      return `
+        <tr class="border-t border-gray-200">
+          <td colspan="4" class="px-4 py-3 text-center text-gray-500">Товары не найдены</td>
+        </tr>
+      `;
+    }
+
     return products.map(product => {
       const currentPrice = this.productPrices[product.id] || product.price;
       return `
         <tr class="border-t border-gray-200">
-          <td class="px-4 py-3 text-sm text-gray-900">${product.name}</td>
+          <td class="px-4 py-3 text-sm text-gray-900">${product.name} (${product.color})</td>
           <td class="px-4 py-3 text-sm text-gray-900">${currentPrice} ₽</td>
           <td class="px-4 py-3">
             <input 
