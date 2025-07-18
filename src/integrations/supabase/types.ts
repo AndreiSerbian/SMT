@@ -116,6 +116,24 @@ export type Database = {
         }
         Relationships: []
       }
+      product_prices: {
+        Row: {
+          price_rub: number
+          product_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          price_rub: number
+          product_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          price_rub?: number
+          product_id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       site_settings: {
         Row: {
           id: string

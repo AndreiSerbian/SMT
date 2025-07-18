@@ -3,19 +3,62 @@ import { products } from '../data/products.js';
 import { cartService } from '../services/cartService.js';
 import SwiperService from '../services/swiperService.js';
 import { ColorService } from '../services/colorService.js';
+import { pricesService } from '../services/pricesService.js';
 
 const HomeComponent = {
   swipersById: {},
   eventListeners: [],
   timeouts: [],
+  productsWithPrices: [],
   
   // Получение уникальных категорий
   getCategories() {
     const categories = new Set();
-    products.forEach(product => {
+    this.productsWithPrices.forEach(product => {
       categories.add(`${product.name} (${product.sizeType})`);
     });
     return Array.from(categories);
+  },
+
+  // Загрузка товаров с ценами
+  async loadProducts() {
+    try {
+      this.productsWithPrices = await pricesService.loadProductsWithPrices(products);
+      
+      // Показываем баннер если есть ошибки с БД
+      if (pricesService.status.hasError) {
+        pricesService.showPriceUpdateBanner();
+      }
+      
+      // Подписываемся на realtime обновления
+      pricesService.subscribeToRealtimeUpdates((productId, newPrice, eventType) => {
+        console.log('Получено обновление цены:', { productId, newPrice, eventType });
+        
+        // Обновляем цену в нашем локальном массиве
+        const product = this.productsWithPrices.find(p => p.id === productId);
+        if (product) {
+          product.price = newPrice;
+          
+          // Обновляем отображение цены на странице если необходимо
+          this.updatePriceDisplay(productId, newPrice);
+        }
+      });
+      
+    } catch (error) {
+      console.error('Ошибка загрузки товаров:', error);
+      // В случае критической ошибки используем товары с дефолтными ценами
+      this.productsWithPrices = products.map(p => ({
+        ...p,
+        price: p.price_default
+      }));
+      pricesService.showPriceUpdateBanner();
+    }
+  },
+
+  // Обновление отображения цены
+  updatePriceDisplay(productId, newPrice) {
+    // Можно добавить логику обновления цен в UI если нужно
+    console.log(`Цена товара ${productId} обновлена до ${newPrice}`);
   },
   
   destroy(container) {
@@ -43,11 +86,14 @@ const HomeComponent = {
     this.eventListeners.push({ element, event, handler });
   },
   
-  render(container) {
+  async render(container) {
     if (!container) {
       console.error('Container not provided to HomeComponent');
       return;
     }
+    
+    // Загружаем товары с актуальными ценами
+    await this.loadProducts();
     
     const categories = HomeComponent.getCategories();
     
@@ -97,7 +143,7 @@ const HomeComponent = {
             const sizeType = (sizeTypeRaw || '').slice(0, -1);
             
             // Находим "продукт по умолчанию" (первый цвет)
-            const product = products.find(p => p.name === name && p.sizeType === sizeType);
+            const product = this.productsWithPrices.find(p => p.name === name && p.sizeType === sizeType);
             if (!product) return '';
 
             return `
@@ -229,7 +275,7 @@ const HomeComponent = {
               console.log('First click on color:', chosenColor, 'for product:', productId);
               
               // Находим соответствующий продукт с выбранным цветом
-              const matchingProduct = products.find(p =>
+              const matchingProduct = this.productsWithPrices.find(p =>
                 p.name === baseName &&
                 p.sizeType === baseSize &&
                 p.color === chosenColor
@@ -257,7 +303,7 @@ const HomeComponent = {
             console.log('Second click on color:', chosenColor, 'navigating to product');
             
             // Находим соответствующий продукт с выбранным цветом
-            const matchingProduct = products.find(p =>
+            const matchingProduct = this.productsWithPrices.find(p =>
               p.name === baseName &&
               p.sizeType === baseSize &&
               p.color === chosenColor
@@ -289,7 +335,7 @@ const HomeComponent = {
             const chosenColor = activeColorButton.dataset.color;
             
             // Находим соответствующий продукт с выбранным цветом
-            const matchingProduct = products.find(p =>
+            const matchingProduct = this.productsWithPrices.find(p =>
               p.name === baseName &&
               p.sizeType === baseSize &&
               p.color === chosenColor
