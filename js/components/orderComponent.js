@@ -435,6 +435,10 @@ const OrderComponent = {
     // Преобразуем корзину, добавляя информацию о товарах
     const cartItems = cart.map(item => {
       const product = products.find(p => p.id === item.id);
+      if (!product) {
+        console.error('Продукт не найден:', item.id);
+        return null;
+      }
       return {
         id: item.id,
         quantity: item.quantity,
@@ -443,7 +447,7 @@ const OrderComponent = {
         color: product.color,
         price: product.price
       };
-    });
+    }).filter(item => item !== null);
     
     // Calculate order totals
     const subtotal = cartService.getCartTotal();
