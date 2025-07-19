@@ -1,11 +1,12 @@
 import { supabase } from '../utils/supabase.js';
 import { products } from '../data/products.js';
 import { NotificationService } from '../services/notificationService.js';
+import { fetchProducts, savePrice } from '../services/productPriceService.js';
 
 export class AdminComponent {
   constructor() {
     this.isAuthenticated = false;
-    this.productPrices = {};
+    this.productsWithPrices = [];
     this.maintenanceMode = false;
   }
 
@@ -106,22 +107,25 @@ export class AdminComponent {
   }
 
   renderProductsCards() {
-    console.log('Rendering products cards. Products count:', products ? products.length : 0);
+    console.log('Rendering products cards. Products count:', this.productsWithPrices ? this.productsWithPrices.length : 0);
     
-    if (!products || products.length === 0) {
+    if (!this.productsWithPrices || this.productsWithPrices.length === 0) {
       return `<div class="text-center text-gray-500 py-8">Товары не найдены</div>`;
     }
 
     return `
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        ${products.map(product => {
-          const currentPrice = this.productPrices[product.id] || product.price;
+        ${this.productsWithPrices.map(product => {
+          const currentPrice = product.price || '';
           return `
             <div class="bg-gray-50 rounded-lg p-4 border">
               <div class="mb-3">
                 <div class="text-xs text-gray-500 font-mono">ID: ${product.id}</div>
                 <div class="font-medium text-gray-900">${product.name}</div>
                 <div class="text-sm text-gray-600">${product.color}</div>
+                <div class="text-xs ${product.price ? 'text-green-600' : 'text-red-600'}">
+                  ${product.price ? '✓ Цена установлена' : '⚠ Цена не установлена'}
+                </div>
               </div>
               <div class="flex items-center gap-2">
                 <span class="text-sm text-gray-600">Цена:</span>
@@ -129,6 +133,7 @@ export class AdminComponent {
                   type="number" 
                   id="price-${product.id}" 
                   value="${currentPrice}"
+                  placeholder="Не установлена"
                   class="w-20 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   min="0"
                   step="100"
@@ -155,6 +160,7 @@ export class AdminComponent {
     document.documentElement.style.overflow = '';
     
     await this.loadSettings();
+    await this.loadProductsWithPrices();
     
     container.innerHTML = await this.render();
     this.attachEventListeners(container);
@@ -267,13 +273,20 @@ export class AdminComponent {
         data.forEach(setting => {
           if (setting.key === 'maintenance_mode') {
             this.maintenanceMode = setting.value === 'true';
-          } else if (setting.key === 'product_prices') {
-            this.productPrices = setting.value || {};
           }
         });
       }
     } catch (error) {
       console.error('Failed to load settings:', error);
+    }
+  }
+
+  async loadProductsWithPrices() {
+    try {
+      this.productsWithPrices = await fetchProducts();
+    } catch (error) {
+      console.error('Failed to load products with prices:', error);
+      this.productsWithPrices = products.map(p => ({ ...p, price: undefined }));
     }
   }
 
@@ -287,23 +300,37 @@ export class AdminComponent {
     }
     
     try {
-      // Обновляем цену в объекте
-      this.productPrices[productId] = newPrice;
+      // Сохраняем цену через productPriceService
+      await savePrice(productId, newPrice);
       
-      // Сохраняем в Supabase
-      await supabase
-        .from('site_settings')
-        .upsert({
-          key: 'product_prices',
-          value: this.productPrices
-        });
+      // Обновляем локальные данные
+      const product = this.productsWithPrices.find(p => p.id === productId);
+      if (product) {
+        product.price = newPrice;
+      }
       
-      // Успешно обновлено
-      alert('Цена успешно обновлена');
+      // Показываем уведомление об успехе
+      const notification = document.createElement('div');
+      notification.className = 'fixed top-4 right-4 bg-green-500 text-white p-4 rounded-lg shadow-lg z-50';
+      notification.textContent = `Цена товара ${productId} обновлена!`;
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        notification.remove();
+      }, 3000);
       
     } catch (error) {
       console.error('Failed to update price:', error);
-      alert('Ошибка при обновлении цены');
+      
+      // Показываем уведомление об ошибке
+      const notification = document.createElement('div');
+      notification.className = 'fixed top-4 right-4 bg-red-500 text-white p-4 rounded-lg shadow-lg z-50';
+      notification.textContent = `Ошибка: ${error.message}`;
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        notification.remove();
+      }, 3000);
     }
   }
 

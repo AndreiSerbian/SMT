@@ -2,10 +2,12 @@ import { products } from '../data/products.js';
 import { cartService } from '../services/cartService.js';
 import { colorMap } from '../data/products.js';
 import { ColorService } from '../services/colorService.js';
+import { fetchProducts } from '../services/productPriceService.js';
 
 const ProductComponent = {
   eventListeners: [],
   timeouts: [],
+  productsWithPrices: [],
   
   destroy(container) {
     // Очищаем таймеры
@@ -33,13 +35,25 @@ const ProductComponent = {
     }
   },
 
-  render(productId, container) {
+  async loadProductsWithPrices() {
+    try {
+      this.productsWithPrices = await fetchProducts();
+    } catch (error) {
+      console.error('Ошибка загрузки цен:', error);
+      this.productsWithPrices = products.map(p => ({ ...p, price: undefined }));
+    }
+  },
+
+  async render(productId, container) {
     if (!container) {
       console.error('Container not provided to ProductComponent');
       return;
     }
     
-    const product = products.find(p => p.id === productId);
+    // Загружаем актуальные цены
+    await this.loadProductsWithPrices();
+    
+    const product = this.productsWithPrices.find(p => p.id === productId);
     if (!product) {
       // Если продукт не найден, перенаправляем на главную
       window.location.href = '#';
@@ -134,7 +148,7 @@ const ProductComponent = {
               <div class="flex flex-wrap gap-2">
                 ${Object.entries(colorMap)
                   .filter(([color]) => 
-                    products.some(p => 
+                    this.productsWithPrices.some(p => 
                       p.name === product.name && 
                       p.sizeType === product.sizeType && 
                       p.color === color
@@ -147,7 +161,7 @@ const ProductComponent = {
                         class="w-8 h-8 rounded-full border-2 ${isSelected ? 'border-blue-500' : 'border-gray-300'}"
                         style="background-color: ${hex}"
                         onclick="window.location.href='#product/${
-                          products.find(p => 
+                          this.productsWithPrices.find(p => 
                             p.name === product.name && 
                             p.sizeType === product.sizeType && 
                             p.color === color
