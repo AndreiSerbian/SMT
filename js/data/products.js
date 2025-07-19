@@ -509,118 +509,128 @@ export const products = [
     },
     
     // Коробки с ручками
-    {
-      name: 'Подарочная коробка с ручками',
-      id: '070',
-      artikul: '070',
-      color: 'Золотая',
-      sizeType: 'ручки',
-      dimensions: { length: 18, width: 18, height: 8 },
-      weight: 0.43,
-      photo: [
-        "images/Коробка с ручками/Золотая с ручками/Слайд1.JPG",
-        "images/Коробка с ручками/Золотая с ручками/Слайд2.JPG"
-      ],
-      videos: [],
-    },
-    {
-      name: 'Подарочная коробка с ручками',
-      id: '071',
-      artikul: '071',
-      color: 'Красная',
-      sizeType: 'ручки',
-      dimensions: { length: 18, width: 18, height: 8 },
-      weight: 0.43,
-      photo: [
-        "images/Коробка с ручками/Красная с ручками/Слайд4.JPG",
-        "images/Коробка с ручками/Красная с ручками/Слайд5.JPG"
-      ],
-      videos: [],
-    },
-    {
-      name: 'Подарочная коробка с ручками',
-      id: '0711',
-      artikul: '0711',
-      color: 'Оранжевая',
-      sizeType: 'ручки',
-      dimensions: { length: 18, width: 18, height: 8 },
-      weight: 0.43,
-      photo: [
-        "images/Коробка с ручками/Оранжевая  с ручками/Слайд8.JPG",
-        "images/Коробка с ручками/Оранжевая  с ручками/Слайд9.JPG"
-      ],
-      videos: [],
-    },
-    {
-      name: 'Подарочная коробка с ручками',
-      id: '072',
-      artikul: '072',
+ {
+      name: 'Подарочная коробка с ручкой',
+      id: '062',
+      artikul: '062',
       color: 'Розовая',
-      sizeType: 'ручки',
-      dimensions: { length: 18, width: 18, height: 8 },
+      sizeType: 'малая',
+      dimensions: { length: 30, width: 23, height: 11 },
       weight: 0.43,
       photo: [
         "images/Коробка с ручками/Розовая с ручками/Слайд10.JPG",
-        "images/Коробка с ручками/Розовая с ручками/Слайд11.JPG"
+        "images/Коробка с ручками/Розовая с ручками/Слайд11.JPG",
+        "images/Коробка с ручками/Слайд3.JPG"
       ],
       videos: [],
     },
     {
-      name: 'Подарочная коробка с ручками',
-      id: '073',
-      artikul: '073',
-      color: 'Белая',
-      sizeType: 'ручки',
-      dimensions: { length: 18, width: 18, height: 8 },
+      name: 'Подарочная коробка с ручкой',
+      id: '0621',
+      artikul: '0621',
+      color: 'Сиреневая',
+      sizeType: 'малая',
+      dimensions: { length: 30, width: 23, height: 11 },
       weight: 0.43,
       photo: [
-        "images/Коробка с ручками/Белая с ручками/Слайд12.JPG",
-        "images/Коробка с ручками/Белая с ручками/Слайд13.JPG"
+        "images/Коробка с ручками/Сиреневая с ручками/Слайд18.JPG",
+        "images/Коробка с ручками/Сиреневая с ручками/Слайд19.JPG",
+        "images/Коробка с ручками/Слайд3.JPG"
       ],
       videos: [],
     },
     {
-      name: 'Подарочная коробка с ручками',
-      id: '074',
-      artikul: '074',
+      name: 'Подарочная коробка с ручкой',
+      id: '0622',
+      artikul: '0622',
       color: 'Черная',
-      sizeType: 'ручки',
-      dimensions: { length: 18, width: 18, height: 8 },
+      sizeType: 'малая',
+      dimensions: { length: 30, width: 23, height: 11 },
       weight: 0.43,
       photo: [
         "images/Коробка с ручками/Черная с ручками/Слайд14.JPG",
-        "images/Коробка с ручками/Черная с ручками/Слайд15.JPG"
+        "images/Коробка с ручками/Черная с ручками/Слайд15.JPG",
+        "images/Коробка с ручками/Слайд3.JPG"
       ],
       videos: [],
     },
     {
-      name: 'Подарочная коробка с ручками',
-      id: '075',
-      artikul: '075',
-      color: 'Серебряная',
-      sizeType: 'ручки',
-      dimensions: { length: 18, width: 18, height: 8 },
+      name: 'Подарочная коробка с ручкой',
+      id: '0623',
+      artikul: '0623',
+      color: 'Белая',
+      sizeType: 'малая',
+      dimensions: { length: 30, width: 23, height: 11 },
+      weight: 0.43,
+      photo: [
+        "images/Коробка с ручками/Белая с ручками/Слайд12.JPG",
+        "images/Коробка с ручками/Белая с ручками/Слайд13.JPG",
+        "images/Коробка с ручками/Слайд3.JPG"
+      ],
+      videos: [],
+    },
+    {
+      name: 'Подарочная коробка с ручкой',
+      id: '0624',
+      artikul: '0624',
+      color: 'Красный перламутр',
+      sizeType: 'малая',
+      dimensions: { length: 30, width: 23, height: 11 },
+      weight: 0.43,
+      photo: [
+        "images/Коробка с ручками/Красная с ручками/Слайд4.JPG",
+        "images/Коробка с ручками/Красная с ручками/Слайд5.JPG",
+        "images/Коробка с ручками/Слайд3.JPG"
+      ],
+      videos: [],
+    },
+    {
+      name: 'Подарочная коробка с ручкой',
+      id: '0625',
+      artikul: '0625',
+      color: 'Оранжевая',
+      sizeType: 'малая',
+      dimensions: { length: 30, width: 23, height: 11 },
+      weight: 0.43,
+      photo: [
+        "images/Коробка с ручками/Оранжевая  с ручками/Gift box with handle small WB.jpg",
+        "images/Коробка с ручками/Оранжевая  с ручками/Gift box with handle small WB 1.jpg",
+        "images/Коробка с ручками/Оранжевая  с ручками/Слайд8.JPG",
+        "images/Коробка с ручками/Оранжевая  с ручками/Слайд9.JPG",
+        "images/Коробка с ручками/Слайд3.JPG"
+      ],
+      videos: [],
+    },
+    {
+      name: 'Подарочная коробка с ручкой',
+      id: '0626',
+      artikul: '0626',
+      color: 'Золото',
+      sizeType: 'малая',
+      dimensions: { length: 30, width: 23, height: 11 },
+      weight: 0.43,
+      photo: [
+        "images/Коробка с ручками/Золотая с ручками/Слайд1.JPG",
+        "images/Коробка с ручками/Золотая с ручками/Слайд2.JPG",
+        "images/Коробка с ручками/Слайд3.JPG"
+      ],
+      videos: [],
+    },
+    {
+      name: 'Подарочная коробка с ручкой',
+      id: '0627',
+      artikul: '0627',
+      color: 'Серебро',
+      sizeType: 'малая',
+      dimensions: { length: 30, width: 23, height: 11 },
       weight: 0.43,
       photo: [
         "images/Коробка с ручками/Серебренная с ручками/Слайд16.JPG",
-        "images/Коробка с ручками/Серебренная с ручками/Слайд17.JPG"
+        "images/Коробка с ручками/Серебренная с ручками/Слайд17.JPG",
+        "images/Коробка с ручками/Слайд3.JPG"
       ],
       videos: [],
     },
-    {
-      name: 'Подарочная коробка с ручками',
-      id: '076',
-      artikul: '076',
-      color: 'Сиреневая',
-      sizeType: 'ручки',
-      dimensions: { length: 18, width: 18, height: 8 },
-      weight: 0.43,
-      photo: [
-        "images/Коробка с ручками/Сиреневая с ручками/Слайд18.jpg",
-        "images/Коробка с ручками/Сиреневая с ручками/Слайд19.jpg"
-      ],
-      videos: [],
-    }
   ];
 
   export const colorMap = {
