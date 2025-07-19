@@ -8,7 +8,6 @@ export const products = [
       sizeType: 'малая',
       dimensions: { length: 23, width: 17, height: 7 },
       weight: 0.195,
-      price_default: 290,
       photo: [
         "images/Малые с бантом/Розовая/Слайд1.JPG",
         "images/Малые с бантом/Розовая/Слайд2.JPG"
@@ -23,8 +22,6 @@ export const products = [
       sizeType: 'малая',
       dimensions: { length: 23, width: 17, height: 7 },
       weight: 0.195,
-      price_default: 290,
-     
       photo: [
         "images/Малые с бантом/Тиффани/Слайд4.JPG",
         "images/Малые с бантом/Тиффани/Слайд5.JPG"
@@ -39,8 +36,6 @@ export const products = [
       sizeType: 'малая',
       dimensions: { length: 23, width: 17, height: 7 },
       weight: 0.195,
-      price_default: 290,
-      
       photo: [
         "images/Малые с бантом/Черная/Слайд6.JPG",
         "images/Малые с бантом/Черная/Слайд7.JPG",
@@ -57,8 +52,6 @@ export const products = [
       sizeType: 'малая',
       dimensions: { length: 23, width: 17, height: 7 },
       weight: 0.195,
-      price_default: 290,
- 
       photo: [
         "images/Малые с бантом/Белая/Слайд10.JPG",
         "images/Малые с бантом/Белая/Слайд11.JPG",
@@ -75,8 +68,6 @@ export const products = [
       sizeType: 'малая',
       dimensions: { length: 23, width: 17, height: 7 },
       weight: 0.195,
-      price_default: 290,
-     
       photo: [
         "images/Малые с бантом/Красная/Слайд14.JPG",
         "images/Малые с бантом/Красная/Слайд15.JPG"
@@ -91,7 +82,6 @@ export const products = [
       sizeType: 'малая',
       dimensions: { length: 23, width: 17, height: 7 },
       weight: 0.195,
-      price_default: 290,
       photo: [
         "images/Малые с бантом/Оранжевая/Слайд16.JPG",
         "images/Малые с бантом/Оранжевая/Слайд17.JPG"
@@ -106,7 +96,6 @@ export const products = [
       sizeType: 'малая',
       dimensions: { length: 22, width: 16.5, height: 8.8 },
       weight: 0.245,
-      price_default: 310,
       photo: [
         "images/Малые с бантом/Голубой лед/Слайд26.JPG",
         "images/Малые с бантом/Голубой лед/Слайд27.JPG",
@@ -123,7 +112,6 @@ export const products = [
       sizeType: 'малая',
       dimensions: { length: 22, width: 16.5, height: 8.8 },
       weight: 0.245,
-      price_default: 310,
       photo: [
         "images/Малые с бантом/Ванильная/Слайд22.JPG",
         "images/Малые с бантом/Ванильная/Слайд23.JPG",
@@ -140,7 +128,6 @@ export const products = [
       sizeType: 'малая',
       dimensions: { length: 22, width: 16.5, height: 8.8 },
       weight: 0.245,
-      price_default: 310,
       photo: [
         "images/Малые с бантом/Золотая/Слайд18.JPG",
         "images/Малые с бантом/Золотая/Слайд19.JPG",
@@ -158,7 +145,6 @@ export const products = [
       sizeType: 'средняя',
       dimensions: { length: 26, width: 19, height: 8 },
       weight: 0.25,
-      price_default: 330,
       photo: [
         "images/Средние с бантом/Розовая/Слайд1.JPG",
         "images/Средние с бантом/Розовая/Слайд2.JPG"
@@ -173,7 +159,6 @@ export const products = [
       sizeType: 'средняя',
       dimensions: { length: 26, width: 19, height: 8 },
       weight: 0.25,
-      price_default: 330,
       photo: [
         "images/Средние с бантом/Тиффани/Слайд3.JPG",
         "images/Средние с бантом/Тиффани/Слайд4.JPG"
@@ -188,7 +173,6 @@ export const products = [
       sizeType: 'средняя',
       dimensions: { length: 26, width: 19, height: 8 },
       weight: 0.25,
-      price_default: 330,
       photo: [
         "images/Средние с бантом/Черная/Слайд8.JPG",
         "images/Средние с бантом/Черная/Слайд7.JPG",
@@ -205,7 +189,6 @@ export const products = [
       sizeType: 'средняя',
       dimensions: { length: 26, width: 19, height: 8 },
       weight: 0.25,
-      price_default: 330,
       photo: [
         "images/Средние с бантом/Белая/Слайд9.JPG",
         "images/Средние с бантом/Белая/Слайд10.JPG",
@@ -222,7 +205,6 @@ export const products = [
       sizeType: 'средняя',
       dimensions: { length: 26, width: 19, height: 8 },
       weight: 0.25,
-      price_default: 330,
       photo: [
         "images/Средние с бантом/Красная/Слайд13.JPG",
         "images/Средние с бантом/Красная/Слайд14.JPG"
@@ -237,7 +219,6 @@ export const products = [
       sizeType: 'средняя',
       dimensions: { length: 26, width: 19, height: 8 },
       weight: 0.25,
-      price_default: 330,
       photo: [
         "images/Средние с бантом/Оранжевая/Слайд15.JPG",
         "images/Средние с бантом/Оранжевая/Слайд16.JPG"
@@ -251,8 +232,7 @@ export const products = [
       color: 'Розовая пудра',
       sizeType: 'средняя',
       dimensions: { length: 26, width: 17, height: 11 },
-      price_default: 370,
-      weight: 0.32, // эквивалент 320 г
+      weight: 0.32,
       photo: [
         "images/Средние с бантом/Розовая пудра/Слайд29.JPG",
         "images/Средние с бантом/Розовая пудра/Слайд30.JPG",
@@ -268,7 +248,6 @@ export const products = [
       color: 'Черный муар',
       sizeType: 'средняя',
       dimensions: { length: 26, width: 17, height: 11 },
-      price_default: 370,
       weight: 0.32,
       photo: [
         "images/Средние с бантом/Черный муар/Слайд33.JPG",
@@ -285,7 +264,6 @@ export const products = [
       color: 'Белый бриллиант',
       sizeType: 'средняя',
       dimensions: { length: 26, width: 17, height: 11 },
-      price_default: 370,
       weight: 0.32,
       photo: [
         "images/Средние с бантом/Белый бриллиант/Слайд25.JPG",
@@ -303,7 +281,6 @@ export const products = [
       sizeType: 'средняя',
       dimensions: { length: 26, width: 17, height: 11 },
       weight: 0.32,
-      price_default: 350,
       photo: [
         "images/Средние с бантом/Синий бархат/Слайд21.JPG",
         "images/Средние с бантом/Синий бархат/Слайд22.JPG",
@@ -320,7 +297,6 @@ export const products = [
       sizeType: 'средняя',
       dimensions: { length: 26, width: 17, height: 11 },
       weight: 0.25,
-      price_default: 330,
       photo: [
         "images/Средние с бантом/Лавандовая/Слайд17.JPG",
         "images/Средние с бантом/Лавандовая/Слайд18.JPG",
@@ -339,7 +315,6 @@ export const products = [
       sizeType: 'большая',
       dimensions: { length: 31.5, width: 26, height: 10.5 },
       weight: 0.44,
-      price_default: 440,
       photo: [
         "images/Большие с бантом/Розовая/Слайд1.JPG",
         "images/Большие с бантом/Розовая/Слайд2.JPG"
@@ -354,7 +329,6 @@ export const products = [
       sizeType: 'большая',
       dimensions: { length: 31.5, width: 26, height: 10.5 },
       weight: 0.44,
-      price_default: 440,
       photo: [
         "images/Большие с бантом/Тиффани/Слайд3.JPG",
         "images/Большие с бантом/Тиффани/Слайд4.JPG"
@@ -369,7 +343,6 @@ export const products = [
       sizeType: 'большая',
       dimensions: { length: 31.5, width: 26, height: 10.5 },
       weight: 0.44,
-      price_default: 440,
       photo: [
         "images/Большие с бантом/Черная/Слайд5.JPG",
         "images/Большие с бантом/Черная/Слайд6.JPG",
@@ -386,7 +359,6 @@ export const products = [
       sizeType: 'большая',
       dimensions: { length: 31.5, width: 26, height: 10.5 },
       weight: 0.44,
-      price_default: 440,
       photo: [
         "images/Большие с бантом/Белая/Слайд7.JPG",
         "images/Большие с бантом/Белая/Слайд8.JPG",
@@ -403,7 +375,6 @@ export const products = [
       sizeType: 'большая',
       dimensions: { length: 31.5, width: 26, height: 10.5 },
       weight: 0.44,
-      price_default: 440,
       photo: [
         "images/Большие с бантом/Красная/Слайд9.JPG",
         "images/Большие с бантом/Красная/Слайд10.JPG"
@@ -418,7 +389,6 @@ export const products = [
       sizeType: 'большая',
       dimensions: { length: 31.5, width: 26, height: 10.5 },
       weight: 0.44,
-      price_default: 440,
       photo: [
         "images/Большие с бантом/Оранжевая/Слайд11.JPG",
         "images/Большие с бантом/Оранжевая/Слайд12.JPG"
@@ -432,8 +402,7 @@ export const products = [
       color: 'Голубой лед',
       sizeType: 'большая',
       dimensions: { length: 29, width: 22, height: 10.5 },
-      price_default: 490,
-      weight: 0.41, // 410 г
+      weight: 0.41,
       photo: [
         "images/Большие с бантом/Голубой лед/Слайд37.JPG",
         "images/Большие с бантом/Голубой лед/Слайд38.JPG",
@@ -449,7 +418,6 @@ export const products = [
       color: 'Ванильная',
       sizeType: 'большая',
       dimensions: { length: 29, width: 22, height: 10.5 },
-      price_default: 490,
       weight: 0.41,
       photo: [
         "images/Большие с бантом/Ванильная/Слайд33.JPG",
@@ -466,7 +434,6 @@ export const products = [
       color: 'Золото',
       sizeType: 'большая',
       dimensions: { length: 29, width: 22, height: 10.5 },
-      price_default: 490,
       weight: 0.41,
       photo: [
         "images/Большие с бантом/Золотая/Слайд29.JPG",
@@ -483,7 +450,6 @@ export const products = [
       color: 'Розовая пудра',
       sizeType: 'большая',
       dimensions: { length: 30, width: 24, height: 10 },
-      price_default: 490,
       weight: 0.41,
       photo: [
         "images/Большие с бантом/Розовая пудра/Слайд21.JPG",
@@ -500,7 +466,6 @@ export const products = [
       color: 'Черный муар',
       sizeType: 'большая',
       dimensions: { length: 30, width: 24, height: 10 },
-      price_default: 490,
       weight: 0.41,
       photo: [
         "images/Большие с бантом/Черный муар/Слайд25.JPG",
@@ -517,7 +482,6 @@ export const products = [
       color: 'Белый бриллиант',
       sizeType: 'большая',
       dimensions: { length: 30, width: 24, height: 10 },
-      price_default: 490,
       weight: 0.41,
       photo: [
         "images/Большие с бантом/Белый бриллиант/Слайд17.JPG",
@@ -535,7 +499,6 @@ export const products = [
       sizeType: 'большая',
       dimensions: { length: 31.5, width: 26, height: 10.5 },
       weight: 0.41,
-      price_default: 440,
       photo: [
         "images/Большие с бантом/Синий бархат/Слайд13.JPG",
         "images/Большие с бантом/Синий бархат/Слайд14.JPG",
@@ -554,7 +517,6 @@ export const products = [
       sizeType: 'ручки',
       dimensions: { length: 18, width: 18, height: 8 },
       weight: 0.43,
-      price_default: 410,
       photo: [
         "images/Коробка с ручками/Золотая с ручками/Слайд1.JPG",
         "images/Коробка с ручками/Золотая с ручками/Слайд2.JPG"
@@ -569,7 +531,6 @@ export const products = [
       sizeType: 'ручки',
       dimensions: { length: 18, width: 18, height: 8 },
       weight: 0.43,
-      price_default: 410,
       photo: [
         "images/Коробка с ручками/Красная с ручками/Слайд4.JPG",
         "images/Коробка с ручками/Красная с ручками/Слайд5.JPG"
@@ -584,7 +545,6 @@ export const products = [
       sizeType: 'ручки',
       dimensions: { length: 18, width: 18, height: 8 },
       weight: 0.43,
-      price_default: 410,
       photo: [
         "images/Коробка с ручками/Оранжевая  с ручками/Слайд8.JPG",
         "images/Коробка с ручками/Оранжевая  с ручками/Слайд9.JPG"
@@ -599,7 +559,6 @@ export const products = [
       sizeType: 'ручки',
       dimensions: { length: 18, width: 18, height: 8 },
       weight: 0.43,
-      price_default: 410,
       photo: [
         "images/Коробка с ручками/Розовая с ручками/Слайд10.JPG",
         "images/Коробка с ручками/Розовая с ручками/Слайд11.JPG"
@@ -614,7 +573,6 @@ export const products = [
       sizeType: 'ручки',
       dimensions: { length: 18, width: 18, height: 8 },
       weight: 0.43,
-      price_default: 410,
       photo: [
         "images/Коробка с ручками/Белая с ручками/Слайд12.JPG",
         "images/Коробка с ручками/Белая с ручками/Слайд13.JPG"
@@ -629,7 +587,6 @@ export const products = [
       sizeType: 'ручки',
       dimensions: { length: 18, width: 18, height: 8 },
       weight: 0.43,
-      price_default: 410,
       photo: [
         "images/Коробка с ручками/Черная с ручками/Слайд14.JPG",
         "images/Коробка с ручками/Черная с ручками/Слайд15.JPG"
@@ -644,7 +601,6 @@ export const products = [
       sizeType: 'ручки',
       dimensions: { length: 18, width: 18, height: 8 },
       weight: 0.43,
-      price_default: 410,
       photo: [
         "images/Коробка с ручками/Серебренная с ручками/Слайд16.JPG",
         "images/Коробка с ручками/Серебренная с ручками/Слайд17.JPG"
@@ -659,7 +615,6 @@ export const products = [
       sizeType: 'ручки',
       dimensions: { length: 18, width: 18, height: 8 },
       weight: 0.43,
-      price_default: 410,
       photo: [
         "images/Коробка с ручками/Сиреневая с ручками/Слайд18.jpg",
         "images/Коробка с ручками/Сиреневая с ручками/Слайд19.jpg"

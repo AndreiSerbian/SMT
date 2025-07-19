@@ -1,9 +1,8 @@
 
-import { products } from '../data/products.js';
 import { cartService } from '../services/cartService.js';
 import SwiperService from '../services/swiperService.js';
 import { ColorService } from '../services/colorService.js';
-import { pricesService } from '../services/pricesService.js';
+import { fetchProducts } from '../services/productPriceService.js';
 
 const HomeComponent = {
   swipersById: {},
@@ -23,35 +22,11 @@ const HomeComponent = {
   // Загрузка товаров с ценами
   async loadProducts() {
     try {
-      this.productsWithPrices = await pricesService.loadProductsWithPrices(products);
-      
-      // Показываем баннер если есть ошибки с БД
-      if (pricesService.status.hasError) {
-        pricesService.showPriceUpdateBanner();
-      }
-      
-      // Подписываемся на realtime обновления
-      pricesService.subscribeToRealtimeUpdates((productId, newPrice, eventType) => {
-        console.log('Получено обновление цены:', { productId, newPrice, eventType });
-        
-        // Обновляем цену в нашем локальном массиве
-        const product = this.productsWithPrices.find(p => p.id === productId);
-        if (product) {
-          product.price = newPrice;
-          
-          // Обновляем отображение цены на странице если необходимо
-          this.updatePriceDisplay(productId, newPrice);
-        }
-      });
-      
+      this.productsWithPrices = await fetchProducts();
+      console.log('Товары загружены:', this.productsWithPrices.length);
     } catch (error) {
       console.error('Ошибка загрузки товаров:', error);
-      // В случае критической ошибки используем товары с дефолтными ценами
-      this.productsWithPrices = products.map(p => ({
-        ...p,
-        price: p.price_default
-      }));
-      pricesService.showPriceUpdateBanner();
+      this.productsWithPrices = [];
     }
   },
 

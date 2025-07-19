@@ -116,7 +116,10 @@ const ProductComponent = {
           <div class="bg-white rounded-lg shadow-lg p-8">
             <h1 class="text-3xl font-bold text-gray-800 mb-4">${product.name}</h1>
             <p class="text-gray-600 mb-4">Цвет: ${product.color}</p>
-            <p class="text-2xl font-bold text-gray-800 mb-6">₽${product.price || product.price_default}</p>
+            ${product.price 
+              ? `<p class="text-2xl font-bold text-gray-800 mb-6">₽${product.price}</p>` 
+              : `<p class="text-lg text-red-500 mb-6">Цена уточняется</p>`
+            }
             
             <div class="mb-6">
               <h2 class="font-semibold text-gray-800 mb-2">Размеры:</h2>
