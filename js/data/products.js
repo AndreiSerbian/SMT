@@ -402,7 +402,7 @@ export const products = [
       color: 'Голубой лед',
       sizeType: 'большая',
       dimensions: { length: 29, width: 22, height: 10.5 },
-      weight: 0.41,
+      weight: 0.41, // 410 г
       photo: [
         "images/Большие с бантом/Голубой лед/Слайд37.JPG",
         "images/Большие с бантом/Голубой лед/Слайд38.JPG",
@@ -461,8 +461,8 @@ export const products = [
     },
     {
       name: 'Подарочная коробка с лентой',
-      id: '0651',
-      artikul: '0651',
+      id: '0652',
+      artikul: '0652',
       color: 'Черный муар',
       sizeType: 'большая',
       dimensions: { length: 30, width: 24, height: 10 },
@@ -477,8 +477,8 @@ export const products = [
     },
     {
       name: 'Подарочная коробка с лентой',
-      id: '0652',
-      artikul: '0652',
+      id: '0653',
+      artikul: '0653',
       color: 'Белый бриллиант',
       sizeType: 'большая',
       dimensions: { length: 30, width: 24, height: 10 },
@@ -493,17 +493,17 @@ export const products = [
     },
     {
       name: 'Подарочная коробка с лентой',
-      id: '0616',
-      artikul: '0616',
+      id: '0656',
+      artikul: '0656',
       color: 'Синий бархат',
       sizeType: 'большая',
-      dimensions: { length: 31.5, width: 26, height: 10.5 },
+      dimensions: { length: 30, width: 24, height: 10 },
       weight: 0.41,
       photo: [
         "images/Большие с бантом/Синий бархат/Слайд13.JPG",
         "images/Большие с бантом/Синий бархат/Слайд14.JPG",
         "images/Большие с бантом/Синий бархат/Слайд15.JPG",
-        "images/Большие с бантом/Синий бархат/Слайд16.JPG"
+        "images/Большие с бантом/Синий бархат/Слайд16.JPG",
       ],
       videos: [],
     },
