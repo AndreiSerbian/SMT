@@ -275,8 +275,8 @@ export const products = [
     },
     {
       name: 'Подарочная коробка с лентой',
-      id: '0606',
-      artikul: '0606',
+      id: '0646',
+      artikul: '0646',
       color: 'Синий бархат',
       sizeType: 'средняя',
       dimensions: { length: 26, width: 17, height: 11 },
