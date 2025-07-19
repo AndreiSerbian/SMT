@@ -620,7 +620,7 @@ export const products = [
       name: 'Подарочная коробка с ручкой',
       id: '0627',
       artikul: '0627',
-      color: 'Серебро',
+      color: 'Серебряная',
       sizeType: 'малая',
       dimensions: { length: 30, width: 23, height: 11 },
       weight: 0.43,
