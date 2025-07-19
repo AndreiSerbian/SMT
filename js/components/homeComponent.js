@@ -250,7 +250,7 @@ const HomeComponent = {
               console.log('First click on color:', chosenColor, 'for product:', productId);
               
               // Находим соответствующий продукт с выбранным цветом
-              const matchingProduct = this.productsWithPrices.find(p =>
+              const matchingProduct = HomeComponent.productsWithPrices.find(p =>
                 p.name === baseName &&
                 p.sizeType === baseSize &&
                 p.color === chosenColor
@@ -278,7 +278,7 @@ const HomeComponent = {
             console.log('Second click on color:', chosenColor, 'navigating to product');
             
             // Находим соответствующий продукт с выбранным цветом
-            const matchingProduct = this.productsWithPrices.find(p =>
+            const matchingProduct = HomeComponent.productsWithPrices.find(p =>
               p.name === baseName &&
               p.sizeType === baseSize &&
               p.color === chosenColor
@@ -310,7 +310,7 @@ const HomeComponent = {
             const chosenColor = activeColorButton.dataset.color;
             
             // Находим соответствующий продукт с выбранным цветом
-            const matchingProduct = this.productsWithPrices.find(p =>
+            const matchingProduct = HomeComponent.productsWithPrices.find(p =>
               p.name === baseName &&
               p.sizeType === baseSize &&
               p.color === chosenColor
