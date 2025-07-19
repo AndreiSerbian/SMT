@@ -573,7 +573,7 @@ export const products = [
       name: 'Подарочная коробка с ручкой',
       id: '0624',
       artikul: '0624',
-      color: 'Красный перламутр',
+      color: 'Красная',
       sizeType: 'малая',
       dimensions: { length: 30, width: 23, height: 11 },
       weight: 0.43,
