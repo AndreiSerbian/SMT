@@ -259,7 +259,7 @@ export class AdminComponent {
 
   logout() {
     this.isAuthenticated = false;
-    window.location.hash = '#home';
+    window.location.hash = '#';
   }
 
   async loadSettings() {
