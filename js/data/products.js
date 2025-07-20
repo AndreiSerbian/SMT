@@ -12,7 +12,7 @@ export const products = [
         "images/Малые с бантом/Розовая/Слайд1.JPG",
         "images/Малые с бантом/Розовая/Слайд2.JPG"
       ],
-      videos: [],
+      videos: ["giftboxes/public/videos/Video 0.mp4"],
     },
     {
       name: 'Подарочная коробка с лентой',
@@ -26,7 +26,7 @@ export const products = [
         "images/Малые с бантом/Тиффани/Слайд4.JPG",
         "images/Малые с бантом/Тиффани/Слайд5.JPG"
       ],
-      videos: [],
+      videos: ["giftboxes/public/videos/Video 0.mp4"],
     },
     {
       name: 'Подарочная коробка с лентой',
@@ -42,7 +42,7 @@ export const products = [
         "images/Малые с бантом/Черная/Слайд8.JPG",
         "images/Малые с бантом/Черная/Слайд9.JPG",
       ],
-      videos: [],
+      videos: ["giftboxes/public/videos/Video 0.mp4"],
     },
     {
       name: 'Подарочная коробка с лентой',
@@ -58,7 +58,7 @@ export const products = [
         "images/Малые с бантом/Белая/Слайд12.JPG",
         "images/Малые с бантом/Белая/Слайд13.JPG",
       ],
-      videos: [],
+      videos: ["giftboxes/public/videos/Video 0.mp4"],
     },
     {
       name: 'Подарочная коробка с лентой',
@@ -72,7 +72,7 @@ export const products = [
         "images/Малые с бантом/Красная/Слайд14.JPG",
         "images/Малые с бантом/Красная/Слайд15.JPG"
       ],
-      videos: [],
+      videos: ["giftboxes/public/videos/Video 0.mp4"],
     },
     {
       name: 'Подарочная коробка с лентой',
@@ -86,7 +86,7 @@ export const products = [
         "images/Малые с бантом/Оранжевая/Слайд16.JPG",
         "images/Малые с бантом/Оранжевая/Слайд17.JPG"
       ],
-      videos: [],
+      videos: ["giftboxes/public/videos/Video 0.mp4"],
     },
     {
       name: 'Подарочная коробка с лентой',
@@ -102,7 +102,7 @@ export const products = [
         "images/Малые с бантом/Голубой лед/Слайд28.JPG",
         "images/Малые с бантом/Голубой лед/Слайд29.JPG"
       ],
-      videos: [],
+      videos: ["giftboxes/public/videos/Video 2.mp4"],
     },
     {
       name: 'Подарочная коробка с лентой',
@@ -118,7 +118,7 @@ export const products = [
         "images/Малые с бантом/Ванильная/Слайд24.JPG",
         "images/Малые с бантом/Ванильная/Слайд25.JPG"
       ],
-      videos: [],
+      videos: ["giftboxes/public/videos/Video 2.mp4"],
     },
     {
       name: 'Подарочная коробка с лентой',
@@ -134,7 +134,7 @@ export const products = [
         "images/Малые с бантом/Золотая/Слайд20.JPG",
         "images/Малые с бантом/Золотая/Слайд21.JPG"
       ],
-      videos: [],
+      videos: ["giftboxes/public/videos/Video 2.mp4"],
     },
     // Средний размер (средняя)
     {
@@ -149,7 +149,7 @@ export const products = [
         "images/Средние с бантом/Розовая/Слайд1.JPG",
         "images/Средние с бантом/Розовая/Слайд2.JPG"
       ],
-      videos: [],
+      videos: ["giftboxes/public/videos/Video 0.mp4"],
     },
     {
       name: 'Подарочная коробка с лентой',
@@ -163,7 +163,7 @@ export const products = [
         "images/Средние с бантом/Тиффани/Слайд3.JPG",
         "images/Средние с бантом/Тиффани/Слайд4.JPG"
       ],
-      videos: [],
+      videos: ["giftboxes/public/videos/Video 0.mp4"],
     },
     {
       name: 'Подарочная коробка с лентой',
@@ -179,7 +179,7 @@ export const products = [
         "images/Средние с бантом/Черная/Слайд6.JPG",
         "images/Средние с бантом/Черная/Слайд5.JPG",
       ],
-      videos: [],
+      videos: ["giftboxes/public/videos/Video 0.mp4"],
     },
     {
       name: 'Подарочная коробка с лентой',
@@ -195,7 +195,7 @@ export const products = [
         "images/Средние с бантом/Белая/Слайд27.JPG",
         "images/Средние с бантом/Белая/Слайд28.JPG"
       ],
-      videos: [],
+      videos: ["giftboxes/public/videos/Video 0.mp4"],
     },
     {
       name: 'Подарочная коробка с лентой',
@@ -209,7 +209,7 @@ export const products = [
         "images/Средние с бантом/Красная/Слайд13.JPG",
         "images/Средние с бантом/Красная/Слайд14.JPG"
       ],
-      videos: [],
+      videos: ["giftboxes/public/videos/Video 0.mp4"],
     },
     {
       name: 'Подарочная коробка с лентой',
@@ -223,7 +223,7 @@ export const products = [
         "images/Средние с бантом/Оранжевая/Слайд15.JPG",
         "images/Средние с бантом/Оранжевая/Слайд16.JPG"
       ],
-      videos: [],
+      videos: ["giftboxes/public/videos/Video 0.mp4"],
     },
     {
       name: 'Подарочная коробка с лентой',
@@ -239,7 +239,7 @@ export const products = [
         "images/Средние с бантом/Розовая пудра/Слайд31.JPG",
         "images/Средние с бантом/Розовая пудра/Слайд32.JPG"
       ],
-      videos: [],
+      videos: ["giftboxes/public/videos/Video 1.mp4"],
     },
     {
       name: 'Подарочная коробка с лентой',
@@ -255,7 +255,7 @@ export const products = [
         "images/Средние с бантом/Черный муар/Слайд35.JPG",
         "images/Средние с бантом/Черный муар/Слайд36.JPG"
       ],
-      videos: [],
+      videos: ["giftboxes/public/videos/Video 1.mp4"],
     },
     {
       name: 'Подарочная коробка с лентой',
@@ -271,7 +271,7 @@ export const products = [
         "images/Средние с бантом/Белый бриллиант/Слайд27.JPG",
         "images/Средние с бантом/Белый бриллиант/Слайд28.JPG"
       ],
-      videos: [],
+      videos: ["giftboxes/public/videos/Video 1.mp4"],
     },
     {
       name: 'Подарочная коробка с лентой',
@@ -287,7 +287,7 @@ export const products = [
         "images/Средние с бантом/Синий бархат/Слайд23.JPG",
         "images/Средние с бантом/Синий бархат/Слайд24.JPG"
       ],
-      videos: [],
+      videos: ["giftboxes/public/videos/Video 1.mp4"],
     },
     {
       name: 'Подарочная коробка с лентой',
@@ -303,7 +303,7 @@ export const products = [
         "images/Средние с бантом/Лавандовая/Слайд19.JPG",
         "images/Средние с бантом/Лавандовая/Слайд20.JPG"
       ],
-      videos: [],
+      videos: ["giftboxes/public/videos/Video 0.mp4"],
     },
 
     // Большой размер (большая)
@@ -319,7 +319,7 @@ export const products = [
         "images/Большие с бантом/Розовая/Слайд1.JPG",
         "images/Большие с бантом/Розовая/Слайд2.JPG"
       ],
-      videos: ["images/Большие с бантом/Розовая/video1.mp4"],
+      videos: ["giftboxes/public/videos/Video 0.mp4"],
     },
     {
       name: 'Подарочная коробка с лентой',
@@ -333,7 +333,7 @@ export const products = [
         "images/Большие с бантом/Тиффани/Слайд3.JPG",
         "images/Большие с бантом/Тиффани/Слайд4.JPG"
       ],
-      videos: [],
+      videos: ["giftboxes/public/videos/Video 0.mp4"],
     },
     {
       name: 'Подарочная коробка с лентой',
@@ -349,7 +349,7 @@ export const products = [
         "images/Большие с бантом/Черная/Слайд27.JPG",
         "images/Большие с бантом/Черная/Слайд28.JPG"
       ],
-      videos: [],
+      videos: ["giftboxes/public/videos/Video 0.mp4"],
     },
     {
       name: 'Подарочная коробка с лентой',
@@ -365,7 +365,7 @@ export const products = [
         "images/Большие с бантом/Белая/Слайд19.JPG",
         "images/Большие с бантом/Белая/Слайд20.JPG"
       ],
-      videos: [],
+      videos: ["giftboxes/public/videos/Video 0.mp4"],
     },
     {
       name: 'Подарочная коробка с лентой',
@@ -379,7 +379,7 @@ export const products = [
         "images/Большие с бантом/Красная/Слайд9.JPG",
         "images/Большие с бантом/Красная/Слайд10.JPG"
       ],
-      videos: [],
+      videos: ["giftboxes/public/videos/Video 0.mp4"],
     },
     {
       name: 'Подарочная коробка с лентой',
@@ -393,7 +393,7 @@ export const products = [
         "images/Большие с бантом/Оранжевая/Слайд11.JPG",
         "images/Большие с бантом/Оранжевая/Слайд12.JPG"
       ],
-      videos: [],
+      videos: ["giftboxes/public/videos/Video 0.mp4"],
     },
     {
       name: 'Подарочная коробка с лентой',
@@ -409,7 +409,7 @@ export const products = [
         "images/Большие с бантом/Голубой лед/Слайд39.JPG",
         "images/Большие с бантом/Голубой лед/Слайд40.JPG"
       ],
-      videos: [],
+      videos: ["giftboxes/public/videos/Video 2.mp4"],
     },
     {
       name: 'Подарочная коробка с лентой',
@@ -425,7 +425,7 @@ export const products = [
         "images/Большие с бантом/Ванильная/Слайд35.JPG",
         "images/Большие с бантом/Ванильная/Слайд36.JPG"
       ],
-      videos: [],
+      videos: ["giftboxes/public/videos/Video 2.mp4"],
     },
     {
       name: 'Подарочная коробка с лентой',
@@ -441,7 +441,7 @@ export const products = [
         "images/Большие с бантом/Золотая/Слайд31.JPG",
         "images/Большие с бантом/Золотая/Слайд32.JPG"
       ],
-      videos: [],
+      videos: ["giftboxes/public/videos/Video 2.mp4"],
     },
     {
       name: 'Подарочная коробка с лентой',
@@ -457,7 +457,7 @@ export const products = [
         "images/Большие с бантом/Розовая пудра/Слайд23.JPG",
         "images/Большие с бантом/Розовая пудра/Слайд24.JPG"
       ],
-      videos: [],
+      videos: ["giftboxes/public/videos/Video 1.mp4"],
     },
     {
       name: 'Подарочная коробка с лентой',
@@ -473,7 +473,7 @@ export const products = [
         "images/Большие с бантом/Черный муар/Слайд27.JPG",
         "images/Большие с бантом/Черный муар/Слайд28.JPG"
       ],
-      videos: [],
+      videos: ["giftboxes/public/videos/Video 1.mp4"],
     },
     {
       name: 'Подарочная коробка с лентой',
@@ -489,7 +489,7 @@ export const products = [
         "images/Большие с бантом/Белый бриллиант/Слайд19.JPG",
         "images/Большие с бантом/Белый бриллиант/Слайд20.JPG"
       ],
-      videos: [],
+      videos: ["giftboxes/public/videos/Video 1.mp4"],
     },
     {
       name: 'Подарочная коробка с лентой',
@@ -505,7 +505,7 @@ export const products = [
         "images/Большие с бантом/Синий бархат/Слайд15.JPG",
         "images/Большие с бантом/Синий бархат/Слайд16.JPG",
       ],
-      videos: [],
+      videos: ["giftboxes/public/videos/Video 1.mp4"],
     },
     
     // Коробки с ручками
@@ -522,7 +522,7 @@ export const products = [
         "images/Коробка с ручками/Розовая с ручками/Слайд11.JPG",
         "images/Коробка с ручками/Слайд3.JPG"
       ],
-      videos: [],
+      videos: ["giftboxes/public/videos/Video 3.mp4"],
     },
     {
       name: 'Подарочная коробка с ручкой',
@@ -537,7 +537,7 @@ export const products = [
         "images/Коробка с ручками/Сиреневая с ручками/Слайд19.JPG",
         "images/Коробка с ручками/Слайд3.JPG"
       ],
-      videos: [],
+      videos: ["giftboxes/public/videos/Video 3.mp4"],
     },
     {
       name: 'Подарочная коробка с ручкой',
@@ -552,7 +552,7 @@ export const products = [
         "images/Коробка с ручками/Черная с ручками/Слайд15.JPG",
         "images/Коробка с ручками/Слайд3.JPG"
       ],
-      videos: [],
+      videos: ["giftboxes/public/videos/Video 3.mp4"],
     },
     {
       name: 'Подарочная коробка с ручкой',
@@ -567,7 +567,7 @@ export const products = [
         "images/Коробка с ручками/Белая с ручками/Слайд13.JPG",
         "images/Коробка с ручками/Слайд3.JPG"
       ],
-      videos: [],
+      videos: ["giftboxes/public/videos/Video 3.mp4"],
     },
     {
       name: 'Подарочная коробка с ручкой',
@@ -582,7 +582,7 @@ export const products = [
         "images/Коробка с ручками/Красная с ручками/Слайд5.JPG",
         "images/Коробка с ручками/Слайд3.JPG"
       ],
-      videos: [],
+      videos: ["giftboxes/public/videos/Video 3.mp4"],
     },
     {
       name: 'Подарочная коробка с ручкой',
@@ -599,7 +599,7 @@ export const products = [
         "images/Коробка с ручками/Оранжевая  с ручками/Слайд9.JPG",
         "images/Коробка с ручками/Слайд3.JPG"
       ],
-      videos: [],
+      videos: ["giftboxes/public/videos/Video 3.mp4"],
     },
     {
       name: 'Подарочная коробка с ручкой',
@@ -614,7 +614,7 @@ export const products = [
         "images/Коробка с ручками/Золотая с ручками/Слайд2.JPG",
         "images/Коробка с ручками/Слайд3.JPG"
       ],
-      videos: [],
+      videos: ["giftboxes/public/videos/Video 3.mp4"],
     },
     {
       name: 'Подарочная коробка с ручкой',
@@ -629,7 +629,7 @@ export const products = [
         "images/Коробка с ручками/Серебренная с ручками/Слайд17.JPG",
         "images/Коробка с ручками/Слайд3.JPG"
       ],
-      videos: [],
+      videos: ["giftboxes/public/videos/Video 3.mp4"],
     },
   ];
 
