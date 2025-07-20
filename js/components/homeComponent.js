@@ -71,6 +71,7 @@ const HomeComponent = {
     await this.loadProducts();
     
     const categories = HomeComponent.getCategories();
+    const cartHTML = await cartService.renderCart();
     
     container.innerHTML = `
       <nav class="bg-white shadow-md relative">
@@ -160,7 +161,7 @@ const HomeComponent = {
           }).join('')}
         </div>
       </div>
-      ${cartService.renderCart()}
+      ${cartHTML}
       
       <footer class="bg-blue-950 text-white py-8 mt-12">
         <div class="container mx-auto px-6">
