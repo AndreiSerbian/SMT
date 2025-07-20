@@ -263,8 +263,12 @@ const OrderComponent = {
               <p class="text-white-400">Email: smtpremiumbox@serbiyan.ru</p>
             </div>
           </div>
-          <div class="border-t border-gray-700 mt-8 pt-6 text-center text-white-400">
-            <p>&copy; 2025 SMT Premium Box. Все права защищены.</p>
+          <div class="border-t border-gray-700 mt-8 pt-6 text-center">
+            <div class="mb-4 space-x-4">
+              <a href="#privacy-policy" class="text-gray-400 hover:text-white">Политика конфиденциальности</a>
+              <a href="#terms-of-use" class="text-gray-400 hover:text-white">Условия пользования</a>
+            </div>
+            <p class="text-gray-400">&copy; 2025 SMT Premium Box. Все права защищены.</p>
           </div>
         </div>
       </footer>

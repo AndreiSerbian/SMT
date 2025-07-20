@@ -3,6 +3,8 @@ import HomeComponent from './components/homeComponent.js';
 import ProductComponent from './components/productComponent.js';
 import OrderComponent from './components/orderComponent.js';
 import ContactsComponent from './components/contactsComponent.js';
+import PrivacyPolicyComponent from './components/privacyPolicyComponent.js';
+import TermsOfUseComponent from './components/termsOfUseComponent.js';
 import { AdminComponent } from './components/adminComponent.js';
 
 class Router {
@@ -14,6 +16,8 @@ class Router {
       '#product': (id) => ProductComponent.render(id, this.getMainContainer()),
       '#order': () => OrderComponent.render(this.getMainContainer()),
       '#contacts': () => ContactsComponent.render(this.getMainContainer()),
+      '#privacy-policy': () => PrivacyPolicyComponent.render(this.getMainContainer()),
+      '#terms-of-use': () => TermsOfUseComponent.render(this.getMainContainer()),
       '#admin': () => this.adminComponent.mount(this.getMainContainer())
     };
     
@@ -60,6 +64,12 @@ class Router {
     } else if (hash === '#contacts') {
       this.currentComponent = ContactsComponent;
       this.routes['#contacts']();
+    } else if (hash === '#privacy-policy') {
+      this.currentComponent = PrivacyPolicyComponent;
+      this.routes['#privacy-policy']();
+    } else if (hash === '#terms-of-use') {
+      this.currentComponent = TermsOfUseComponent;
+      this.routes['#terms-of-use']();
     } else if (hash === '#admin') {
       this.currentComponent = this.adminComponent;
       this.routes['#admin']();
