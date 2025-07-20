@@ -125,6 +125,25 @@ const ProductComponent = {
                 >
               `).join('')}
             </div>
+            ${product.videos && product.videos.length > 0 ? `
+              <div class="mt-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">Видео товара</h3>
+                <div class="grid grid-cols-1 gap-4">
+                  ${product.videos.map(video => `
+                    <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+                      <video 
+                        controls 
+                        class="w-full h-64 object-contain"
+                        preload="metadata"
+                      >
+                        <source src="${video}" type="video/mp4">
+                        Ваш браузер не поддерживает воспроизведение видео.
+                      </video>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            ` : ''}
           </div>
 
           <div class="bg-white rounded-lg shadow-lg p-8">
