@@ -1,7 +1,10 @@
 
-import { products } from '../data/products.js';
+import { fetchProducts } from './productPriceService.js';
 import { eventBus } from '../utils/eventBus.js';
 import { env } from '../utils/env.js';
+
+// Кеш для загруженных товаров с ценами
+let cachedProducts = null;
 
 export const cartService = {
   // Get cart from localStorage
@@ -60,24 +63,41 @@ export const cartService = {
   },
   
   // Get cart total
-  getCartTotal() {
+  async getCartTotal() {
     const cart = this.getCart();
+    const products = await this.getProducts();
     return cart.reduce((sum, item) => {
       const product = products.find(p => p.id === item.id);
-      return sum + (product ? product.price * item.quantity : 0);
+      return sum + (product && product.price ? product.price * item.quantity : 0);
     }, 0);
+  },
+
+  // Get products with prices
+  async getProducts() {
+    if (!cachedProducts) {
+      cachedProducts = await fetchProducts();
+    }
+    return cachedProducts;
+  },
+
+  // Refresh products cache
+  async refreshProducts() {
+    cachedProducts = await fetchProducts();
+    return cachedProducts;
   },
   
   // Check if order meets minimum amount
-  meetsMinimumOrderAmount() {
-    return this.getCartTotal() >= env.minOrderAmount;
+  async meetsMinimumOrderAmount() {
+    const total = await this.getCartTotal();
+    return total >= env.minOrderAmount;
   },
   
   // Render cart component
-  renderCart() {
+  async renderCart() {
     const cart = this.getCart();
-    const total = this.getCartTotal();
-    const meetsMinimum = this.meetsMinimumOrderAmount();
+    const products = await this.getProducts();
+    const total = await this.getCartTotal();
+    const meetsMinimum = await this.meetsMinimumOrderAmount();
 
     return `
       <div class="fixed bottom-4 right-4 z-50">
@@ -207,7 +227,7 @@ export const cartService = {
   },
 
   // Update cart UI without re-rendering everything
-  updateCartUI() {
+  async updateCartUI() {
     const cart = this.getCart();
     
     // Update cart icon count - ищем правильный элемент счетчика
@@ -231,9 +251,10 @@ export const cartService = {
           </div>
         `;
       } else {
+        const products = await this.getProducts();
         const total = cart.reduce((sum, item) => {
           const product = products.find(p => p.id === item.id);
-          return sum + (product ? product.price * item.quantity : 0);
+          return sum + (product && product.price ? product.price * item.quantity : 0);
         }, 0);
         
         // Update cart items
