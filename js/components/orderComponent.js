@@ -1,4 +1,4 @@
-import { products } from '../data/products.js';
+import { fetchProducts } from '../services/productPriceService.js';
 import { cartService } from '../services/cartService.js';
 import { env } from '../utils/env.js';
 
@@ -22,7 +22,7 @@ const OrderComponent = {
     }
   },
   
-  render(container) {
+  async render(container) {
     if (!container) {
       console.error('Container not provided to OrderComponent');
       return;
@@ -33,10 +33,12 @@ const OrderComponent = {
     document.body.style.position = '';
     document.documentElement.style.overflow = '';
     
+    // Загружаем товары с ценами
+    const products = await fetchProducts();
     const cart = cartService.getCart();
     
     // Check minimum order value
-    const subtotal = cartService.getCartTotal();
+    const subtotal = await cartService.getCartTotal();
     
     if (subtotal < env.minOrderAmount) {
       alert(`Минимальная сумма заказа — ${env.minOrderAmount}₽. Пожалуйста, добавьте ещё товары.`);
@@ -77,8 +79,9 @@ const OrderComponent = {
     const cartRows = cart.map(item => {
       const product = products.find(p => p.id === item.id);
       if (!product) return '';
-      // Получаем актуальную цену (если есть админская цена, используем её)
-      const actualPrice = window.adminComponent?.productPrices[product.id] || product.price;
+      // Используем цену из базы данных или undefined если её нет
+      const actualPrice = product.price;
+      if (!actualPrice) return ''; // Если цены нет, не показываем товар
       const itemSum = actualPrice * item.quantity;
       const itemWeightGrams = product.weight * 1000 * item.quantity;
       return `
@@ -378,7 +381,7 @@ const OrderComponent = {
     // Add form submission handler
     const form = container.querySelector('#orderForm');
     if (form) {
-      const formSubmitHandler = (event) => OrderComponent.submitOrder(event, container);
+      const formSubmitHandler = async (event) => await OrderComponent.submitOrder(event, container);
       OrderComponent.addEventListenerWithCleanup(form, 'submit', formSubmitHandler);
     }
   },
@@ -415,7 +418,7 @@ const OrderComponent = {
     return isValid;
   },
   
-  submitOrder(event, container) {
+  async submitOrder(event, container) {
     event.preventDefault();
     
     // Get form
@@ -434,6 +437,8 @@ const OrderComponent = {
     const paymentValue = form.payment.value;
     const deliveryValue = form.delivery.value;
     
+    // Загружаем товары с ценами для формирования заказа
+    const products = await fetchProducts();
     const cart = cartService.getCart();
     
     // Преобразуем корзину, добавляя информацию о товарах
@@ -449,12 +454,12 @@ const OrderComponent = {
         name: product.name,
         artikul: product.artikul,
         color: product.color,
-        price: product.price
+        price: product.price || 0
       };
     }).filter(item => item !== null);
     
     // Calculate order totals
-    const subtotal = cartService.getCartTotal();
+    const subtotal = await cartService.getCartTotal();
     
     let discountRate = 0;
     if (subtotal >= 50000) {
