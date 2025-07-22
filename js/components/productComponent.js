@@ -234,7 +234,7 @@ const ProductComponent = {
           </div>
         </div>
       </div>
-      ${cartService.renderCart()}
+      ${await cartService.renderCart()}
       
      <footer class="bg-blue-950 text-white py-8 mt-12">
         <div class="container mx-auto px-6">
