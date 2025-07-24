@@ -188,7 +188,7 @@ async function sendOrderConfirmationEmail(order) {
     console.log("Attempting to send confirmation email to:", email);
     
     const data = await resend.emails.send({
-      from: 'Подтверждение заказа <onboarding@resend.dev>',
+      from: 'Подтверждение заказа <send@giftboxopt.ru>',
       to: email,
       subject: `Подтвердите ваш заказ №${id}`,
       html: generateOrderConfirmationEmail(order),
