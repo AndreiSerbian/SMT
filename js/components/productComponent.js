@@ -154,6 +154,15 @@ const ProductComponent = {
               : `<p class="text-lg text-red-500 mb-6">Цена уточняется</p>`
             }
             
+            <p class="mt-2">
+              <a href="https://www.wildberries.ru/catalog/${product.idWB}/detail.aspx"
+                 target="_blank"
+                 rel="nofollow noopener"
+                 class="text-indigo-600 hover:underline">
+                Купить пробный товар
+              </a>
+            </p>
+            
             <div class="mb-6">
               <h2 class="font-semibold text-gray-800 mb-2">Размеры:</h2>
               <p class="text-gray-600">Длина: ${product.dimensions.length}см</p>
