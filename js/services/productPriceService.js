@@ -39,7 +39,16 @@ export async function fetchProducts() {
 export async function savePrice(productId, newPrice) {
   try {
     // Проверяем что пользователь аутентифицирован как админ
+    console.log('Checking admin auth:', {
+      adminComponent: !!window.adminComponent,
+      isAuthenticated: window.adminComponent?.isAuthenticated
+    });
+    
     if (!window.adminComponent || !window.adminComponent.isAuthenticated) {
+      console.error('Admin check failed:', {
+        adminComponent: !!window.adminComponent,
+        isAuthenticated: window.adminComponent?.isAuthenticated
+      });
       throw new Error('Доступ запрещен: требуется авторизация администратора');
     }
 
