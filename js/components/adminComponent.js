@@ -292,12 +292,19 @@ export class AdminComponent {
 
   async updatePrice(productId) {
     const priceInput = document.getElementById(`price-${productId}`);
+    const button = priceInput.parentElement.querySelector('button');
     const newPrice = parseFloat(priceInput.value);
     
     if (isNaN(newPrice) || newPrice < 0) {
-      alert('Введите корректную цену');
+      this.showNotification('Введите корректную цену', 'error');
       return;
     }
+    
+    // Показываем loading состояние
+    const originalButtonText = button.innerHTML;
+    button.innerHTML = '⏳';
+    button.disabled = true;
+    priceInput.disabled = true;
     
     try {
       // Сохраняем цену через productPriceService
@@ -310,28 +317,51 @@ export class AdminComponent {
       }
       
       // Показываем уведомление об успехе
-      const notification = document.createElement('div');
-      notification.className = 'fixed top-4 right-4 bg-green-500 text-white p-4 rounded-lg shadow-lg z-50';
-      notification.textContent = `Цена товара ${productId} обновлена!`;
-      document.body.appendChild(notification);
-      
-      setTimeout(() => {
-        notification.remove();
-      }, 3000);
+      this.showNotification(`Цена товара обновлена: ${newPrice}₽`, 'success');
       
     } catch (error) {
       console.error('Failed to update price:', error);
+      this.showNotification(`Ошибка: ${error.message}`, 'error');
       
-      // Показываем уведомление об ошибке
-      const notification = document.createElement('div');
-      notification.className = 'fixed top-4 right-4 bg-red-500 text-white p-4 rounded-lg shadow-lg z-50';
-      notification.textContent = `Ошибка: ${error.message}`;
-      document.body.appendChild(notification);
-      
-      setTimeout(() => {
-        notification.remove();
-      }, 3000);
+      // Возвращаем старое значение в случае ошибки
+      const product = this.productsWithPrices.find(p => p.id === productId);
+      if (product && product.price !== undefined) {
+        priceInput.value = product.price;
+      } else {
+        priceInput.value = '';
+      }
+    } finally {
+      // Восстанавливаем кнопку
+      button.innerHTML = originalButtonText;
+      button.disabled = false;
+      priceInput.disabled = false;
     }
+  }
+
+  showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    const bgColor = type === 'success' ? 'bg-green-500' : 
+                   type === 'error' ? 'bg-red-500' : 'bg-blue-500';
+    
+    notification.className = `fixed top-4 right-4 ${bgColor} text-white p-4 rounded-lg shadow-lg z-50 transform transition-all duration-300 translate-x-full`;
+    notification.textContent = message;
+    
+    document.body.appendChild(notification);
+    
+    // Анимация появления
+    setTimeout(() => {
+      notification.classList.remove('translate-x-full');
+    }, 100);
+    
+    // Удаление через 4 секунды
+    setTimeout(() => {
+      notification.classList.add('translate-x-full');
+      setTimeout(() => {
+        if (notification.parentNode) {
+          notification.remove();
+        }
+      }, 300);
+    }, 4000);
   }
 
   async toggleMaintenance() {
