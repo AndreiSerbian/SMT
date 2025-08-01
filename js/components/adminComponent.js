@@ -222,6 +222,8 @@ export class AdminComponent {
       
       // Успешная авторизация
       this.isAuthenticated = true;
+      this.currentAdminLogin = login;
+      this.currentAdminPassword = password;
       sessionStorage.setItem('admin_authenticated', 'true');
       
       // Отправляем уведомление в Telegram
@@ -310,8 +312,25 @@ export class AdminComponent {
     priceInput.disabled = true;
     
     try {
-      // Сохраняем цену через productPriceService
-      await savePrice(productId, newPrice);
+      // Используем edge function для обновления цены
+      const response = await fetch('https://bsndismiessofvhglzrv.supabase.co/functions/v1/update-price', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          product_id: productId,
+          price: newPrice,
+          admin_login: this.currentAdminLogin,
+          admin_password: this.currentAdminPassword
+        })
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to update price');
+      }
       
       // Обновляем локальные данные
       const product = this.productsWithPrices.find(p => p.id === productId);
