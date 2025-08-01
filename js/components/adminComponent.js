@@ -72,28 +72,19 @@ export class AdminComponent {
           <div class="bg-white rounded-lg shadow-lg p-6">
             <div class="flex justify-between items-center mb-6">
               <h1 class="text-2xl font-bold text-gray-800">⚙️ Админ-панель</h1>
-              <button 
-                id="admin-logout" 
-                class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors"
-              >
-                Выйти
-              </button>
-            </div>
-
-            <!-- Режим технических работ -->
-            <div class="mb-6 p-4 border rounded-lg ${this.maintenanceMode ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'}">
-              <div class="flex justify-between items-center">
-                <div>
-                  <span class="text-lg font-medium">🛠 Технические работы</span>
-                  <span class="ml-2 text-sm ${this.maintenanceMode ? 'text-red-600' : 'text-green-600'}">
-                    (${this.maintenanceMode ? 'Активны' : 'Отключены'})
-                  </span>
-                </div>
+              <div class="flex gap-3">
                 <button 
                   id="toggle-maintenance" 
-                  class="px-4 py-2 rounded-md text-white transition-colors ${this.maintenanceMode ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}"
+                  disabled
+                  class="px-4 py-2 rounded-md text-white bg-gray-400 cursor-not-allowed"
                 >
-                  ${this.maintenanceMode ? 'Отключить' : 'Начать технические работы'}
+                  Начать технические работы
+                </button>
+                <button 
+                  id="admin-logout" 
+                  class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors"
+                >
+                  Выйти
                 </button>
               </div>
             </div>
@@ -162,14 +153,10 @@ export class AdminComponent {
     document.body.style.position = '';
     document.documentElement.style.overflow = '';
     
-    await this.loadSettings();
     await this.loadProductsWithPrices();
     
     container.innerHTML = await this.render();
     this.attachEventListeners(container);
-    
-    // Проверяем режим технических работ
-    this.checkMaintenanceMode();
   }
 
   attachEventListeners(container) {
@@ -190,14 +177,9 @@ export class AdminComponent {
     } else {
       // Обработчики для админ-панели
       const logoutBtn = container.querySelector('#admin-logout');
-      const maintenanceBtn = container.querySelector('#toggle-maintenance');
       
       if (logoutBtn) {
         logoutBtn.addEventListener('click', () => this.logout());
-      }
-      
-      if (maintenanceBtn) {
-        maintenanceBtn.addEventListener('click', () => this.toggleMaintenance());
       }
     }
   }
@@ -271,25 +253,6 @@ export class AdminComponent {
     sessionStorage.removeItem('admin_login');
     sessionStorage.removeItem('admin_password');
     window.location.hash = '#';
-  }
-
-  async loadSettings() {
-    try {
-      // Загружаем настройки из Supabase
-      const { data, error } = await supabase
-        .from('site_settings')
-        .select('*');
-      
-      if (!error && data) {
-        data.forEach(setting => {
-          if (setting.key === 'maintenance_mode') {
-            this.maintenanceMode = setting.value === 'true';
-          }
-        });
-      }
-    } catch (error) {
-      console.error('Failed to load settings:', error);
-    }
   }
 
   async loadProductsWithPrices() {
@@ -398,67 +361,6 @@ export class AdminComponent {
     }, 4000);
   }
 
-  async toggleMaintenance() {
-    try {
-      this.maintenanceMode = !this.maintenanceMode;
-      
-      // Сохраняем в Supabase
-      await supabase
-        .from('site_settings')
-        .upsert({
-          key: 'maintenance_mode',
-          value: this.maintenanceMode.toString()
-        });
-      
-      // Перерендериваем компонент
-      const container = document.getElementById('app');
-      if (container) {
-        await this.mount(container);
-      }
-      
-      // Обновляем режим технических работ на всех страницах
-      this.checkMaintenanceMode();
-      
-    } catch (error) {
-      console.error('Failed to toggle maintenance mode:', error);
-      alert('Ошибка при переключении режима технических работ');
-    }
-  }
-
-  checkMaintenanceMode() {
-    // Проверяем и применяем режим технических работ для других страниц
-    const currentHash = window.location.hash;
-    
-    if (this.maintenanceMode && currentHash !== '#admin') {
-      this.showMaintenanceOverlay();
-    } else {
-      this.hideMaintenanceOverlay();
-    }
-  }
-
-  showMaintenanceOverlay() {
-    let overlay = document.getElementById('maintenance-overlay');
-    if (!overlay) {
-      overlay = document.createElement('div');
-      overlay.id = 'maintenance-overlay';
-      overlay.className = 'fixed inset-0 bg-black/60 z-50 flex items-center justify-center';
-      overlay.innerHTML = `
-        <div class="bg-white rounded-lg p-8 max-w-md mx-4 text-center">
-          <div class="text-6xl mb-4">🛠</div>
-          <h2 class="text-2xl font-bold text-gray-800 mb-4">Ведутся технические работы</h2>
-          <p class="text-gray-600">Пожалуйста, зайдите позже.</p>
-        </div>
-      `;
-      document.body.appendChild(overlay);
-    }
-  }
-
-  hideMaintenanceOverlay() {
-    const overlay = document.getElementById('maintenance-overlay');
-    if (overlay) {
-      overlay.remove();
-    }
-  }
 
   // Метод для получения актуальной цены товара
   static getProductPrice(productId) {
