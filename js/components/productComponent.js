@@ -269,7 +269,7 @@ const ProductComponent = {
               <a href="https://www.wildberries.ru/catalog/${product.idWB}/detail.aspx"
                  target="_blank"
                  rel="nofollow noopener"
-                 class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded transition duration-200">
+                 class="bg-indigo-600 hover:bg-indigo-700 text-white px-2 py-2 rounded transition duration-200">
                 Купить пробный товар на WB
               </a>
             </div>
