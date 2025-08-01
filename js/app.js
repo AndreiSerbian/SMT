@@ -13,7 +13,6 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // Set up the router
   const router = new Router();
-  window.router = router;
   
   // Initialize the application
   initApp();

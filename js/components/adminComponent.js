@@ -84,15 +84,14 @@ export class AdminComponent {
                 <div>
                   <span class="text-lg font-medium">🛠 Технические работы</span>
                   <span class="ml-2 text-sm ${this.maintenanceMode ? 'text-red-600' : 'text-green-600'}">
-                    (${this.maintenanceMode ? 'Активны - сайт заблокирован' : 'Отключены'})
+                    (${this.maintenanceMode ? 'Активны' : 'Отключены'})
                   </span>
-                  ${this.maintenanceMode ? '<div class="text-xs text-red-500 mt-1">Пользователи не могут переходить между страницами</div>' : ''}
                 </div>
                 <button 
                   id="toggle-maintenance" 
                   class="px-4 py-2 rounded-md text-white transition-colors ${this.maintenanceMode ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}"
                 >
-                  ${this.maintenanceMode ? 'Завершить технические работы' : 'Начать технические работы'}
+                  ${this.maintenanceMode ? 'Отключить' : 'Начать технические работы'}
                 </button>
               </div>
             </div>
@@ -139,19 +138,14 @@ export class AdminComponent {
                   class="w-20 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   min="0"
                   step="100"
-                  ${this.maintenanceMode ? '' : 'disabled'}
                 >
                 <span class="text-sm text-gray-600">₽</span>
-                <input 
-                  type="checkbox" 
-                  id="checkbox-${product.id}"
-                  class="ml-2 w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
-                  ${this.maintenanceMode ? '' : 'disabled'}
-                  onchange="window.adminComponent.handlePriceConfirmation('${product.id}')"
+                <button 
+                  onclick="window.adminComponent.updatePrice('${product.id}')"
+                  class="ml-2 bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700 transition-colors"
                 >
-                <label for="checkbox-${product.id}" class="text-xs text-gray-600">
-                  ${this.maintenanceMode ? 'Применить' : 'Заблокировано'}
-                </label>
+                  ✓
+                </button>
               </div>
             </div>
           `;
@@ -301,24 +295,20 @@ export class AdminComponent {
     }
   }
 
-  async handlePriceConfirmation(productId) {
-    const checkbox = document.getElementById(`checkbox-${productId}`);
+  async updatePrice(productId) {
     const priceInput = document.getElementById(`price-${productId}`);
-    
-    if (!checkbox.checked) {
-      return;
-    }
-    
+    const button = priceInput.parentElement.querySelector('button');
     const newPrice = parseFloat(priceInput.value);
     
     if (isNaN(newPrice) || newPrice < 0) {
       this.showNotification('Введите корректную цену', 'error');
-      checkbox.checked = false;
       return;
     }
     
     // Показываем loading состояние
-    checkbox.disabled = true;
+    const originalButtonText = button.innerHTML;
+    button.innerHTML = '⏳';
+    button.disabled = true;
     priceInput.disabled = true;
     
     try {
@@ -355,9 +345,6 @@ export class AdminComponent {
       console.error('Failed to update price:', error);
       this.showNotification(`Ошибка: ${error.message}`, 'error');
       
-      // Снимаем галочку в случае ошибки
-      checkbox.checked = false;
-      
       // Возвращаем старое значение в случае ошибки
       const product = this.productsWithPrices.find(p => p.id === productId);
       if (product && product.price !== undefined) {
@@ -366,8 +353,9 @@ export class AdminComponent {
         priceInput.value = '';
       }
     } finally {
-      // Восстанавливаем элементы
-      checkbox.disabled = false;
+      // Восстанавливаем кнопку
+      button.innerHTML = originalButtonText;
+      button.disabled = false;
       priceInput.disabled = false;
     }
   }
@@ -400,23 +388,15 @@ export class AdminComponent {
 
   async toggleMaintenance() {
     try {
-      const newMaintenanceMode = !this.maintenanceMode;
+      this.maintenanceMode = !this.maintenanceMode;
       
       // Сохраняем в Supabase
       await supabase
         .from('site_settings')
         .upsert({
           key: 'maintenance_mode',
-          value: newMaintenanceMode.toString()
+          value: this.maintenanceMode.toString()
         });
-      
-      // Обновляем локальное состояние
-      this.maintenanceMode = newMaintenanceMode;
-      
-      // Обновляем состояние в Router
-      if (window.router) {
-        window.router.setMaintenanceMode(this.maintenanceMode);
-      }
       
       // Перерендериваем компонент
       const container = document.getElementById('app');
@@ -424,16 +404,12 @@ export class AdminComponent {
         await this.mount(container);
       }
       
-      // Показываем уведомление
-      if (this.maintenanceMode) {
-        this.showNotification('Технические работы начались. Сайт заблокирован для пользователей.', 'success');
-      } else {
-        this.showNotification('Технические работы завершены. Сайт разблокирован.', 'success');
-      }
+      // Обновляем режим технических работ на всех страницах
+      this.checkMaintenanceMode();
       
     } catch (error) {
       console.error('Failed to toggle maintenance mode:', error);
-      this.showNotification('Ошибка при переключении режима технических работ', 'error');
+      alert('Ошибка при переключении режима технических работ');
     }
   }
 
