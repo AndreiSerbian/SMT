@@ -271,7 +271,7 @@ const ProductComponent = {
                  target="_blank"
                  rel="nofollow noopener"
                  class="text-indigo-600 hover:underline">
-                Купить пробный товар
+                Купить пробный товар на WB
               </a>
             </p>
             
