@@ -261,19 +261,18 @@ const ProductComponent = {
           <div class="bg-white rounded-lg shadow-lg p-8">
             <h1 class="text-3xl font-bold text-gray-800 mb-4">${product.name}</h1>
             <p class="text-gray-600 mb-4">Цвет: ${product.color}</p>
-            ${product.price 
-              ? `<p class="text-2xl font-bold text-gray-800 mb-6">₽${product.price}</p>` 
-              : `<p class="text-lg text-red-500 mb-6">Цена уточняется</p>`
-            }
-            
-            <p class="mt-2">
+            <div class="flex items-center justify-between mb-6">
+              ${product.price 
+                ? `<p class="text-2xl font-bold text-gray-800">₽${product.price}</p>` 
+                : `<p class="text-lg text-red-500">Цена уточняется</p>`
+              }
               <a href="https://www.wildberries.ru/catalog/${product.idWB}/detail.aspx"
                  target="_blank"
                  rel="nofollow noopener"
-                 class="text-indigo-600 hover:underline">
+                 class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded transition duration-200">
                 Купить пробный товар на WB
               </a>
-            </p>
+            </div>
             
             <div class="mb-6">
               <h2 class="font-semibold text-gray-800 mb-2">Размеры:</h2>

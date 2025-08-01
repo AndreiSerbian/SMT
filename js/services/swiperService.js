@@ -37,36 +37,41 @@ const SwiperService = {
     const swiper = this.swipersById[productId];
     if (!swiper) return;
     
-    // Сохраняем текущие высоту и ширину слайдов
-    const slideHeight = swiper.slides[0]?.querySelector('img')?.style.height;
-    const slideWidth = swiper.slides[0]?.querySelector('img')?.style.width;
-    const slideClass = swiper.slides[0]?.querySelector('img')?.className;
+    // Находим контейнер слайдера для фиксации размеров
+    const swiperContainer = document.getElementById(`product-slider-${productId}`);
+    if (!swiperContainer) return;
+    
+    // Сохраняем текущие размеры контейнера для предотвращения скачков
+    const currentHeight = swiperContainer.offsetHeight;
+    const currentWidth = swiperContainer.offsetWidth;
+    
+    // Фиксируем размеры контейнера
+    swiperContainer.style.height = currentHeight + 'px';
+    swiperContainer.style.width = currentWidth + 'px';
+    
+    // Сохраняем класс изображения
+    const slideClass = swiper.slides[0]?.querySelector('img')?.className || 'w-full h-80 object-contain hover:scale-105';
     
     // Удаляем старые слайды
     swiper.removeAllSlides();
     
-    // Добавляем новые
+    // Добавляем новые слайды
     newPhotos.forEach(image => {
       swiper.appendSlide(`
         <div class="swiper-slide">
-          <img src="${image}" class="${slideClass || 'w-full h-64 object-contain'}" />
+          <img src="${image}" class="${slideClass}" />
         </div>
       `);
     });
     
-    // Применяем сохраненные размеры к новым слайдам
-    if (slideHeight && slideWidth) {
-      swiper.slides.forEach(slide => {
-        const img = slide.querySelector('img');
-        if (img) {
-          if (slideHeight) img.style.height = slideHeight;
-          if (slideWidth) img.style.width = slideWidth;
-        }
-      });
-    }
-    
     // Обновляем Swiper
     swiper.update();
+    
+    // Убираем фиксированные размеры после короткой задержки
+    setTimeout(() => {
+      swiperContainer.style.height = '';
+      swiperContainer.style.width = '';
+    }, 100);
   }
 };
 
