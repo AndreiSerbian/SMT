@@ -305,6 +305,12 @@ export class AdminComponent {
       return;
     }
     
+    // Проверяем наличие учетных данных
+    if (!this.currentAdminLogin || !this.currentAdminPassword) {
+      this.showNotification('Ошибка: недостаточно данных для авторизации. Перелогиньтесь.', 'error');
+      return;
+    }
+    
     // Показываем loading состояние
     const originalButtonText = button.innerHTML;
     button.innerHTML = '⏳';
