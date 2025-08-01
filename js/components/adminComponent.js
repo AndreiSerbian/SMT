@@ -13,6 +13,18 @@ export class AdminComponent {
     this.maintenanceMode = false;
   }
 
+  // Метод для проверки режима технических работ (заглушка)
+  checkMaintenanceMode() {
+    // Технические работы больше не блокируют сайт
+    return false;
+  }
+
+  // Метод для загрузки настроек (заглушка)
+  async loadSettings() {
+    // Загрузка настроек не требуется
+    return true;
+  }
+
   async render() {
     // Проверяем авторизацию при загрузке
     if (!this.isAuthenticated) {
