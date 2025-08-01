@@ -7,6 +7,8 @@ export class AdminComponent {
   constructor() {
     // Проверяем сохраненное состояние авторизации
     this.isAuthenticated = sessionStorage.getItem('admin_authenticated') === 'true';
+    this.currentAdminLogin = sessionStorage.getItem('admin_login');
+    this.currentAdminPassword = sessionStorage.getItem('admin_password');
     this.productsWithPrices = [];
     this.maintenanceMode = false;
   }
@@ -225,6 +227,8 @@ export class AdminComponent {
       this.currentAdminLogin = login;
       this.currentAdminPassword = password;
       sessionStorage.setItem('admin_authenticated', 'true');
+      sessionStorage.setItem('admin_login', login);
+      sessionStorage.setItem('admin_password', password);
       
       // Отправляем уведомление в Telegram
       await this.sendTelegramNotification(login);
@@ -264,6 +268,8 @@ export class AdminComponent {
   logout() {
     this.isAuthenticated = false;
     sessionStorage.removeItem('admin_authenticated');
+    sessionStorage.removeItem('admin_login');
+    sessionStorage.removeItem('admin_password');
     window.location.hash = '#';
   }
 
