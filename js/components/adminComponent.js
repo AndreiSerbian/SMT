@@ -400,15 +400,18 @@ export class AdminComponent {
 
   async toggleMaintenance() {
     try {
-      this.maintenanceMode = !this.maintenanceMode;
+      const newMaintenanceMode = !this.maintenanceMode;
       
       // Сохраняем в Supabase
       await supabase
         .from('site_settings')
         .upsert({
           key: 'maintenance_mode',
-          value: this.maintenanceMode.toString()
+          value: newMaintenanceMode.toString()
         });
+      
+      // Обновляем локальное состояние
+      this.maintenanceMode = newMaintenanceMode;
       
       // Обновляем состояние в Router
       if (window.router) {
