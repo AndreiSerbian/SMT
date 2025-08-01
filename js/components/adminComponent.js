@@ -5,7 +5,8 @@ import { fetchProducts, savePrice } from '../services/productPriceService.js';
 
 export class AdminComponent {
   constructor() {
-    this.isAuthenticated = false;
+    // Проверяем сохраненное состояние авторизации
+    this.isAuthenticated = sessionStorage.getItem('admin_authenticated') === 'true';
     this.productsWithPrices = [];
     this.maintenanceMode = false;
   }
@@ -221,6 +222,7 @@ export class AdminComponent {
       
       // Успешная авторизация
       this.isAuthenticated = true;
+      sessionStorage.setItem('admin_authenticated', 'true');
       
       // Отправляем уведомление в Telegram
       await this.sendTelegramNotification(login);
@@ -259,6 +261,7 @@ export class AdminComponent {
 
   logout() {
     this.isAuthenticated = false;
+    sessionStorage.removeItem('admin_authenticated');
     window.location.hash = '#';
   }
 
