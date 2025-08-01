@@ -6,11 +6,14 @@ import ContactsComponent from './components/contactsComponent.js';
 import PrivacyPolicyComponent from './components/privacyPolicyComponent.js';
 import TermsOfUseComponent from './components/termsOfUseComponent.js';
 import { AdminComponent } from './components/adminComponent.js';
+import MaintenanceComponent from './components/maintenanceComponent.js';
+import { supabase } from './utils/supabase.js';
 
 class Router {
   constructor() {
     this.currentComponent = null;
     this.adminComponent = new AdminComponent();
+    this.maintenanceMode = false;
     this.routes = {
       '#': () => HomeComponent.render(this.getMainContainer()),
       '#product': (id) => ProductComponent.render(id, this.getMainContainer()),
@@ -23,6 +26,9 @@ class Router {
     
     window.addEventListener('hashchange', () => this.handleRouteChange());
     window.addEventListener('load', () => this.handleRouteChange());
+    
+    // Загружаем состояние технических работ при инициализации
+    this.loadMaintenanceMode();
   }
   
   getMainContainer() {
@@ -45,11 +51,19 @@ class Router {
     window.scrollTo({ top: 0, behavior: 'auto' });
   }
   
-  handleRouteChange() {
+  async handleRouteChange() {
     // Очищаем предыдущий контент ПЕРЕД рендером нового
     this.clearContainer();
     
     const hash = window.location.hash || '#';
+    
+    // Проверяем режим технических работ для всех маршрутов кроме admin и order
+    if (this.maintenanceMode && hash !== '#admin' && hash !== '#order') {
+      this.currentComponent = MaintenanceComponent;
+      MaintenanceComponent.render(this.getMainContainer());
+      this.scrollToTop();
+      return;
+    }
     
     if (hash === '#') {
       this.currentComponent = HomeComponent;
@@ -81,6 +95,28 @@ class Router {
   
   navigate(hash) {
     window.location.hash = hash;
+  }
+  
+  async loadMaintenanceMode() {
+    try {
+      const { data, error } = await supabase
+        .from('site_settings')
+        .select('value')
+        .eq('key', 'maintenance_mode')
+        .single();
+      
+      if (!error && data) {
+        this.maintenanceMode = data.value === 'true';
+      }
+    } catch (error) {
+      console.error('Failed to load maintenance mode:', error);
+    }
+  }
+  
+  setMaintenanceMode(enabled) {
+    this.maintenanceMode = enabled;
+    // Перезапускаем обработку текущего маршрута
+    this.handleRouteChange();
   }
 }
 
