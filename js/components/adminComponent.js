@@ -286,8 +286,18 @@ export class AdminComponent {
       return;
     }
     
+    // Получаем актуальные данные из sessionStorage
+    const currentLogin = sessionStorage.getItem('admin_login');
+    const currentPassword = sessionStorage.getItem('admin_password');
+    
+    console.log('Проверка авторизации:', {
+      currentLogin: currentLogin,
+      currentPassword: currentPassword ? '[HIDDEN]' : null,
+      sessionAuth: sessionStorage.getItem('admin_authenticated')
+    });
+    
     // Проверяем наличие учетных данных
-    if (!this.currentAdminLogin || !this.currentAdminPassword) {
+    if (!currentLogin || !currentPassword) {
       this.showNotification('Ошибка: недостаточно данных для авторизации. Перелогиньтесь.', 'error');
       return;
     }
@@ -308,8 +318,8 @@ export class AdminComponent {
         body: JSON.stringify({
           product_id: productId,
           price: newPrice,
-          admin_login: this.currentAdminLogin,
-          admin_password: this.currentAdminPassword
+          admin_login: currentLogin,
+          admin_password: currentPassword
         })
       });
 
