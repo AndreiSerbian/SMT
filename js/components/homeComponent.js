@@ -129,7 +129,7 @@ const HomeComponent = {
                     <div class="swiper-wrapper">
                     ${product.photo.map(image => `
                       <div class="swiper-slide">
-                        <img src="${image}" alt="${category}" class="w-full h-80 object-contain hover:scale-105" loading="lazy" decoding="async" fetchpriority="low" />
+                        <img src="${image}" alt="${category}" class="w-full h-80 object-contain hover:scale-105" />
                       </div>
                     `).join('')}
                     </div>

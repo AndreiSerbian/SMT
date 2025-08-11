@@ -226,7 +226,7 @@ const ProductComponent = {
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div class="space-y-4">
             <div class="bg-white rounded-lg shadow-lg overflow-hidden">
-              <img id="main-product-image" src="${product.photo[0]}" alt="${product.name}" class="w-full h-96 object-contain cursor-pointer" decoding="async" fetchpriority="high">
+              <img id="main-product-image" src="${product.photo[0]}" alt="${product.name}" class="w-full h-96 object-contain cursor-pointer">
             </div>
             <div class="grid grid-cols-4 gap-4">
               ${product.photo.map(photo => `
@@ -234,7 +234,6 @@ const ProductComponent = {
                   src="${photo}" 
                   alt="${product.name}" 
                   class="product-thumbnail w-full h-32 object-cover rounded-lg cursor-pointer hover:opacity-75 transition"
-                  loading="lazy" decoding="async"
                 >
               `).join('')}
             </div>
@@ -247,8 +246,7 @@ const ProductComponent = {
                       <video 
                         controls 
                         class="w-full h-64 object-contain"
-                        preload="none"
-                        playsinline
+                        preload="metadata"
                       >
                         <source src="${video}" type="video/mp4">
                         Ваш браузер не поддерживает воспроизведение видео.
@@ -483,7 +481,7 @@ const ProductComponent = {
               `;
             } else {
               slide.innerHTML = `
-                <img src="${media}" alt="${product.name}" class="max-w-full max-h-full object-contain" loading="lazy" decoding="async">
+                <img src="${media}" alt="${product.name}" class="max-w-full max-h-full object-contain">
               `;
             }
             
