@@ -110,6 +110,7 @@ const HomeComponent = {
           </div>
         </div>
       </nav>
+
 <!-- Hero-блок -->
 <section class="bg-white py-12 px-4 text-center">
   <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4">SMT Premium Box</h1>
@@ -261,7 +262,6 @@ const HomeComponent = {
     </div>
   </div>
 </section>
-<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 
       <div class="container mx-auto px-4 py-8">
         <h1 class="text-4xl font-bold text-center mb-12 text-gray-800">Коллекция подарочных упаковок</h1>
