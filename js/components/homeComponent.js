@@ -115,7 +115,7 @@ const HomeComponent = {
 <section class="bg-white py-12 px-4 text-center">
   <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4">SMT Premium Box</h1>
   <p class="text-lg md:text-xl text-gray-600 mb-6">Оптовые продажи подарочных упаковок</p>
-  <a href="#catalog" class="inline-block bg-blue-900 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg transition">
+  <a href id="catalog" class="inline-block bg-blue-900 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg transition">
     Перейти в каталог коробок
   </a>
 </section>
