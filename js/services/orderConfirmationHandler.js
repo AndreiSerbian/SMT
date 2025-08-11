@@ -250,10 +250,10 @@ export const OrderConfirmationHandler = {
   }
 };
 
-// Автоматически инициализируем кнопки при загрузке DOM
-document.addEventListener('DOMContentLoaded', () => {
-  OrderConfirmationHandler.initializeConfirmationButtons();
-});
+// Legacy auto-init disabled; use orderConfirmationService.initializeConfirmationButtons() instead
+// document.addEventListener('DOMContentLoaded', () => {
+//   OrderConfirmationHandler.initializeConfirmationButtons();
+// });
 
 // Экспортируем обработчик для использования в других модулях
 window.OrderConfirmationHandler = OrderConfirmationHandler;
