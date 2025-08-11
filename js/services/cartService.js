@@ -131,7 +131,7 @@ export const cartService = {
                  bg-white shadow-lg p-6 transform transition-transform duration-300 translate-x-full"
         >
           <div class="flex justify-between items-center mb-6">
-            <h2 class="text-2xl font-bold text-gray-800">Shopping Cart</h2>
+            <h2 class="text-2xl font-bold text-gray-800">Корзина</h2>
             <button onclick="toggleCart()" class="text-gray-500 hover:text-gray-700">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -144,7 +144,7 @@ export const cartService = {
           <div class="overflow-y-auto max-h-[80vh]">
             ${cart.length === 0 ? `
               <div class="text-center py-8">
-                <p class="text-gray-500">Your cart is empty</p>
+                <p class="text-gray-500">Ваша корзина пуста</p>
               </div>
             ` : `
               <div class="space-y-4 mb-6">
@@ -247,7 +247,7 @@ export const cartService = {
       if (cart.length === 0) {
         cartModalContent.innerHTML = `
           <div class="text-center py-8">
-            <p class="text-gray-500">Your cart is empty</p>
+            <p class="text-gray-500">Ваша корзина пуста</p>
           </div>
         `;
       } else {
