@@ -520,13 +520,6 @@ const ProductComponent = {
       const closeImageModal = () => {
         const imageModal = container.querySelector('#imageModal');
         if (imageModal) {
-          // Остановить и выгрузить все видео в модалке перед закрытием
-          const videos = imageModal.querySelectorAll('video');
-          videos.forEach((v) => {
-            try { v.pause(); } catch {}
-            v.removeAttribute('src');
-            v.load();
-          });
           imageModal.classList.add('hidden');
           
           // Уничтожаем Swiper при закрытии
@@ -556,15 +549,6 @@ const ProductComponent = {
       
       if (closeModalBtn) {
         ProductComponent.addEventListenerWithCleanup(closeModalBtn, 'click', closeImageModal);
-      }
-
-      // Кнопка "Смотреть видео" — открывает модал на первом видео
-      const openVideoBtn = container.querySelector('.open-video-btn');
-      if (openVideoBtn) {
-        ProductComponent.addEventListenerWithCleanup(openVideoBtn, 'click', () => {
-          const startIndex = product.photo.length; // первое видео идёт после фото
-          openImageModal(startIndex);
-        });
       }
       
       // Закрытие модального окна по клику на фон

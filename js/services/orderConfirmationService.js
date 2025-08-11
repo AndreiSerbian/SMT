@@ -1,27 +1,21 @@
 /**
  * Сервис для обработки подтверждения заказов
- * Клиент теперь вызывает только Edge Function, без anon ключей
+ * Теперь использует новый OrderConfirmationHandler для генерации номеров заказов
  */
 import { env } from '../utils/env.js';
+import { OrderConfirmationHandler } from './orderConfirmationHandler.js';
 
 export const orderConfirmationService = {
   /**
-   * Подтверждение заказа с обновлением UI
+   * Основная функция для подтверждения заказа
+   * Теперь делегирует обработку в OrderConfirmationHandler
+   * @param {string} orderId - ID заказа для подтверждения
+   * @param {HTMLButtonElement} button - Кнопка подтверждения (для изменения состояния)
+   * @returns {Promise<boolean>} - Успешность операции
    */
   async confirmOrder(orderId, button = null) {
-    try {
-      if (button) this.setButtonLoading(button, true);
-      const resp = await this.sendConfirmationRequest(orderId);
-      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-      if (button) this.setButtonConfirmed(button);
-      this.showSuccessMessage('Заказ подтверждён');
-      return true;
-    } catch (e) {
-      console.error(e);
-      this.showErrorMessage('Не удалось подтвердить заказ');
-      if (button) this.setButtonLoading(button, false);
-      return false;
-    }
+    // Используем новый обработчик с генерацией номеров заказов
+    return await OrderConfirmationHandler.confirmOrder(orderId, button);
   },
 
   /**
@@ -30,11 +24,20 @@ export const orderConfirmationService = {
    * @returns {Promise<Response>} - Промис с ответом сервера
    */
   async sendConfirmationRequest(orderId) {
+    // Формируем URL для Edge Function подтверждения заказа
     const confirmationUrl = `${env.supabaseUrl}/functions/v1/order-confirmation`;
+    
+    // Отправляем POST-запрос с ID заказа
     return await fetch(confirmationUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ orderId })
+      headers: {
+        'Content-Type': 'application/json',
+        // Добавляем anon key для авторизации в Supabase
+        'Authorization': `Bearer ${env.supabaseAnonKey}`,
+      },
+      body: JSON.stringify({
+        orderId: orderId
+      })
     });
   },
 
@@ -136,15 +139,12 @@ export const orderConfirmationService = {
     return notification;
   },
 
+  /**
+   * Инициализирует обработчики событий для кнопок подтверждения
+   * Теперь делегирует в OrderConfirmationHandler
+   */
   initializeConfirmationButtons() {
-    const confirmButtons = document.querySelectorAll('[data-order-id]');
-    confirmButtons.forEach((button) => {
-      button.addEventListener('click', async (e) => {
-        e.preventDefault();
-        const orderId = button.getAttribute('data-order-id');
-        if (orderId) await this.confirmOrder(orderId, button);
-      });
-    });
+    OrderConfirmationHandler.initializeConfirmationButtons();
   }
 };
 

@@ -12,7 +12,3 @@ verify_jwt = false
 
 [functions.update-price]
 verify_jwt = false
-
-[functions.contact-handler]
-verify_jwt = false
-
