@@ -553,7 +553,8 @@ export const products = [
       weight: 0.43,
       photo: [
         "images/Коробка с ручками/Розовая с ручками/Слайд10.JPG",
-        "images/Коробка с ручками/Розовая с ручками/Слайд11.JPG"
+        "images/Коробка с ручками/Розовая с ручками/Слайд11.JPG",
+        "images/Коробка с ручками/Слайд3.JPG"
       ],
       videos: ["videos/Video 3.mp4"],
     },
@@ -568,7 +569,8 @@ export const products = [
       weight: 0.43,
       photo: [
         "images/Коробка с ручками/Сиреневая с ручками/Слайд18.JPG",
-        "images/Коробка с ручками/Сиреневая с ручками/Слайд19.JPG"
+        "images/Коробка с ручками/Сиреневая с ручками/Слайд19.JPG",
+        "images/Коробка с ручками/Слайд3.JPG"
       ],
       videos: ["videos/Video 3.mp4"],
     },
@@ -583,7 +585,8 @@ export const products = [
       weight: 0.43,
       photo: [
         "images/Коробка с ручками/Черная с ручками/Слайд14.JPG",
-        "images/Коробка с ручками/Черная с ручками/Слайд15.JPG"
+        "images/Коробка с ручками/Черная с ручками/Слайд15.JPG",
+        "images/Коробка с ручками/Слайд3.JPG"
       ],
       videos: ["videos/Video 3.mp4"],
     },
@@ -598,7 +601,8 @@ export const products = [
       weight: 0.43,
       photo: [
         "images/Коробка с ручками/Белая с ручками/Слайд12.JPG",
-        "images/Коробка с ручками/Белая с ручками/Слайд13.JPG"
+        "images/Коробка с ручками/Белая с ручками/Слайд13.JPG",
+        "images/Коробка с ручками/Слайд3.JPG"
       ],
       videos: ["videos/Video 3.mp4"],
     },
@@ -613,7 +617,8 @@ export const products = [
       weight: 0.43,
       photo: [
         "images/Коробка с ручками/Красная с ручками/Слайд4.JPG",
-        "images/Коробка с ручками/Красная с ручками/Слайд5.JPG"
+        "images/Коробка с ручками/Красная с ручками/Слайд5.JPG",
+        "images/Коробка с ручками/Слайд3.JPG"
       ],
       videos: ["videos/Video 3.mp4"],
     },
@@ -630,7 +635,8 @@ export const products = [
         "images/Коробка с ручками/Оранжевая  с ручками/Gift box with handle small WB.jpg",
         "images/Коробка с ручками/Оранжевая  с ручками/Gift box with handle small WB 1.jpg",
         "images/Коробка с ручками/Оранжевая  с ручками/Слайд8.JPG",
-        "images/Коробка с ручками/Оранжевая  с ручками/Слайд9.JPG"
+        "images/Коробка с ручками/Оранжевая  с ручками/Слайд9.JPG",
+        "images/Коробка с ручками/Слайд3.JPG"
       ],
       videos: ["videos/Video 3.mp4"],
     },
@@ -645,7 +651,8 @@ export const products = [
       weight: 0.43,
       photo: [
         "images/Коробка с ручками/Золотая с ручками/Слайд1.JPG",
-        "images/Коробка с ручками/Золотая с ручками/Слайд2.JPG"
+        "images/Коробка с ручками/Золотая с ручками/Слайд2.JPG",
+        "images/Коробка с ручками/Слайд3.JPG"
       ],
       videos: ["videos/Video 3.mp4"],
     },
@@ -660,7 +667,8 @@ export const products = [
       weight: 0.43,
       photo: [
         "images/Коробка с ручками/Серебренная с ручками/Слайд16.JPG",
-        "images/Коробка с ручками/Серебренная с ручками/Слайд17.JPG"
+        "images/Коробка с ручками/Серебренная с ручками/Слайд17.JPG",
+        "images/Коробка с ручками/Слайд3.JPG"
       ],
       videos: ["videos/Video 3.mp4"],
     },
