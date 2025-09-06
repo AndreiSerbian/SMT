@@ -384,10 +384,10 @@ export const products = [
       dimensions: { length: 31.5, width: 26, height: 10.5 },
       weight: 0.44,
       photo: [
-        "images/Большие с бантом/Белая/Слайд7.JPG",
-        "images/Большие с бантом/Белая/Слайд8.JPG",
-        "images/Большие с бантом/Белая/Слайд19.JPG",
-        "images/Большие с бантом/Белая/Слайд20.JPG"
+        "images/Большие с бантом/Белая/Слайд7.webp",
+        "images/Большие с бантом/Белая/Слайд8.webp",
+        "images/Большие с бантом/Белая/Слайд19.webp",
+        "images/Большие с бантом/Белая/Слайд20.webp"
       ],
       videos: ["videos/Video 0.mp4"],
     },
