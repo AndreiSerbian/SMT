@@ -7,8 +7,11 @@ export const AdminProductsComponent = {
     categories: [],
     colors: [],
     loading: false,
+    showModal: false,
+    showImportModal: false,
     editingProduct: null,
-    showImportModal: false
+    uploadingImage: false,
+    selectedImages: []
   },
 
   async render() {
@@ -60,7 +63,7 @@ export const AdminProductsComponent = {
     return this.data.products.map(product => `
       <div class="product-card">
         <div class="product-image">
-          <img src="${product.photos[0]}" alt="${product.name}" loading="lazy" />
+          <img src="${this.getImageUrl(product.photos[0])}" alt="${product.name}" loading="lazy" />
         </div>
         <div class="product-info">
           <h3>${product.name}</h3>
@@ -93,87 +96,131 @@ export const AdminProductsComponent = {
 
     return `
       <div class="modal-overlay" onclick="AdminProductsComponent.closeModal(event)">
-        <div class="modal-content">
+        <div class="modal-content large-modal">
           <div class="modal-header">
             <h3>${isCreate ? 'Добавить товар' : 'Редактировать товар'}</h3>
             <button class="close-btn" onclick="AdminProductsComponent.closeModal()">&times;</button>
           </div>
           
           <form class="product-form" onsubmit="AdminProductsComponent.saveProduct(event)">
-            <div class="form-group">
-              <label>Артикул</label>
-              <input type="text" name="artikul" value="${product.artikul || ''}" required />
-            </div>
-            
-            <div class="form-group">
-              <label>Название</label>
-              <input type="text" name="name" value="${product.name || ''}" required />
-            </div>
-            
-            <div class="form-row">
+            <div class="form-grid">
               <div class="form-group">
-                <label>Категория</label>
+                <label>Название товара*</label>
+                <input type="text" name="name" value="${product.name || ''}" required 
+                       placeholder="Подарочная коробка с лентой">
+              </div>
+              
+              <div class="form-group">
+                <label>Артикул*</label>
+                <input type="text" name="artikul" value="${product.artikul || ''}" required 
+                       placeholder="059">
+              </div>
+              
+              <div class="form-group">
+                <label>ID на Wildberries</label>
+                <input type="text" name="id_wb" value="${product.id_wb || ''}" 
+                       placeholder="215908492">
+              </div>
+              
+              <div class="form-group">
+                <label>Категория*</label>
                 <select name="category_id" required>
                   <option value="">Выберите категорию</option>
-                  ${this.data.categories.map(cat => `
-                    <option value="${cat.id}" ${cat.id === product.category_id ? 'selected' : ''}>
+                  ${this.data.categories.map(cat => 
+                    `<option value="${cat.id}" ${cat.id === product.category_id ? 'selected' : ''}>
                       ${cat.name}
-                    </option>
-                  `).join('')}
+                    </option>`
+                  ).join('')}
                 </select>
               </div>
               
               <div class="form-group">
-                <label>Цвет</label>
+                <label>Цвет*</label>
                 <select name="color_id" required>
                   <option value="">Выберите цвет</option>
-                  ${this.data.colors.map(color => `
-                    <option value="${color.id}" ${color.id === product.color_id ? 'selected' : ''}>
+                  ${this.data.colors.map(color => 
+                    `<option value="${color.id}" ${color.id === product.color_id ? 'selected' : ''}>
                       ${color.name}
-                    </option>
-                  `).join('')}
+                    </option>`
+                  ).join('')}
                 </select>
               </div>
-            </div>
-            
-            <div class="form-group">
-              <label>Цена (₽)</label>
-              <input type="number" name="price_rub" value="${product.price_rub || ''}" required min="0" />
-            </div>
-            
-            <div class="form-group">
-              <label>ID на Wildberries</label>
-              <input type="text" name="id_wb" value="${product.id_wb || ''}" />
-            </div>
-            
-            <div class="form-row">
+              
               <div class="form-group">
-                <label>Длина (см)</label>
-                <input type="number" name="length" value="${product.dimensions?.length || ''}" required step="0.1" />
+                <label>Цена (руб)*</label>
+                <input type="number" name="price_rub" value="${product.price_rub || ''}" required 
+                       step="0.01" min="0" placeholder="1500">
               </div>
+              
               <div class="form-group">
-                <label>Ширина (см)</label>
-                <input type="number" name="width" value="${product.dimensions?.width || ''}" required step="0.1" />
+                <label>Длина (см)*</label>
+                <input type="number" name="length" value="${product.dimensions?.length || ''}" required 
+                       step="0.1" min="0" placeholder="23">
               </div>
+              
               <div class="form-group">
-                <label>Высота (см)</label>
-                <input type="number" name="height" value="${product.dimensions?.height || ''}" required step="0.1" />
+                <label>Ширина (см)*</label>
+                <input type="number" name="width" value="${product.dimensions?.width || ''}" required 
+                       step="0.1" min="0" placeholder="17">
+              </div>
+              
+              <div class="form-group">
+                <label>Высота (см)*</label>
+                <input type="number" name="height" value="${product.dimensions?.height || ''}" required 
+                       step="0.1" min="0" placeholder="7">
+              </div>
+              
+              <div class="form-group">
+                <label>Вес (кг)*</label>
+                <input type="number" name="weight" value="${product.weight || ''}" required 
+                       step="0.001" min="0" placeholder="0.195">
               </div>
             </div>
             
-            <div class="form-group">
-              <label>Вес (кг)</label>
-              <input type="number" name="weight" value="${product.weight || ''}" required step="0.001" />
+            <div class="form-section">
+              <h4>Изображения товара</h4>
+              <div class="image-upload-section">
+                <input type="file" id="imageUpload" multiple accept="image/webp,image/jpeg,image/png" 
+                       onchange="AdminProductsComponent.handleImageUpload(event)" class="hidden">
+                <button type="button" onclick="document.getElementById('imageUpload').click()" 
+                        class="btn btn-secondary" ${this.data.uploadingImage ? 'disabled' : ''}>
+                  ${this.data.uploadingImage ? 'Загрузка...' : 'Добавить изображения'}
+                </button>
+                <small class="help-text">Поддерживаются форматы: WebP, JPEG, PNG. Рекомендуемый размер: 800x800px</small>
+                
+                <div class="current-images">
+                  ${(product.photos || []).map((photo, index) => `
+                    <div class="image-item">
+                      <img src="${this.getImageUrl(photo)}" 
+                           alt="Товар ${index + 1}" class="image-preview">
+                      <button type="button" onclick="AdminProductsComponent.removeImage(${index})" 
+                              class="remove-image">×</button>
+                      <span class="image-order">${index + 1}</span>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
             </div>
             
-            <div class="form-group">
-              <label>Фотографии (по одной на строку)</label>
-              <textarea name="photos" rows="3" required>${(product.photos || []).join('\n')}</textarea>
-            </div>
-            
-            <div class="form-group">
-              <label>Видео (по одному на строку)</label>
-              <textarea name="videos" rows="2">${(product.videos || []).join('\n')}</textarea>
+            <div class="form-section">
+              <h4>Видео товара</h4>
+              <div class="video-section">
+                <input type="text" name="video_url" placeholder="Ссылка на видео или путь к файлу" 
+                       class="video-input">
+                <button type="button" onclick="AdminProductsComponent.addVideo()" class="btn btn-secondary">
+                  Добавить видео
+                </button>
+                
+                <div class="current-videos">
+                  ${(product.videos || []).map((video, index) => `
+                    <div class="video-item">
+                      <span class="video-path">${video}</span>
+                      <button type="button" onclick="AdminProductsComponent.removeVideo(${index})" 
+                              class="remove-video">×</button>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
             </div>
             
             <div class="form-group">
@@ -183,12 +230,12 @@ export const AdminProductsComponent = {
               </label>
             </div>
             
-            <div class="modal-actions">
+            <div class="form-actions">
               <button type="button" class="btn btn-secondary" onclick="AdminProductsComponent.closeModal()">
                 Отмена
               </button>
               <button type="submit" class="btn btn-primary">
-                ${isCreate ? 'Создать' : 'Сохранить'}
+                ${isCreate ? 'Создать' : 'Сохранить'} товар
               </button>
             </div>
           </form>
@@ -281,6 +328,88 @@ export const AdminProductsComponent = {
     return color ? color.name : 'Неизвестно';
   },
 
+  getImageUrl(photo) {
+    if (photo.startsWith('http')) {
+      return photo;
+    }
+    return `https://bsndismiessofvhglzrv.supabase.co/storage/v1/object/public/product-media/${photo}`;
+  },
+
+  async handleImageUpload(event) {
+    const files = Array.from(event.target.files);
+    if (!files.length) return;
+
+    this.data.uploadingImage = true;
+    this.rerender();
+
+    try {
+      const uploadPromises = files.map(async (file) => {
+        // Генерируем уникальное имя файла
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+        const filePath = `products/${fileName}`;
+
+        const { data, error } = await supabase.storage
+          .from('product-media')
+          .upload(filePath, file);
+
+        if (error) throw error;
+        return filePath;
+      });
+
+      const uploadedPaths = await Promise.all(uploadPromises);
+      
+      // Добавляем новые пути к существующим фото
+      if (this.data.editingProduct) {
+        this.data.editingProduct.photos = [...(this.data.editingProduct.photos || []), ...uploadedPaths];
+      } else {
+        this.data.selectedImages = [...(this.data.selectedImages || []), ...uploadedPaths];
+      }
+
+      this.showNotification(`Загружено ${uploadedPaths.length} изображений`, 'success');
+    } catch (error) {
+      console.error('Error uploading images:', error);
+      this.showNotification('Ошибка загрузки изображений: ' + error.message, 'error');
+    } finally {
+      this.data.uploadingImage = false;
+      event.target.value = ''; // Очищаем input
+      this.rerender();
+    }
+  },
+
+  removeImage(index) {
+    if (this.data.editingProduct) {
+      this.data.editingProduct.photos.splice(index, 1);
+    } else {
+      this.data.selectedImages.splice(index, 1);
+    }
+    this.rerender();
+  },
+
+  addVideo() {
+    const videoInput = document.querySelector('.video-input');
+    const videoUrl = videoInput.value.trim();
+    
+    if (!videoUrl) {
+      this.showNotification('Введите ссылку на видео', 'error');
+      return;
+    }
+
+    if (this.data.editingProduct) {
+      this.data.editingProduct.videos = [...(this.data.editingProduct.videos || []), videoUrl];
+    }
+    
+    videoInput.value = '';
+    this.rerender();
+  },
+
+  removeVideo(index) {
+    if (this.data.editingProduct) {
+      this.data.editingProduct.videos.splice(index, 1);
+      this.rerender();
+    }
+  },
+
   showImport() {
     this.data.showImportModal = true;
     this.rerender();
@@ -367,10 +496,16 @@ export const AdminProductsComponent = {
         height: parseFloat(formData.get('height'))
       },
       weight: parseFloat(formData.get('weight')),
-      photos: formData.get('photos').split('\n').filter(line => line.trim()),
-      videos: formData.get('videos').split('\n').filter(line => line.trim()),
+      photos: this.data.editingProduct?.photos || this.data.selectedImages || [],
+      videos: this.data.editingProduct?.videos || [],
       is_active: formData.has('is_active')
     };
+
+    // Проверяем наличие изображений
+    if (!productData.photos.length) {
+      this.showNotification('Добавьте хотя бы одно изображение товара', 'error');
+      return;
+    }
 
     try {
       let result;
@@ -391,6 +526,7 @@ export const AdminProductsComponent = {
 
       this.showNotification('Товар сохранен', 'success');
       this.closeModal();
+      this.data.selectedImages = []; // Очищаем выбранные изображения
       await this.loadData();
       this.rerender();
       
