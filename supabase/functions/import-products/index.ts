@@ -99,6 +99,7 @@ serve(async (req) => {
         const { error } = await supabaseClient
           .from('products')
           .upsert({
+            id: product.artikul, // Используем artikul как id
             artikul: product.artikul,
             name: product.name,
             category_id: categoryId,
@@ -141,7 +142,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Import function error:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

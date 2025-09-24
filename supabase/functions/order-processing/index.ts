@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.0";
-import { Resend } from "npm:resend@1.0.0";
+import { Resend } from "https://esm.sh/resend@3.2.0";
 
 // Конфигурация CORS
 const corsHeaders = {
@@ -357,7 +357,7 @@ ${order.comment ? `📝 *Комментарий:* ${order.comment}` : ''}
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: error.message 
+          error: error instanceof Error ? error.message : 'Unknown error'
         }),
         { 
           status: 500,

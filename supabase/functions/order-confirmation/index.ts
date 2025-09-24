@@ -219,7 +219,7 @@ async function sendTelegramConfirmation(order: any) {
     return { success: true, result };
   } catch (error) {
     console.error("Ошибка отправки Telegram уведомления:", error);
-    return { error: error.message };
+    return { error: error instanceof Error ? error.message : 'Unknown error' };
   }
 }
 
@@ -300,11 +300,11 @@ async function updateGoogleSheets(order: any) {
     
   } catch (error) {
     console.error("Критическая ошибка при обновлении Google Sheets:", error);
-    console.error("Стек ошибки:", error.stack);
+    console.error("Стек ошибки:", error instanceof Error ? error.stack : 'No stack');
     return { 
-      error: error.message,
-      type: error.name,
-      stack: error.stack
+      error: error instanceof Error ? error.message : 'Unknown error',
+      type: error instanceof Error ? error.name : 'Unknown',
+      stack: error instanceof Error ? error.stack : 'No stack'
     };
   }
 }
@@ -437,9 +437,9 @@ serve(async (req) => {
       
     } catch (error) {
       console.error("КРИТИЧЕСКАЯ ОШИБКА в GET обработчике:", error);
-      console.error("Стек ошибки:", error.stack);
+      console.error("Стек ошибки:", error instanceof Error ? error.stack : 'No stack');
       return new Response(
-        generateErrorHTML(`Системная ошибка: ${error.message}`),
+        generateErrorHTML(`Системная ошибка: ${error instanceof Error ? error.message : 'Unknown error'}`),
         { 
           status: 500,
           headers: { "Content-Type": "text/html; charset=utf-8" }
@@ -582,11 +582,11 @@ serve(async (req) => {
       
     } catch (error) {
       console.error("КРИТИЧЕСКАЯ ОШИБКА в POST обработчике:", error);
-      console.error("Стек ошибки:", error.stack);
+      console.error("Стек ошибки:", error instanceof Error ? error.stack : 'No stack');
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: error.message 
+          error: error instanceof Error ? error.message : 'Unknown error'
         }),
         { 
           status: 500,
