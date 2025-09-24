@@ -197,8 +197,7 @@ export type Database = {
       products: {
         Row: {
           artikul: string
-          category_id: string
-          color_id: string
+          color_hex: string
           created_at: string | null
           dimensions: Json
           id: string
@@ -207,30 +206,30 @@ export type Database = {
           name: string
           photos: string[]
           price_rub: number
+          size: Database["public"]["Enums"]["product_size"]
           updated_at: string | null
           videos: string[] | null
           weight: number
         }
         Insert: {
           artikul: string
-          category_id: string
-          color_id: string
+          color_hex?: string
           created_at?: string | null
           dimensions: Json
-          id?: string
+          id: string
           id_wb?: string | null
           is_active?: boolean
           name: string
           photos: string[]
           price_rub: number
+          size?: Database["public"]["Enums"]["product_size"]
           updated_at?: string | null
           videos?: string[] | null
           weight: number
         }
         Update: {
           artikul?: string
-          category_id?: string
-          color_id?: string
+          color_hex?: string
           created_at?: string | null
           dimensions?: Json
           id?: string
@@ -239,26 +238,12 @@ export type Database = {
           name?: string
           photos?: string[]
           price_rub?: number
+          size?: Database["public"]["Enums"]["product_size"]
           updated_at?: string | null
           videos?: string[] | null
           weight?: number
         }
-        Relationships: [
-          {
-            foreignKeyName: "products_category_id_fkey"
-            columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "categories"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "products_color_id_fkey"
-            columns: ["color_id"]
-            isOneToOne: false
-            referencedRelation: "colors"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       site_settings: {
         Row: {
@@ -290,9 +275,14 @@ export type Database = {
         Args: { login_input: string; password_input: string }
         Returns: boolean
       }
+      storage_public_url: {
+        Args: { bucket: string; project_ref: string; rel_path: string }
+        Returns: string
+      }
     }
     Enums: {
-      [_ in never]: never
+      product_size: "small" | "medium" | "big"
+      size_type_enum: "малая" | "средняя" | "большая"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -419,6 +409,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      product_size: ["small", "medium", "big"],
+      size_type_enum: ["малая", "средняя", "большая"],
+    },
   },
 } as const

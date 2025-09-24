@@ -47,27 +47,31 @@ serve(async (req) => {
 
     console.log(`Starting import of ${products.length} products`);
 
-    // Получаем справочники
-    const { data: categories } = await supabaseClient
-      .from('categories')
-      .select('id, name');
-    
-    const { data: colors } = await supabaseClient
-      .from('colors')
-      .select('id, name');
+    // Маппинг размеров из JSON в базу
+    const sizeTypeMapping: Record<string, 'small' | 'medium' | 'big'> = {
+      'малая': 'small',
+      'средняя': 'medium', 
+      'большая': 'big'
+    };
 
-    if (!categories || !colors) {
-      throw new Error('Failed to load categories or colors');
-    }
-
-    const categoryMap = new Map(categories.map(c => [c.name, c.id]));
-    const colorMap = new Map(colors.map(c => [c.name, c.id]));
-
-    // Маппинг категорий из JSON в базу
-    const sizeTypeMapping: Record<string, string> = {
-      'малая': 'Малая',
-      'средняя': 'Средняя', 
-      'большая': 'Большая'
+    // Маппинг цветов в hex коды
+    const colorMapping: Record<string, string> = {
+      'Розовая': '#FFB6C1',
+      'Черная': '#1a1a1a',
+      'Белая': '#FFFFFF',
+      'Золотая': '#FFD700',
+      'Серебряная': '#C0C0C0',
+      'Красная': '#FF0000',
+      'Оранжевая': '#FFA500',
+      'Персиковая': '#FFCBA4',
+      'Голубая ледяная': '#B0E0E6',
+      'Синяя бархатная': '#003366',
+      'Тиффани': '#0ABAB5',
+      'Ванильная': '#F3E5AB',
+      'Белая алмазная': '#F8F8FF',
+      'Черная муар': '#2F2F2F',
+      'Лавандовая': '#E6E6FA',
+      'Сиреневая': '#DDA0DD'
     };
 
     let imported = 0;
@@ -75,21 +79,8 @@ serve(async (req) => {
 
     for (const product of products as Product[]) {
       try {
-        const categoryName = sizeTypeMapping[product.sizeType] || 'Малая';
-        const categoryId = categoryMap.get(categoryName);
-        const colorId = colorMap.get(product.color);
-
-        if (!categoryId) {
-          console.error(`Category not found: ${categoryName} for product ${product.artikul}`);
-          errors++;
-          continue;
-        }
-
-        if (!colorId) {
-          console.error(`Color not found: ${product.color} for product ${product.artikul}`);
-          errors++;
-          continue;
-        }
+        const size = sizeTypeMapping[product.sizeType] || 'small';
+        const colorHex = colorMapping[product.color] || '#000000';
 
         // Определяем цену по размеру
         let price = 500; // По умолчанию для малых
@@ -102,8 +93,8 @@ serve(async (req) => {
             id: product.artikul, // Используем artikul как id
             artikul: product.artikul,
             name: product.name,
-            category_id: categoryId,
-            color_id: colorId,
+            size: size,
+            color_hex: colorHex,
             price_rub: price,
             id_wb: product.idWB,
             dimensions: product.dimensions,
@@ -120,6 +111,16 @@ serve(async (req) => {
           errors++;
         } else {
           imported++;
+          
+          // Также добавляем запись в product_prices
+          await supabaseClient
+            .from('product_prices')
+            .upsert({
+              product_id: product.artikul,
+              price_rub: price
+            }, {
+              onConflict: 'product_id'
+            });
         }
       } catch (err) {
         console.error(`Exception importing product ${product.artikul}:`, err);

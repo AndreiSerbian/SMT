@@ -7,7 +7,7 @@ export class ProductsService {
   }
 
   /**
-   * Получить все активные товары с категориями и цветами
+   * Получить все активные товары
    */
   async getActiveProducts() {
     if (this.loading) {
@@ -23,11 +23,7 @@ export class ProductsService {
     try {
       const { data, error } = await supabase
         .from('products')
-        .select(`
-          *,
-          categories(id, name, slug),
-          colors(id, name, hex_code)
-        `)
+        .select('*')
         .eq('is_active', true)
         .order('created_at', { ascending: false });
 
@@ -37,13 +33,11 @@ export class ProductsService {
       const products = data.map(product => ({
         ...product,
         id: product.artikul, // Используем artikul как ID для совместимости
-        sizeType: this.mapCategoryToSize(product.categories.slug),
-        color: product.colors.name,
+        sizeType: this.mapSizeToRussian(product.size),
+        color: this.getColorNameFromHex(product.color_hex),
         photo: product.photos,
         videos: product.videos || [],
-        price: product.price_rub,
-        category: product.categories,
-        colorData: product.colors
+        price: product.price_rub
       }));
 
       this.cache.set('activeProducts', products);
@@ -58,12 +52,18 @@ export class ProductsService {
   }
 
   /**
-   * Получить товары по категории
+   * Получить товары по категории (размеру)
    */
   async getProductsByCategory(categorySlug) {
     const allProducts = await this.getActiveProducts();
+    const sizeMapping = {
+      'small': 'small',
+      'medium': 'medium', 
+      'large': 'big'
+    };
+    const targetSize = sizeMapping[categorySlug];
     return allProducts.filter(product => 
-      product.categories.slug === categorySlug
+      product.size === targetSize
     );
   }
 
@@ -128,16 +128,40 @@ export class ProductsService {
   }
 
   /**
-   * Маппинг slug категории в sizeType для совместимости
+   * Маппинг размера в русский язык для совместимости
    */
-  mapCategoryToSize(slug) {
+  mapSizeToRussian(size) {
     const mapping = {
       'small': 'малая',
-      'medium': 'средняя',
-      'large': 'большая',
-      'with_handle': 'с ручками'
+      'medium': 'средняя', 
+      'big': 'большая'
     };
-    return mapping[slug] || slug;
+    return mapping[size] || size;
+  }
+
+  /**
+   * Получить название цвета по hex коду (упрощенный маппинг)
+   */
+  getColorNameFromHex(hex) {
+    const colorMapping = {
+      '#FFB6C1': 'Розовая',
+      '#1a1a1a': 'Черная',
+      '#FFFFFF': 'Белая', 
+      '#FFD700': 'Золотая',
+      '#C0C0C0': 'Серебряная',
+      '#FF0000': 'Красная',
+      '#FFA500': 'Оранжевая',
+      '#FFCBA4': 'Персиковая',
+      '#B0E0E6': 'Голубая ледяная',
+      '#003366': 'Синяя бархатная',
+      '#0ABAB5': 'Тиффани',
+      '#F3E5AB': 'Ванильная',
+      '#F8F8FF': 'Белая алмазная',
+      '#2F2F2F': 'Черная муар',
+      '#E6E6FA': 'Лавандовая',
+      '#DDA0DD': 'Сиреневая'
+    };
+    return colorMapping[hex] || hex;
   }
 
   /**
@@ -147,7 +171,7 @@ export class ProductsService {
     try {
       const { data, error } = await supabase
         .from('products')
-        .select('is_active, category_id, categories(name)', { count: 'exact' });
+        .select('is_active, size');
 
       if (error) throw error;
 
@@ -155,18 +179,18 @@ export class ProductsService {
         total: data.length,
         active: data.filter(p => p.is_active).length,
         inactive: data.filter(p => !p.is_active).length,
-        byCategory: {}
+        bySize: {}
       };
 
-      // Группировка по категориям
+      // Группировка по размерам
       data.forEach(product => {
-        const categoryName = product.categories?.name || 'Без категории';
-        if (!stats.byCategory[categoryName]) {
-          stats.byCategory[categoryName] = { total: 0, active: 0 };
+        const sizeName = this.mapSizeToRussian(product.size);
+        if (!stats.bySize[sizeName]) {
+          stats.bySize[sizeName] = { total: 0, active: 0 };
         }
-        stats.byCategory[categoryName].total++;
+        stats.bySize[sizeName].total++;
         if (product.is_active) {
-          stats.byCategory[categoryName].active++;
+          stats.bySize[sizeName].active++;
         }
       });
 
@@ -222,7 +246,7 @@ export class ProductsService {
       product.name.toLowerCase().includes(searchTerm) ||
       product.artikul.toLowerCase().includes(searchTerm) ||
       product.color.toLowerCase().includes(searchTerm) ||
-      product.categories.name.toLowerCase().includes(searchTerm)
+      product.sizeType.toLowerCase().includes(searchTerm)
     );
   }
 }

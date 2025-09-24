@@ -68,8 +68,11 @@ export const AdminProductsComponent = {
         <div class="product-info">
           <h3>${product.name}</h3>
           <p class="artikul">Артикул: ${product.artikul}</p>
-          <p class="category">${this.getCategoryName(product.category_id)}</p>
-          <p class="color">${this.getColorName(product.color_id)}</p>
+          <p class="category">${this.getSizeName(product.size)}</p>
+          <p class="color" style="display: flex; align-items: center; gap: 8px;">
+            <span style="width: 16px; height: 16px; border-radius: 50%; background-color: ${product.color_hex}; border: 1px solid #ddd;"></span>
+            ${this.getColorNameFromHex(product.color_hex)}
+          </p>
           <p class="price">${product.price_rub} ₽</p>
           <div class="status">
             <span class="status-badge ${product.is_active ? 'active' : 'inactive'}">
@@ -123,27 +126,27 @@ export const AdminProductsComponent = {
               </div>
               
               <div class="form-group">
-                <label>Категория*</label>
-                <select name="category_id" required>
-                  <option value="">Выберите категорию</option>
-                  ${this.data.categories.map(cat => 
-                    `<option value="${cat.id}" ${cat.id === product.category_id ? 'selected' : ''}>
-                      ${cat.name}
-                    </option>`
-                  ).join('')}
+                <label>Размер*</label>
+                <select name="size" required>
+                  <option value="">Выберите размер</option>
+                  <option value="small" ${product.size === 'small' ? 'selected' : ''}>Малая</option>
+                  <option value="medium" ${product.size === 'medium' ? 'selected' : ''}>Средняя</option>
+                  <option value="big" ${product.size === 'big' ? 'selected' : ''}>Большая</option>
                 </select>
               </div>
               
               <div class="form-group">
-                <label>Цвет*</label>
-                <select name="color_id" required>
-                  <option value="">Выберите цвет</option>
-                  ${this.data.colors.map(color => 
-                    `<option value="${color.id}" ${color.id === product.color_id ? 'selected' : ''}>
-                      ${color.name}
-                    </option>`
-                  ).join('')}
-                </select>
+                <label>Цвет (hex код)*</label>
+                <div class="color-input-group">
+                  <input type="color" name="color_hex" value="${product.color_hex || '#000000'}" 
+                         style="width: 50px; height: 40px; border: none; border-radius: 4px;"
+                         onchange="this.nextElementSibling.value = this.value">
+                  <input type="text" name="color_hex_text" value="${product.color_hex || '#000000'}" 
+                         placeholder="#FF0000" maxlength="7" pattern="^#[0-9A-Fa-f]{6}$"
+                         style="flex: 1; margin-left: 8px;"
+                         oninput="if(/^#[0-9A-Fa-f]{6}$/.test(this.value)) this.previousElementSibling.value = this.value">
+                </div>
+                <small class="help-text">Выберите цвет или введите hex код (например: #FF0000)</small>
               </div>
               
               <div class="form-group">
@@ -291,23 +294,14 @@ export const AdminProductsComponent = {
     this.data.loading = true;
     
     try {
-      // Загружаем категории и цвета
-      const [categoriesResult, colorsResult, productsResult] = await Promise.all([
-        supabase.from('categories').select('*').order('sort_order'),
-        supabase.from('colors').select('*').order('sort_order'),
-        supabase.from('products').select(`
-          *,
-          categories(name),
-          colors(name, hex_code)
-        `).order('created_at', { ascending: false })
-      ]);
+      // Загружаем только продукты
+      const productsResult = await supabase
+        .from('products')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-      if (categoriesResult.error) throw categoriesResult.error;
-      if (colorsResult.error) throw colorsResult.error;
       if (productsResult.error) throw productsResult.error;
 
-      this.data.categories = categoriesResult.data;
-      this.data.colors = colorsResult.data;
       this.data.products = productsResult.data;
       
     } catch (error) {
@@ -318,14 +312,35 @@ export const AdminProductsComponent = {
     this.data.loading = false;
   },
 
-  getCategoryName(categoryId) {
-    const category = this.data.categories.find(c => c.id === categoryId);
-    return category ? category.name : 'Неизвестно';
+  getSizeName(size) {
+    const sizeMapping = {
+      'small': 'Малая',
+      'medium': 'Средняя', 
+      'big': 'Большая'
+    };
+    return sizeMapping[size] || size;
   },
 
-  getColorName(colorId) {
-    const color = this.data.colors.find(c => c.id === colorId);
-    return color ? color.name : 'Неизвестно';
+  getColorNameFromHex(hex) {
+    const colorMapping = {
+      '#FFB6C1': 'Розовая',
+      '#1a1a1a': 'Черная',
+      '#FFFFFF': 'Белая', 
+      '#FFD700': 'Золотая',
+      '#C0C0C0': 'Серебряная',
+      '#FF0000': 'Красная',
+      '#FFA500': 'Оранжевая',
+      '#FFCBA4': 'Персиковая',
+      '#B0E0E6': 'Голубая ледяная',
+      '#003366': 'Синяя бархатная',
+      '#0ABAB5': 'Тиффани',
+      '#F3E5AB': 'Ванильная',
+      '#F8F8FF': 'Белая алмазная',
+      '#2F2F2F': 'Черная муар',
+      '#E6E6FA': 'Лавандовая',
+      '#DDA0DD': 'Сиреневая'
+    };
+    return colorMapping[hex] || hex;
   },
 
   getImageUrl(photo) {
@@ -483,11 +498,14 @@ export const AdminProductsComponent = {
     event.preventDefault();
     const formData = new FormData(event.target);
     
+    // Берем цвет из текстового поля, если заполнено, иначе из color picker
+    const colorHex = formData.get('color_hex_text') || formData.get('color_hex');
+    
     const productData = {
       artikul: formData.get('artikul'),
       name: formData.get('name'),
-      category_id: formData.get('category_id'),
-      color_id: formData.get('color_id'),
+      size: formData.get('size'),
+      color_hex: colorHex,
       price_rub: parseFloat(formData.get('price_rub')),
       id_wb: formData.get('id_wb') || null,
       dimensions: {
@@ -516,13 +534,24 @@ export const AdminProductsComponent = {
           .update(productData)
           .eq('id', this.data.editingProduct.id);
       } else {
-        // Создание
+        // Создание - используем artikul как id
+        productData.id = productData.artikul;
         result = await supabase
           .from('products')
           .insert(productData);
       }
 
       if (result.error) throw result.error;
+
+      // Также обновляем/создаем запись в product_prices
+      await supabase
+        .from('product_prices')
+        .upsert({
+          product_id: productData.artikul,
+          price_rub: productData.price_rub
+        }, {
+          onConflict: 'product_id'
+        });
 
       this.showNotification('Товар сохранен', 'success');
       this.closeModal();
