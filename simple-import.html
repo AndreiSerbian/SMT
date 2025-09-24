@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Импорт товаров</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        button { padding: 10px 20px; font-size: 16px; margin: 10px; }
+        #result { margin: 20px 0; padding: 10px; border-radius: 5px; }
+        .success { background: #d4edda; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; border: 1px solid #f5c6cb; }
+    </style>
+</head>
+<body>
+    <h1>Импорт товаров в Supabase</h1>
+    
+    <input type="password" id="password" placeholder="Пароль админа" value="admin123">
+    <button onclick="importProducts()">Импортировать товары</button>
+    <button onclick="checkProducts()">Проверить товары</button>
+    
+    <div id="result"></div>
+
+    <script>
+        async function importProducts() {
+            const password = document.getElementById('password').value;
+            const resultDiv = document.getElementById('result');
+            
+            const products = [{
+      "name": "Подарочная коробка с лентой",
+      "id": "059",
+      "artikul": "059",
+      "idWB": "215908492",
+      "color": "Розовая",
+      "sizeType": "малая",
+      "dimensions": { "length": 23, "width": 17, "height": 7 },
+      "weight": 0.195,
+      "photo": [
+        "images/small with bow/pink/slide1.webp",
+        "images/small with bow/pink/slide2.webp"
+      ],
+      "videos": ["videos/Video 0.mp4"]
+    },
+    {
+      "name": "Подарочная коробка с лентой",
+      "id": "0591",
+      "artikul": "0591",
+      "idWB": "215915227",
+      "color": "Тиффани",
+      "sizeType": "малая",
+      "dimensions": { "length": 23, "width": 17, "height": 7 },
+      "weight": 0.195,
+      "photo": [
+        "images/small with bow/tiffany/slide1.webp",
+        "images/small with bow/tiffany/slide2.webp"
+      ],
+      "videos": ["videos/Video 0.mp4"]
+    }];
+
+            try {
+                resultDiv.innerHTML = 'Импортируем...';
+                
+                const response = await fetch('https://bsndismiessofvhglzrv.supabase.co/functions/v1/import-products', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzbmRpc21pZXNzb2Z2aGdsenJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzg2ODYyNTIsImV4cCI6MjA1NDI2MjI1Mn0.4pumjrK8SV79xaegTEZaJMmi6lnp-_5uhSytvWpoZHY'
+                    },
+                    body: JSON.stringify({
+                        products,
+                        admin_login: 'admin',
+                        admin_password: password
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    resultDiv.innerHTML = `<div class="success">✅ Импортировано: ${result.imported} товаров</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="error">❌ Ошибка: ${result.error}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Ошибка: ${error.message}</div>`;
+            }
+        }
+
+        async function checkProducts() {
+            const resultDiv = document.getElementById('result');
+            try {
+                const response = await fetch('https://bsndismiessofvhglzrv.supabase.co/rest/v1/products?select=count', {
+                    headers: {
+                        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzbmRpc21pZXNzb2Z2aGdsenJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzg2ODYyNTIsImV4cCI6MjA1NDI2MjI1Mn0.4pumjrK8SV79xaegTEZaJMmi6lnp-_5uhSytvWpoZHY'
+                    }
+                });
+                const count = response.headers.get('content-range')?.split('/')[1] || 0;
+                resultDiv.innerHTML = `<div class="success">📊 В базе: ${count} товаров</div>`;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Ошибка проверки: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>
