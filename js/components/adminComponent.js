@@ -80,18 +80,11 @@ export class AdminComponent {
   renderAdminPanel() {
     return `
       <div class="min-h-screen bg-gray-100 p-6">
-        <div class="max-w-4xl mx-auto">
+        <div class="max-w-6xl mx-auto">
           <div class="bg-white rounded-lg shadow-lg p-6">
             <div class="flex justify-between items-center mb-6">
               <h1 class="text-2xl font-bold text-gray-800">⚙️ Админ-панель</h1>
               <div class="flex gap-3">
-                <button 
-                  id="toggle-maintenance" 
-                  disabled
-                  class="px-4 py-2 rounded-md text-white bg-gray-400 cursor-not-allowed"
-                >
-                  Начать технические работы
-                </button>
                 <button 
                   id="admin-logout" 
                   class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors"
@@ -101,10 +94,42 @@ export class AdminComponent {
               </div>
             </div>
 
-            <!-- Управление товарами -->
-            <div>
-              <h2 class="text-xl font-semibold mb-4">📦 Товары</h2>
-              ${this.renderProductsCards()}
+            <!-- Вкладки админки -->
+            <div class="admin-tabs">
+              <button class="tab-btn active" data-tab="products">Товары</button>
+              <button class="tab-btn" data-tab="legacy-prices">Цены (устар.)</button>
+              <button class="tab-btn" data-tab="orders">Заказы</button>
+              <button class="tab-btn" data-tab="settings">Настройки</button>
+            </div>
+
+            <div class="tab-content">
+              <div class="tab-pane active" id="products-tab">
+                <div id="admin-products-container">
+                  <!-- Здесь будет компонент управления товарами -->
+                </div>
+              </div>
+              
+              <div class="tab-pane" id="legacy-prices-tab">
+                <div class="legacy-prices">
+                  <h3>Управление ценами (устаревшая система)</h3>
+                  <p class="warning">⚠️ Эта система устарела. Используйте управление товарами.</p>
+                  ${this.renderProductsCards()}
+                </div>
+              </div>
+
+              <div class="tab-pane" id="orders-tab">
+                <div class="orders-management">
+                  <h3>Управление заказами</h3>
+                  <p class="text-gray-600">Здесь будет управление заказами...</p>
+                </div>
+              </div>
+
+              <div class="tab-pane" id="settings-tab">
+                <div class="settings-management">
+                  <h3>Настройки сайта</h3>
+                  <p class="text-gray-600">Здесь будут настройки сайта...</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -169,7 +194,24 @@ export class AdminComponent {
     
     container.innerHTML = await this.render();
     this.attachEventListeners(container);
+    
+    // Загружаем компонент товаров
+    if (this.isAuthenticated) {
+      await this.loadProductsComponent();
+    }
   }
+
+  async loadProductsComponent() {
+    try {
+      const { AdminProductsComponent } = await import('./adminProductsComponent.js');
+      const container = document.getElementById('admin-products-container');
+      if (container) {
+        await AdminProductsComponent.mount(container);
+      }
+    } catch (error) {
+      console.error('Error loading products component:', error);
+    }
+  },
 
   attachEventListeners(container) {
     if (!this.isAuthenticated) {
@@ -193,6 +235,32 @@ export class AdminComponent {
       if (logoutBtn) {
         logoutBtn.addEventListener('click', () => this.logout());
       }
+
+      // Обработчики для вкладок
+      const tabBtns = container.querySelectorAll('.tab-btn');
+      const tabPanes = container.querySelectorAll('.tab-pane');
+      
+      tabBtns.forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const targetTab = btn.dataset.tab;
+          
+          // Убираем активные классы
+          tabBtns.forEach(b => b.classList.remove('active'));
+          tabPanes.forEach(pane => pane.classList.remove('active'));
+          
+          // Добавляем активные классы
+          btn.classList.add('active');
+          const targetPane = container.querySelector(`#${targetTab}-tab`);
+          if (targetPane) {
+            targetPane.classList.add('active');
+            
+            // Если переключились на товары, перезагружаем компонент
+            if (targetTab === 'products') {
+              await this.loadProductsComponent();
+            }
+          }
+        });
+      });
     }
   }
 

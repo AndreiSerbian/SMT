@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -32,6 +32,66 @@ export type Database = {
           id?: string
           login?: string
           password?: string
+        }
+        Relationships: []
+      }
+      categories: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean
+          name: string
+          slug: string
+          sort_order: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          slug: string
+          sort_order?: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          slug?: string
+          sort_order?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      colors: {
+        Row: {
+          created_at: string | null
+          hex_code: string
+          id: string
+          is_active: boolean
+          name: string
+          sort_order: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          hex_code: string
+          id?: string
+          is_active?: boolean
+          name: string
+          sort_order?: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          hex_code?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          sort_order?: number
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -133,6 +193,72 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      products: {
+        Row: {
+          artikul: string
+          category_id: string
+          color_id: string
+          created_at: string | null
+          dimensions: Json
+          id: string
+          id_wb: string | null
+          is_active: boolean
+          name: string
+          photos: string[]
+          price_rub: number
+          updated_at: string | null
+          videos: string[] | null
+          weight: number
+        }
+        Insert: {
+          artikul: string
+          category_id: string
+          color_id: string
+          created_at?: string | null
+          dimensions: Json
+          id?: string
+          id_wb?: string | null
+          is_active?: boolean
+          name: string
+          photos: string[]
+          price_rub: number
+          updated_at?: string | null
+          videos?: string[] | null
+          weight: number
+        }
+        Update: {
+          artikul?: string
+          category_id?: string
+          color_id?: string
+          created_at?: string | null
+          dimensions?: Json
+          id?: string
+          id_wb?: string | null
+          is_active?: boolean
+          name?: string
+          photos?: string[]
+          price_rub?: number
+          updated_at?: string | null
+          videos?: string[] | null
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_color_id_fkey"
+            columns: ["color_id"]
+            isOneToOne: false
+            referencedRelation: "colors"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       site_settings: {
         Row: {
