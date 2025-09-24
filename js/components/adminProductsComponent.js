@@ -467,8 +467,8 @@ export const AdminProductsComponent = {
     this.data.editingProduct = {
       artikul: '',
       name: '',
-      category_id: '',
-      color_id: '',
+      size: '',
+      color_hex: '#000000',
       price_rub: '',
       id_wb: '',
       dimensions: { length: '', width: '', height: '' },
