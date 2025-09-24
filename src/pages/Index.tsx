@@ -1,6 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Gift, Package, Boxes, Users, Sparkles, Shield, Truck, Wrench } from "lucide-react";
+import { AdminButton } from "@/components/admin/AdminButton";
 const Index = () => {
   return (
     <div className="min-h-screen p-4 md:p-8">
@@ -133,6 +134,8 @@ const Index = () => {
           </div>
         </section>
 
+        {/* Admin Button */}
+        <AdminButton />
       </div>
     </div>
   );
