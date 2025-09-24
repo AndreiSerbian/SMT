@@ -10,8 +10,8 @@ export const products = [
       dimensions: { length: 23, width: 17, height: 7 },
       weight: 0.195,
       photo: [
-        "images/Малые с бантом/Розовая/Слайд1.webp",
-        "images/Малые с бантом/Розовая/Слайд2.webp"
+        "images/small with bow/pink/slide1.webp",
+        "images/small with bow/pink/slide2.webp"
       ],
       videos: ["videos/Video 0.mp4"],
     },
@@ -25,8 +25,8 @@ export const products = [
       dimensions: { length: 23, width: 17, height: 7 },
       weight: 0.195,
       photo: [
-        "images/Малые с бантом/Тиффани/Слайд4.webp",
-        "images/Малые с бантом/Тиффани/Слайд5.webp"
+        "images/small with bow/tiffany/slide1.webp",
+        "images/small with bow/tiffany/slide2.webp"
       ],
       videos: ["videos/Video 0.mp4"],
     },
@@ -40,10 +40,10 @@ export const products = [
       dimensions: { length: 23, width: 17, height: 7 },
       weight: 0.195,
       photo: [
-        "images/Малые с бантом/Черная/Слайд6.webp",
-        "images/Малые с бантом/Черная/Слайд7.webp",
-        "images/Малые с бантом/Черная/Слайд8.webp",
-        "images/Малые с бантом/Черная/Слайд9.webp",
+        "images/small with bow/black/slide1.webp",
+        "images/small with bow/black/slide2.webp",
+        "images/small with bow/black/slide3.webp",
+        "images/small with bow/black/slide4.webp",
       ],
       videos: ["videos/Video 0.mp4"],
     },
@@ -57,10 +57,10 @@ export const products = [
       dimensions: { length: 23, width: 17, height: 7 },
       weight: 0.195,
       photo: [
-        "images/Малые с бантом/Белая/Слайд10.webp",
-        "images/Малые с бантом/Белая/Слайд11.webp",
-        "images/Малые с бантом/Белая/Слайд12.webp",
-        "images/Малые с бантом/Белая/Слайд13.webp",
+        "images/small with bow/white/slide1.webp",
+        "images/small with bow/white/slide2.webp",
+        "images/small with bow/white/slide3.webp",
+        "images/small with bow/white/slide4.webp",
       ],
       videos: ["videos/Video 0.mp4"],
     },
@@ -74,8 +74,8 @@ export const products = [
       dimensions: { length: 23, width: 17, height: 7 },
       weight: 0.195,
       photo: [
-        "images/Малые с бантом/Красная/Слайд14.webp",
-        "images/Малые с бантом/Красная/Слайд15.webp"
+        "images/small with bow/red/slide1.webp",
+        "images/small with bow/red/slide2.webp"
       ],
       videos: ["videos/Video 0.mp4"],
     },
@@ -89,8 +89,8 @@ export const products = [
       dimensions: { length: 23, width: 17, height: 7 },
       weight: 0.195,
       photo: [
-        "images/Малые с бантом/Оранжевая/Слайд16.webp",
-        "images/Малые с бантом/Оранжевая/Слайд17.webp"
+        "images/small with bow/orange/slide1.webp",
+        "images/small with bow/orange/slide2.webp"
       ],
       videos: ["videos/Video 0.mp4"],
     },
@@ -104,10 +104,10 @@ export const products = [
       dimensions: { length: 22, width: 16.5, height: 8.8 },
       weight: 0.245,
       photo: [
-        "images/Малые с бантом/Голубой лед/Слайд26.webp",
-        "images/Малые с бантом/Голубой лед/Слайд27.webp",
-        "images/Малые с бантом/Голубой лед/Слайд28.webp",
-        "images/Малые с бантом/Голубой лед/Слайд29.webp"
+        "images/small with bow/ice blue/slide1.webp",
+        "images/small with bow/ice blue/slide2.webp",
+        "images/small with bow/ice blue/slide3.webp",
+        "images/small with bow/ice blue/slide4.webp"
       ],
       videos: ["videos/Video 2.mp4"],
     },
@@ -121,10 +121,10 @@ export const products = [
       dimensions: { length: 22, width: 16.5, height: 8.8 },
       weight: 0.245,
       photo: [
-        "images/Малые с бантом/Ванильная/Слайд22.webp",
-        "images/Малые с бантом/Ванильная/Слайд23.webp",
-        "images/Малые с бантом/Ванильная/Слайд24.webp",
-        "images/Малые с бантом/Ванильная/Слайд25.webp"
+        "images/small with bow/vanilla/slide1.webp",
+        "images/small with bow/vanilla/slide2.webp",
+        "images/small with bow/vanilla/slide3.webp",
+        "images/small with bow/vanilla/slide4.webp"
       ],
       videos: ["videos/Video 2.mp4"],
     },
@@ -138,10 +138,10 @@ export const products = [
       dimensions: { length: 22, width: 16.5, height: 8.8 },
       weight: 0.245,
       photo: [
-        "images/Малые с бантом/Золотая/Слайд18.webp",
-        "images/Малые с бантом/Золотая/Слайд19.webp",
-        "images/Малые с бантом/Золотая/Слайд20.webp",
-        "images/Малые с бантом/Золотая/Слайд21.webp"
+        "images/small with bow/gold/slide1.webp",
+        "images/small with bow/gold/slide2.webp",
+        "images/small with bow/gold/slide3.webp",
+        "images/small with bow/gold/slide4.webp"
       ],
       videos: ["videos/Video 2.mp4"],
     },
@@ -156,8 +156,8 @@ export const products = [
       dimensions: { length: 26, width: 19, height: 8 },
       weight: 0.25,
       photo: [
-        "images/Средние с бантом/Розовая/Слайд1.webp",
-        "images/Средние с бантом/Розовая/Слайд2.webp"
+        "images/medium with bow/pink/slide1.webp",
+        "images/medium with bow/pink/slide2.webp"
       ],
       videos: ["videos/Video 0.mp4"],
     },
@@ -171,8 +171,8 @@ export const products = [
       dimensions: { length: 26, width: 19, height: 8 },
       weight: 0.25,
       photo: [
-        "images/Средние с бантом/Тиффани/Слайд3.webp",
-        "images/Средние с бантом/Тиффани/Слайд4.webp"
+        "images/medium with bow/tiffany/slide1.webp",
+        "images/medium with bow/tiffany/slide2.webp"
       ],
       videos: ["videos/Video 0.mp4"],
     },
@@ -186,10 +186,10 @@ export const products = [
       dimensions: { length: 26, width: 19, height: 8 },
       weight: 0.25,
       photo: [
-        "images/Средние с бантом/Черная/Слайд8.webp",
-        "images/Средние с бантом/Черная/Слайд7.webp",
-        "images/Средние с бантом/Черная/Слайд6.webp",
-        "images/Средние с бантом/Черная/Слайд5.webp",
+        "images/medium with bow/black/slide1.webp",
+        "images/medium with bow/black/slide2.webp",
+        "images/medium with bow/black/slide3.webp",
+        "images/medium with bow/black/slide4.webp",
       ],
       videos: ["videos/Video 0.mp4"],
     },
@@ -203,10 +203,10 @@ export const products = [
       dimensions: { length: 26, width: 19, height: 8 },
       weight: 0.25,
       photo: [
-        "images/Средние с бантом/Белая/Слайд9.webp",
-        "images/Средние с бантом/Белая/Слайд10.webp",
-        "images/Средние с бантом/Белая/Слайд27.webp",
-        "images/Средние с бантом/Белая/Слайд28.webp"
+        "images/medium with bow/white/slide1.webp",
+        "images/medium with bow/white/slide2.webp",
+        "images/medium with bow/white/slide3.webp",
+        "images/medium with bow/white/slide4.webp"
       ],
       videos: ["videos/Video 0.mp4"],
     },
@@ -220,8 +220,8 @@ export const products = [
       dimensions: { length: 26, width: 19, height: 8 },
       weight: 0.25,
       photo: [
-        "images/Средние с бантом/Красная/Слайд13.webp",
-        "images/Средние с бантом/Красная/Слайд14.webp"
+        "images/medium with bow/red/slide1.webp",
+        "images/medium with bow/red/slide2.webp"
       ],
       videos: ["videos/Video 0.mp4"],
     },
@@ -235,8 +235,8 @@ export const products = [
       dimensions: { length: 26, width: 19, height: 8 },
       weight: 0.25,
       photo: [
-        "images/Средние с бантом/Оранжевая/Слайд15.webp",
-        "images/Средние с бантом/Оранжевая/Слайд16.webp"
+        "images/medium with bow/orange/slide1.webp",
+        "images/medium with bow/orange/slide2.webp"
       ],
       videos: ["videos/Video 0.mp4"],
     },
@@ -250,10 +250,10 @@ export const products = [
       dimensions: { length: 26, width: 17, height: 11 },
       weight: 0.25,
       photo: [
-        "images/Средние с бантом/Лавандовая/Слайд17.webp",
-        "images/Средние с бантом/Лавандовая/Слайд18.webp",
-        "images/Средние с бантом/Лавандовая/Слайд19.webp",
-        "images/Средние с бантом/Лавандовая/Слайд20.webp"
+        "images/medium with bow/lavender/slide1.webp",
+        "images/medium with bow/lavender/slide2.webp",
+        "images/medium with bow/lavender/slide3.webp",
+        "images/medium with bow/lavender/slide4.webp"
       ],
       videos: ["videos/Video 0.mp4"],
     },
@@ -267,10 +267,10 @@ export const products = [
       dimensions: { length: 26, width: 17, height: 11 },
       weight: 0.32,
       photo: [
-        "images/Средние с бантом/Персиковая/Слайд29.webp",
-        "images/Средние с бантом/Персиковая/Слайд30.webp",
-        "images/Средние с бантом/Персиковая/Слайд31.webp",
-        "images/Средние с бантом/Персиковая/Слайд32.webp"
+        "images/medium with bow/peach/slide1.webp",
+        "images/medium with bow/peach/slide2.webp",
+        "images/medium with bow/peach/slide3.webp",
+        "images/medium with bow/peach/slide4.webp"
       ],
       videos: ["videos/Video 1.mp4"],
     },
@@ -284,10 +284,10 @@ export const products = [
       dimensions: { length: 26, width: 17, height: 11 },
       weight: 0.32,
       photo: [
-        "images/Средние с бантом/Черный муар/Слайд33.webp",
-        "images/Средние с бантом/Черный муар/Слайд34.webp",
-        "images/Средние с бантом/Черный муар/Слайд35.webp",
-        "images/Средние с бантом/Черный муар/Слайд36.webp"
+        "images/medium with bow/black moire/slide2.webp",
+        "images/medium with bow/black moire/slide1.webp",
+        "images/medium with bow/black moire/slide3.webp",
+        "images/medium with bow/black moire/slide4.webp"
       ],
       videos: ["videos/Video 1.mp4"],
     },
@@ -301,10 +301,10 @@ export const products = [
       dimensions: { length: 26, width: 17, height: 11 },
       weight: 0.32,
       photo: [
-        "images/Средние с бантом/Белый бриллиант/Слайд25.webp",
-        "images/Средние с бантом/Белый бриллиант/Слайд26.webp",
-        "images/Средние с бантом/Белый бриллиант/Слайд27.webp",
-        "images/Средние с бантом/Белый бриллиант/Слайд28.webp"
+        "images/medium with bow/white diamond/slide25.webp",
+        "images/medium with bow/white diamond/slide26.webp",
+        "images/medium with bow/white diamond/slide27.webp",
+        "images/medium with bow/white diamond/slide28.webp"
       ],
       videos: ["videos/Video 1.mp4"],
     },
@@ -318,10 +318,10 @@ export const products = [
       dimensions: { length: 26, width: 17, height: 11 },
       weight: 0.32,
       photo: [
-        "images/Средние с бантом/Синий бархат/Слайд21.webp",
-        "images/Средние с бантом/Синий бархат/Слайд22.webp",
-        "images/Средние с бантом/Синий бархат/Слайд23.webp",
-        "images/Средние с бантом/Синий бархат/Слайд24.webp"
+        "images/medium with bow/blue velvet/slide21.webp",
+        "images/medium with bow/blue velvet/slide22.webp",
+        "images/medium with bow/blue velvet/slide23.webp",
+        "images/medium with bow/blue velvet/slide24.webp"
       ],
       videos: ["videos/Video 1.mp4"],
     },
@@ -337,8 +337,8 @@ export const products = [
       dimensions: { length: 31.5, width: 26, height: 10.5 },
       weight: 0.44,
       photo: [
-        "images/Большие с бантом/Розовая/Слайд1.webp",
-        "images/Большие с бантом/Розовая/Слайд2.webp"
+        "images/big with bow/pink/slide1.webp",
+        "images/big with bow/pink/slide2.webp"
       ],
       videos: ["videos/Video 0.mp4"],
     },
@@ -352,8 +352,8 @@ export const products = [
       dimensions: { length: 31.5, width: 26, height: 10.5 },
       weight: 0.44,
       photo: [
-        "images/Большие с бантом/Тиффани/Слайд3.webp",
-        "images/Большие с бантом/Тиффани/Слайд4.webp"
+        "images/big with bow/tiffany/slide1.webp",
+        "images/big with bow/tiffany/slide2.webp"
       ],
       videos: ["videos/Video 0.mp4"],
     },
@@ -367,10 +367,10 @@ export const products = [
       dimensions: { length: 31.5, width: 26, height: 10.5 },
       weight: 0.44,
       photo: [
-        "images/Большие с бантом/Черная/Слайд5.webp",
-        "images/Большие с бантом/Черная/Слайд6.webp",
-        "images/Большие с бантом/Черная/Слайд27.webp",
-        "images/Большие с бантом/Черная/Слайд28.webp"
+        "images/big with bow/black/slide1.webp",
+        "images/big with bow/black/slide2.webp",
+        "images/big with bow/black/slide3.webp",
+        "images/big with bow/black/slide4.webp"
       ],
       videos: ["videos/Video 0.mp4"],
     },
@@ -384,10 +384,10 @@ export const products = [
       dimensions: { length: 31.5, width: 26, height: 10.5 },
       weight: 0.44,
       photo: [
-        "images/Большие с бантом/Белая/Слайд7.webp",
-        "images/Большие с бантом/Белая/Слайд8.webp",
-        "images/Большие с бантом/Белая/Слайд19.webp",
-        "images/Большие с бантом/Белая/Слайд20.webp"
+        "images/big with bow/white/slide1.webp",
+        "images/big with bow/white/slide2.webp",
+        "images/big with bow/white/slide3.webp",
+        "images/big with bow/white/slide4.webp"
       ],
       videos: ["videos/Video 0.mp4"],
     },
@@ -401,8 +401,8 @@ export const products = [
       dimensions: { length: 31.5, width: 26, height: 10.5 },
       weight: 0.44,
       photo: [
-        "images/Большие с бантом/Красная/Слайд9.webp",
-        "images/Большие с бантом/Красная/Слайд10.webp"
+        "images/big with bow/red/slide1.webp",
+        "images/big with bow/red/slide2.webp"
       ],
       videos: ["videos/Video 0.mp4"],
     },
@@ -416,8 +416,8 @@ export const products = [
       dimensions: { length: 31.5, width: 26, height: 10.5 },
       weight: 0.44,
       photo: [
-        "images/Большие с бантом/Оранжевая/Слайд11.webp",
-        "images/Большие с бантом/Оранжевая/Слайд12.webp"
+        "images/big with bow/orange/slide1.webp",
+        "images/big with bow/orange/slide2.webp"
       ],
       videos: ["videos/Video 0.mp4"],
     },
@@ -431,10 +431,10 @@ export const products = [
       dimensions: { length: 29, width: 22, height: 10.5 },
       weight: 0.41, // 410 г
       photo: [
-        "images/Большие с бантом/Голубой лед/Слайд37.webp",
-        "images/Большие с бантом/Голубой лед/Слайд38.webp",
-        "images/Большие с бантом/Голубой лед/Слайд39.webp",
-        "images/Большие с бантом/Голубой лед/Слайд40.webp"
+        "images/big with bow/blue ice/slide1.webp",
+        "images/big with bow/blue ice/slide2.webp",
+        "images/big with bow/blue ice/slide3.webp",
+        "images/big with bow/blue ice/slide4.webp"
       ],
       videos: ["videos/Video 2.mp4"],
     },
@@ -448,10 +448,10 @@ export const products = [
       dimensions: { length: 29, width: 22, height: 10.5 },
       weight: 0.41,
       photo: [
-        "images/Большие с бантом/Ванильная/Слайд33.webp",
-        "images/Большие с бантом/Ванильная/Слайд34.webp",
-        "images/Большие с бантом/Ванильная/Слайд35.webp",
-        "images/Большие с бантом/Ванильная/Слайд36.webp"
+        "images/big with bow/vanilla/slide1.webp",
+        "images/big with bow/vanilla/slide2.webp",
+        "images/big with bow/vanilla/slide3.webp",
+        "images/big with bow/vanilla/slide4.webp"
       ],
       videos: ["videos/Video 2.mp4"],
     },
@@ -465,10 +465,10 @@ export const products = [
       dimensions: { length: 29, width: 22, height: 10.5 },
       weight: 0.41,
       photo: [
-        "images/Большие с бантом/Золотая/Слайд29.webp",
-        "images/Большие с бантом/Золотая/Слайд30.webp",
-        "images/Большие с бантом/Золотая/Слайд31.webp",
-        "images/Большие с бантом/Золотая/Слайд32.webp"
+        "images/big with bow/gold/slide1.webp",
+        "images/big with bow/gold/slide2.webp",
+        "images/big with bow/gold/slide3.webp",
+        "images/big with bow/gold/slide4.webp"
       ],
       videos: ["videos/Video 2.mp4"],
     },
@@ -482,10 +482,10 @@ export const products = [
       dimensions: { length: 30, width: 24, height: 10 },
       weight: 0.41,
       photo: [
-        "images/Большие с бантом/Персиковая/Слайд21.webp",
-        "images/Большие с бантом/Персиковая/Слайд22.webp",
-        "images/Большие с бантом/Персиковая/Слайд23.webp",
-        "images/Большие с бантом/Персиковая/Слайд24.webp"
+        "images/big with bow/peach/slide1.webp",
+        "images/big with bow/peach/slide2.webp",
+        "images/big with bow/peach/slide3.webp",
+        "images/big with bow/peach/slide4.webp"
       ],
       videos: ["videos/Video 1.mp4"],
     },
@@ -499,10 +499,10 @@ export const products = [
       dimensions: { length: 30, width: 24, height: 10 },
       weight: 0.41,
       photo: [
-        "images/Большие с бантом/Черный муар/Слайд25.webp",
-        "images/Большие с бантом/Черный муар/Слайд26.webp",
-        "images/Большие с бантом/Черный муар/Слайд27.webp",
-        "images/Большие с бантом/Черный муар/Слайд28.webp"
+        "images/big with bow/black moire/slide1.webp",
+        "images/big with bow/black moire/slide2.webp",
+        "images/big with bow/black moire/slide3.webp",
+        "images/big with bow/black moire/slide4.webp"
       ],
       videos: ["videos/Video 1.mp4"],
     },
@@ -516,10 +516,10 @@ export const products = [
       dimensions: { length: 30, width: 24, height: 10 },
       weight: 0.41,
       photo: [
-        "images/Большие с бантом/Белый бриллиант/Слайд17.webp",
-        "images/Большие с бантом/Белый бриллиант/Слайд18.webp",
-        "images/Большие с бантом/Белый бриллиант/Слайд19.webp",
-        "images/Большие с бантом/Белый бриллиант/Слайд20.webp"
+        "images/big with bow/white diamond/slide1.webp",
+        "images/big with bow/white diamond/slide2.webp",
+        "images/big with bow/white diamond/slide3.webp",
+        "images/big with bow/white diamond/slide4.webp"
       ],
       videos: ["videos/Video 1.mp4"],
     },
@@ -533,10 +533,10 @@ export const products = [
       dimensions: { length: 30, width: 24, height: 10 },
       weight: 0.41,
       photo: [
-        "images/Большие с бантом/Синий бархат/Слайд13.webp",
-        "images/Большие с бантом/Синий бархат/Слайд14.webp",
-        "images/Большие с бантом/Синий бархат/Слайд15.webp",
-        "images/Большие с бантом/Синий бархат/Слайд16.webp",
+        "images/big with bow/blue velvet/slide1.webp",
+        "images/big with bow/blue velvet/slide2.webp",
+        "images/big with bow/blue velvet/slide3.webp",
+        "images/big with bow/blue velvet/slide4.webp",
       ],
       videos: ["videos/Video 1.mp4"],
     },
@@ -552,8 +552,8 @@ export const products = [
       dimensions: { length: 30, width: 23, height: 11 },
       weight: 0.43,
       photo: [
-        "images/Коробка с ручками/Розовая с ручками/Слайд10.webp",
-        "images/Коробка с ручками/Розовая с ручками/Слайд11.webp"
+        "images/boxes with handles/pink/slide1.webp",
+        "images/boxes with handles/pink/slide2.webp"
       ],
       videos: ["videos/Video 3.mp4"],
     },
@@ -567,8 +567,8 @@ export const products = [
       dimensions: { length: 30, width: 23, height: 11 },
       weight: 0.43,
       photo: [
-        "images/Коробка с ручками/Сиреневая с ручками/Слайд18.webp",
-        "images/Коробка с ручками/Сиреневая с ручками/Слайд19.webp"
+        "images/boxes with handles/lilac/slide1.webp",
+        "images/boxes with handles/lilac/slide2.webp"
       ],
       videos: ["videos/Video 3.mp4"],
     },
@@ -582,8 +582,8 @@ export const products = [
       dimensions: { length: 30, width: 23, height: 11 },
       weight: 0.43,
       photo: [
-        "images/Коробка с ручками/Черная с ручками/Слайд14.webp",
-        "images/Коробка с ручками/Черная с ручками/Слайд15.webp"
+        "images/boxes with handles/black/slide1.webp",
+        "images/boxes with handles/black/slide2.webp"
       ],
       videos: ["videos/Video 3.mp4"],
     },
@@ -597,8 +597,8 @@ export const products = [
       dimensions: { length: 30, width: 23, height: 11 },
       weight: 0.43,
       photo: [
-        "images/Коробка с ручками/Белая с ручками/Слайд12.webp",
-        "images/Коробка с ручками/Белая с ручками/Слайд13.webp"
+        "images/boxes with handles/white/slide1.webp",
+        "images/boxes with handles/white/slide2.webp"
       ],
       videos: ["videos/Video 3.mp4"],
     },
@@ -612,8 +612,8 @@ export const products = [
       dimensions: { length: 30, width: 23, height: 11 },
       weight: 0.43,
       photo: [
-        "images/Коробка с ручками/Красная с ручками/Слайд4.webp",
-        "images/Коробка с ручками/Красная с ручками/Слайд5.webp"
+        "images/boxes with handles/red/slide1.webp",
+        "images/boxes with handles/red/slide2.webp"
       ],
       videos: ["videos/Video 3.mp4"],
     },
@@ -627,10 +627,8 @@ export const products = [
       dimensions: { length: 30, width: 23, height: 11 },
       weight: 0.43,
       photo: [
-        "images/Коробка с ручками/Оранжевая  с ручками/Gift box with handle small WB.webp",
-        "images/Коробка с ручками/Оранжевая  с ручками/Gift box with handle small WB 1.webp",
-        "images/Коробка с ручками/Оранжевая  с ручками/Слайд8.webp",
-        "images/Коробка с ручками/Оранжевая  с ручками/Слайд9.webp"
+        "images/boxes with handles/orange/slide1.webp",
+        "images/boxes with handles/orange/slide2.webp"
       ],
       videos: ["videos/Video 3.mp4"],
     },
@@ -644,8 +642,8 @@ export const products = [
       dimensions: { length: 30, width: 23, height: 11 },
       weight: 0.43,
       photo: [
-        "images/Коробка с ручками/Золотая с ручками/Слайд1.webp",
-        "images/Коробка с ручками/Золотая с ручками/Слайд2.webp"
+        "images/boxes with handles/gold/slide1.webp",
+        "images/boxes with handles/gold/slide2.webp"
       ],
       videos: ["videos/Video 3.mp4"],
     },
@@ -659,8 +657,8 @@ export const products = [
       dimensions: { length: 30, width: 23, height: 11 },
       weight: 0.43,
       photo: [
-        "images/Коробка с ручками/Серебренная с ручками/Слайд16.webp",
-        "images/Коробка с ручками/Серебренная с ручками/Слайд17.webp"
+        "images/boxes with handles/silver/slide1.webp",
+        "images/boxes with handles/silver/slide2.webp"
       ],
       videos: ["videos/Video 3.mp4"],
     },
