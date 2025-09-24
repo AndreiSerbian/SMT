@@ -211,7 +211,7 @@ export class AdminComponent {
     } catch (error) {
       console.error('Error loading products component:', error);
     }
-  },
+  }
 
   attachEventListeners(container) {
     if (!this.isAuthenticated) {
