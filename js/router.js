@@ -87,11 +87,11 @@ class Router {
       // Полностью очищаем контейнер
       container.replaceChildren();
     }
-  },
+  }
   
   scrollToTop() {
     window.scrollTo({ top: 0, behavior: 'auto' });
-  },
+  }
   
   handleRouteChange() {
     // Очищаем предыдущий контент ПЕРЕД рендером нового
@@ -129,11 +129,11 @@ class Router {
     
     // Скролл к верху страницы
     this.scrollToTop();
-  },
+  }
   
   getMainContainer() {
     return document.getElementById('app');
-  },
+  }
   
   navigate(hash) {
     window.location.hash = hash;
