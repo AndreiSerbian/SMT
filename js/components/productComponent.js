@@ -1,7 +1,6 @@
 import { cartService } from '../services/cartService.js';
 import { ColorService } from '../services/colorService.js';
 import { productsService } from '../services/productsService.js';
-import { colorMap } from '../data/products.js';
 
 const ProductComponent = {
   eventListeners: [],
@@ -160,13 +159,20 @@ const ProductComponent = {
     // Загружаем актуальные цены
     await this.loadProductsWithPrices();
     
-    const product = this.productsWithPrices.find(p => p.id === productId);
+    // Находим товар по artikul
+    const product = this.productsWithPrices.find(p => p.artikul === productId);
     if (!product) {
       // Если продукт не найден, перенаправляем на главную
       this.hideFullScreenLoader();
       window.location.href = '#';
       return;
     }
+
+    // Загружаем товары той же категории/размера для переключения цветов
+    const categoryProducts = await this.loadCategoryProducts(product);
+    
+    // Загружаем карту цветов из Supabase
+    const colorMap = await this.loadColorMap();
 
     // Устанавливаем текущий продукт как выбранный цвет
     ColorService.selectedColors[productId] = product.color;
@@ -225,10 +231,10 @@ const ProductComponent = {
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div class="space-y-4">
             <div class="bg-white rounded-lg shadow-lg overflow-hidden">
-              <img id="main-product-image" src="${product.photo[0]}" alt="${product.name}" class="w-full h-96 object-contain cursor-pointer">
+              <img id="main-product-image" src="${product.photos[0]}" alt="${product.name}" class="w-full h-96 object-contain cursor-pointer">
             </div>
             <div class="grid grid-cols-4 gap-4">
-              ${product.photo.map(photo => `
+              ${product.photos.map(photo => `
                 <img 
                   src="${photo}" 
                   alt="${product.name}" 
@@ -260,17 +266,23 @@ const ProductComponent = {
           <div class="bg-white rounded-lg shadow-lg p-8">
             <h1 class="text-3xl font-bold text-gray-800 mb-4">${product.name}</h1>
             <p class="text-gray-600 mb-4">Цвет: ${product.color}</p>
+            
+            <!-- Переключатель цветов категории -->
+            ${this.renderColorSwitcher(product, categoryProducts, colorMap)}
+            
             <div class="flex items-center justify-between mb-6">
-              ${product.price 
-                ? `<p class="text-2xl font-bold text-gray-800">₽${product.price}</p>` 
+              ${product.price_rub 
+                ? `<p class="text-2xl font-bold text-gray-800">₽${product.price_rub}</p>` 
                 : `<p class="text-lg text-red-500">Цена уточняется</p>`
               }
-              <a href="https://www.wildberries.ru/catalog/${product.idWB}/detail.aspx"
+              ${product.id_wb ? `
+              <a href="https://www.wildberries.ru/catalog/${product.id_wb}/detail.aspx"
                  target="_blank"
                  rel="nofollow noopener"
                  class="bg-indigo-600 hover:bg-indigo-700 text-white px-2 py-2 rounded transition duration-200">
                 Купить пробный товар на WB
               </a>
+              ` : ''}
             </div>
             
             <div class="mb-6">
@@ -279,36 +291,6 @@ const ProductComponent = {
               <p class="text-gray-600">Ширина: ${product.dimensions.width}см</p>
               <p class="text-gray-600">Высота: ${product.dimensions.height}см</p>
               <p class="text-gray-600">Вес: ${product.weight}кг</p>
-            </div>
-
-            <div class="mb-6">
-              <h2 class="font-semibold text-gray-800 mb-2">Цвета в наличии:</h2>
-              <div class="flex flex-wrap gap-2">
-                ${Object.entries(colorMap)
-                  .filter(([color]) => 
-                    this.productsWithPrices.some(p => 
-                      p.name === product.name && 
-                      p.sizeType === product.sizeType && 
-                      p.color === color
-                    )
-                  )
-                  .map(([color, hex]) => {
-                    const isSelected = product.color === color;
-                    return `
-                      <button 
-                        class="w-8 h-8 rounded-full border-2 ${isSelected ? 'border-blue-500' : 'border-gray-300'}"
-                        style="background-color: ${hex}"
-                        onclick="window.location.href='#product/${
-                          this.productsWithPrices.find(p => 
-                            p.name === product.name && 
-                            p.sizeType === product.sizeType && 
-                            p.color === color
-                          ).id
-                        }'"
-                      ></button>
-                    `;
-                  }).join('')}
-              </div>
             </div>
 
             <div class="flex items-center gap-4 mb-6">
@@ -333,7 +315,7 @@ const ProductComponent = {
             </div>
 
             <button 
-              onclick="addToCart('${product.id}', parseInt(document.getElementById('quantityInput').value))"
+              onclick="addToCart('${product.artikul}', parseInt(document.getElementById('quantityInput').value))"
               class="w-full bg-blue-200 text-gray-800 px-6 py-3 rounded-lg font-semibold hover:bg-blue-300 transition duration-300"
             >
               Добавить в корзину
@@ -455,7 +437,7 @@ const ProductComponent = {
         
         if (imageModal && swiperWrapper) {
           // Создаем массив медиа (фото + видео)
-          const allMedia = [...product.photo];
+          const allMedia = [...product.photos];
           if (product.videos && product.videos.length > 0) {
             allMedia.push(...product.videos);
           }
@@ -565,6 +547,91 @@ const ProductComponent = {
     }, 0);
     
     this.timeouts.push(timeoutId);
+  },
+
+  /**
+   * Загрузка товаров той же категории для переключения цветов
+   */
+  async loadCategoryProducts(currentProduct) {
+    try {
+      return this.productsWithPrices.filter(p => 
+        p.size === currentProduct.size && 
+        p.name.toLowerCase().includes(this.getCategoryKeyword(currentProduct))
+      );
+    } catch (error) {
+      console.error('Error loading category products:', error);
+      return [currentProduct];
+    }
+  },
+
+  /**
+   * Определение ключевого слова категории по товару
+   */
+  getCategoryKeyword(product) {
+    if (product.name.toLowerCase().includes('ручк')) return 'ручк';
+    return 'коробка';
+  },
+
+  /**
+   * Загрузка карты цветов из Supabase
+   */
+  async loadColorMap() {
+    try {
+      const colors = await productsService.getActiveColors();
+      const colorMap = {};
+      colors.forEach(color => {
+        colorMap[color.hex_code] = color.russian_name || color.name;
+      });
+      return colorMap;
+    } catch (error) {
+      console.error('Error loading color map:', error);
+      return {};
+    }
+  },
+
+  /**
+   * Рендер переключателя цветов
+   */
+  renderColorSwitcher(currentProduct, categoryProducts, colorMap) {
+    // Получаем уникальные цвета в категории
+    const availableColors = [...new Set(categoryProducts.map(p => p.color_hex))];
+    
+    if (availableColors.length <= 1) {
+      return ''; // Не показываем переключатель если только один цвет
+    }
+
+    return `
+      <div class="mb-6">
+        <h2 class="font-semibold text-gray-800 mb-3">Доступные цвета:</h2>
+        <div class="flex flex-wrap gap-3">
+          ${availableColors.map(colorHex => {
+            const colorProduct = categoryProducts.find(p => p.color_hex === colorHex);
+            const isSelected = currentProduct.color_hex === colorHex;
+            const colorName = colorMap[colorHex] || colorProduct?.color || 'Цвет';
+            
+            return `
+              <div class="flex flex-col items-center">
+                <button 
+                  class="w-10 h-10 rounded-full border-3 transition-all duration-300 ${
+                    isSelected 
+                      ? 'border-blue-600 shadow-lg scale-110' 
+                      : 'border-gray-300 hover:border-blue-400 hover:scale-105'
+                  }"
+                  style="background-color: ${colorHex}"
+                  title="${colorName}"
+                  onclick="window.location.href='#product/${colorProduct.artikul}'"
+                >
+                  ${isSelected ? '<span class="text-white text-sm font-bold">✓</span>' : ''}
+                </button>
+                <span class="text-xs text-gray-600 mt-1 text-center max-w-20 truncate">
+                  ${colorName}
+                </span>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
   }
 };
 
