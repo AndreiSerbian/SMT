@@ -8,9 +8,11 @@ export class ModernAdminComponent {
     this.colors = [];
     this.currentTab = 'products';
     this.isLoading = false;
-    this.currentProductId = null;
-    this.sortField = null;
-    this.sortDirection = 'asc';
+        this.currentProductId = null;
+        this.sortField = null;
+        this.sortDirection = 'asc';
+        this.ordersPage = 0;
+        this.ORDERS_PAGE_SIZE = 20;
   }
 
   async mount(container) {
@@ -201,8 +203,70 @@ export class ModernAdminComponent {
           <!-- ORDERS TAB -->
           <div id="ordersTab" class="tab-content hidden">
             <div class="flex flex-col gap-4">
-              <h2 class="text-xl font-semibold">Заказы</h2>
-              <p class="text-slate-600">Функциональность заказов будет добавлена позже</p>
+              <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <h2 class="text-xl font-semibold">Заказы</h2>
+                <div class="flex gap-2">
+                  <select id="orderStatusFilter" class="px-3 py-2 border rounded-lg">
+                    <option value="">Все статусы</option>
+                    <option value="pending">В ожидании</option>
+                    <option value="confirmed">Подтверждён</option>
+                    <option value="processing">В обработке</option>
+                    <option value="shipped">Отправлен</option>
+                    <option value="delivered">Доставлен</option>
+                    <option value="cancelled">Отменён</option>
+                  </select>
+                  <input type="date" id="orderDateFrom" class="px-3 py-2 border rounded-lg" placeholder="От">
+                  <input type="date" id="orderDateTo" class="px-3 py-2 border rounded-lg" placeholder="До">
+                </div>
+              </div>
+              
+              <!-- Analytics Dashboard -->
+              <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="bg-white p-4 rounded-xl border">
+                  <div class="text-2xl font-bold text-blue-600" id="totalOrdersCount">0</div>
+                  <div class="text-sm text-slate-600">Всего заказов</div>
+                </div>
+                <div class="bg-white p-4 rounded-xl border">
+                  <div class="text-2xl font-bold text-green-600" id="totalRevenue">₽0</div>
+                  <div class="text-sm text-slate-600">Общая выручка</div>
+                </div>
+                <div class="bg-white p-4 rounded-xl border">
+                  <div class="text-2xl font-bold text-orange-600" id="pendingOrdersCount">0</div>
+                  <div class="text-sm text-slate-600">В ожидании</div>
+                </div>
+                <div class="bg-white p-4 rounded-xl border">
+                  <div class="text-2xl font-bold text-purple-600" id="avgOrderValue">₽0</div>
+                  <div class="text-sm text-slate-600">Средний чек</div>
+                </div>
+              </div>
+
+              <!-- Orders Table -->
+              <div class="bg-white rounded-xl border overflow-hidden">
+                <div class="overflow-x-auto">
+                  <table class="w-full">
+                    <thead class="bg-slate-50 border-b">
+                      <tr>
+                        <th class="px-3 py-2 text-left">№ заказа</th>
+                        <th class="px-3 py-2 text-left">Дата</th>
+                        <th class="px-3 py-2 text-left">Клиент</th>
+                        <th class="px-3 py-2 text-left">Сумма</th>
+                        <th class="px-3 py-2 text-left">Статус</th>
+                        <th class="px-3 py-2 text-left">Действия</th>
+                      </tr>
+                    </thead>
+                    <tbody id="ordersTableBody">
+                      <!-- Orders will be loaded here -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Pagination -->
+              <div class="flex justify-between items-center">
+                <button id="prevOrdersPage" class="px-4 py-2 rounded-lg border disabled:opacity-50" disabled>Назад</button>
+                <span id="ordersPageInfo">Страница 1</span>
+                <button id="nextOrdersPage" class="px-4 py-2 rounded-lg border">Вперёд</button>
+              </div>
             </div>
           </div>
         </main>
@@ -456,6 +520,34 @@ export class ModernAdminComponent {
         }
       });
     }
+
+    // Orders management
+    document.getElementById('orderStatusFilter')?.addEventListener('change', () => {
+      this.ordersPage = 0;
+      this.loadOrders();
+    });
+    document.getElementById('orderDateFrom')?.addEventListener('change', () => {
+      this.ordersPage = 0;
+      this.loadOrders(); 
+    });
+    document.getElementById('orderDateTo')?.addEventListener('change', () => {
+      this.ordersPage = 0;
+      this.loadOrders();
+    });
+    
+    // Orders pagination
+    document.getElementById('prevOrdersPage')?.addEventListener('click', () => {
+      if (this.ordersPage > 0) {
+        this.ordersPage--;
+        this.loadOrders();
+        this.updateOrdersPagination();
+      }
+    });
+    document.getElementById('nextOrdersPage')?.addEventListener('click', () => {
+      this.ordersPage++;
+      this.loadOrders();
+      this.updateOrdersPagination();
+    });
   }
 
   async checkAuth() {
@@ -914,6 +1006,8 @@ export class ModernAdminComponent {
         this.loadColors();
       } else if (this.currentTab === 'categories') {
         this.loadCategories();
+      } else if (this.currentTab === 'orders') {
+        this.loadOrders();
       }
     }
   }
@@ -1093,5 +1187,275 @@ export class ModernAdminComponent {
     `).join('');
     
     grid.innerHTML = html;
+  }
+
+  // Orders management methods
+  async loadOrders() {
+    const statusFilter = document.getElementById('orderStatusFilter')?.value || '';
+    const dateFrom = document.getElementById('orderDateFrom')?.value || '';
+    const dateTo = document.getElementById('orderDateTo')?.value || '';
+
+    let query = this.supabase
+      .from('orders')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .range(this.ordersPage * this.ORDERS_PAGE_SIZE, (this.ordersPage + 1) * this.ORDERS_PAGE_SIZE - 1);
+
+    if (statusFilter) {
+      query = query.eq('order_status', statusFilter);
+    }
+
+    if (dateFrom) {
+      query = query.gte('created_at', dateFrom + 'T00:00:00');
+    }
+
+    if (dateTo) {
+      query = query.lte('created_at', dateTo + 'T23:59:59');
+    }
+
+    const { data: orders, error } = await query;
+
+    if (error) {
+      console.error('Ошибка загрузки заказов:', error);
+      return;
+    }
+
+    this.renderOrders(orders || []);
+    await this.loadOrdersAnalytics();
+  }
+
+  async loadOrdersAnalytics() {
+    const dateFrom = document.getElementById('orderDateFrom')?.value || '';
+    const dateTo = document.getElementById('orderDateTo')?.value || '';
+
+    let query = this.supabase.from('orders').select('*');
+
+    if (dateFrom) {
+      query = query.gte('created_at', dateFrom + 'T00:00:00');
+    }
+
+    if (dateTo) {
+      query = query.lte('created_at', dateTo + 'T23:59:59');
+    }
+
+    const { data: orders, error } = await query;
+
+    if (error) {
+      console.error('Ошибка загрузки аналитики заказов:', error);
+      return;
+    }
+
+    const totalOrders = orders.length;
+    const totalRevenue = orders.reduce((sum, order) => sum + parseFloat(order.total || 0), 0);
+    const pendingOrders = orders.filter(order => order.order_status === 'pending').length;
+    const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+
+    document.getElementById('totalOrdersCount').textContent = totalOrders;
+    document.getElementById('totalRevenue').textContent = '₽' + totalRevenue.toLocaleString('ru-RU');
+    document.getElementById('pendingOrdersCount').textContent = pendingOrders;
+    document.getElementById('avgOrderValue').textContent = '₽' + Math.round(avgOrderValue).toLocaleString('ru-RU');
+  }
+
+  renderOrders(orders) {
+    const tbody = document.getElementById('ordersTableBody');
+    
+    if (!orders.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="px-3 py-4 text-center text-slate-500">Нет заказов</td></tr>';
+      return;
+    }
+
+    const html = orders.map(order => {
+      const createdDate = new Date(order.created_at).toLocaleDateString('ru-RU');
+      const orderNumber = order.order_number || `#${order.id.slice(0, 8)}`;
+      const statusColors = {
+        'pending': 'bg-yellow-100 text-yellow-800',
+        'confirmed': 'bg-blue-100 text-blue-800',
+        'processing': 'bg-orange-100 text-orange-800',
+        'shipped': 'bg-purple-100 text-purple-800',
+        'delivered': 'bg-green-100 text-green-800',
+        'cancelled': 'bg-red-100 text-red-800'
+      };
+      const statusLabels = {
+        'pending': 'В ожидании',
+        'confirmed': 'Подтверждён',
+        'processing': 'В обработке',
+        'shipped': 'Отправлен',
+        'delivered': 'Доставлен',
+        'cancelled': 'Отменён'
+      };
+
+      return `
+        <tr class="border-b hover:bg-slate-50">
+          <td class="px-3 py-2 font-mono text-sm">${orderNumber}</td>
+          <td class="px-3 py-2">${createdDate}</td>
+          <td class="px-3 py-2">
+            <div class="text-sm">
+              <div class="font-medium">${order.name}</div>
+              <div class="text-slate-500">${order.phone}</div>
+              <div class="text-slate-500">${order.email}</div>
+            </div>
+          </td>
+          <td class="px-3 py-2 font-semibold">₽${parseFloat(order.total || 0).toLocaleString('ru-RU')}</td>
+          <td class="px-3 py-2">
+            <select class="order-status-select px-2 py-1 rounded-full text-xs font-medium ${statusColors[order.order_status] || 'bg-gray-100 text-gray-800'}" 
+                    data-order-id="${order.id}" data-current-status="${order.order_status}">
+              <option value="pending" ${order.order_status === 'pending' ? 'selected' : ''}>В ожидании</option>
+              <option value="confirmed" ${order.order_status === 'confirmed' ? 'selected' : ''}>Подтверждён</option>
+              <option value="processing" ${order.order_status === 'processing' ? 'selected' : ''}>В обработке</option>
+              <option value="shipped" ${order.order_status === 'shipped' ? 'selected' : ''}>Отправлен</option>
+              <option value="delivered" ${order.order_status === 'delivered' ? 'selected' : ''}>Доставлен</option>
+              <option value="cancelled" ${order.order_status === 'cancelled' ? 'selected' : ''}>Отменён</option>
+            </select>
+          </td>
+          <td class="px-3 py-2">
+            <button class="view-order-btn px-2 py-1 text-xs bg-slate-100 hover:bg-slate-200 rounded-lg" 
+                    data-order-id="${order.id}">
+              Подробнее
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    tbody.innerHTML = html;
+
+    // Attach events for status changes
+    tbody.querySelectorAll('.order-status-select').forEach(select => {
+      select.addEventListener('change', (e) => this.updateOrderStatus(e.target.dataset.orderId, e.target.value));
+    });
+
+    // Attach events for view order details
+    tbody.querySelectorAll('.view-order-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => this.viewOrderDetails(e.target.dataset.orderId));
+    });
+  }
+
+  async updateOrderStatus(orderId, newStatus) {
+    const { error } = await this.supabase
+      .from('orders')
+      .update({ order_status: newStatus })
+      .eq('id', orderId);
+
+    if (error) {
+      console.error('Ошибка обновления статуса заказа:', error);
+      alert('Ошибка обновления статуса заказа');
+      return;
+    }
+
+    // Reload analytics
+    await this.loadOrdersAnalytics();
+  }
+
+  updateOrdersPagination() {
+    const prevBtn = document.getElementById('prevOrdersPage');
+    const nextBtn = document.getElementById('nextOrdersPage');
+    const pageInfo = document.getElementById('ordersPageInfo');
+
+    if (prevBtn) prevBtn.disabled = this.ordersPage === 0;
+    if (pageInfo) pageInfo.textContent = `Страница ${this.ordersPage + 1}`;
+  }
+
+  async viewOrderDetails(orderId) {
+    const { data: order, error } = await this.supabase
+      .from('orders')
+      .select('*')
+      .eq('id', orderId)
+      .single();
+
+    if (error) {
+      console.error('Ошибка загрузки деталей заказа:', error);
+      return;
+    }
+
+    this.showOrderDetailsModal(order);
+  }
+
+  showOrderDetailsModal(order) {
+    const cartItems = Array.isArray(order.cart_items) ? order.cart_items : [];
+    const itemsHtml = cartItems.map(item => `
+      <div class="flex justify-between items-center py-2 border-b">
+        <div>
+          <div class="font-medium">${item.name || 'Товар'}</div>
+          <div class="text-sm text-slate-500">Артикул: ${item.artikul || 'N/A'} | Цвет: ${item.color || 'N/A'}</div>
+        </div>
+        <div class="text-right">
+          <div>${item.quantity || 1} шт.</div>
+          <div class="font-semibold">₽${(item.price || 0).toLocaleString('ru-RU')}</div>
+        </div>
+      </div>
+    `).join('');
+
+    const modal = document.createElement('dialog');
+    modal.className = 'p-0 rounded-2xl backdrop:bg-black/40 max-w-2xl w-full';
+    modal.innerHTML = `
+      <div class="p-6">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-lg font-semibold">Детали заказа ${order.order_number || `#${order.id.slice(0, 8)}`}</h3>
+          <button class="close-modal text-slate-400 hover:text-slate-600">✕</button>
+        </div>
+        
+        <div class="space-y-4">
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <h4 class="font-medium mb-2">Информация о клиенте</h4>
+              <div class="text-sm space-y-1">
+                <div><strong>Имя:</strong> ${order.name}</div>
+                <div><strong>Телефон:</strong> ${order.phone}</div>
+                <div><strong>Email:</strong> ${order.email}</div>
+                ${order.yandex_address ? `<div><strong>Адрес:</strong> ${order.yandex_address}</div>` : ''}
+              </div>
+            </div>
+            <div>
+              <h4 class="font-medium mb-2">Информация о заказе</h4>
+              <div class="text-sm space-y-1">
+                <div><strong>Дата создания:</strong> ${new Date(order.created_at).toLocaleString('ru-RU')}</div>
+                ${order.confirmed_at ? `<div><strong>Дата подтверждения:</strong> ${new Date(order.confirmed_at).toLocaleString('ru-RU')}</div>` : ''}
+                <div><strong>Доставка:</strong> ${order.delivery || 'Не указана'}</div>
+                <div><strong>Оплата:</strong> ${order.payment || 'Не указана'}</div>
+              </div>
+            </div>
+          </div>
+
+          ${order.comment ? `
+            <div>
+              <h4 class="font-medium mb-2">Комментарий</h4>
+              <div class="text-sm bg-slate-50 p-3 rounded-lg">${order.comment}</div>
+            </div>
+          ` : ''}
+
+          <div>
+            <h4 class="font-medium mb-2">Товары в заказе</h4>
+            <div class="border rounded-lg overflow-hidden">
+              ${itemsHtml}
+              <div class="p-3 bg-slate-50">
+                <div class="flex justify-between items-center">
+                  <div>
+                    <div class="text-sm">Подытог: ₽${parseFloat(order.subtotal || 0).toLocaleString('ru-RU')}</div>
+                    ${order.discount ? `<div class="text-sm text-green-600">Скидка: -₽${parseFloat(order.discount || 0).toLocaleString('ru-RU')}</div>` : ''}
+                  </div>
+                  <div class="text-lg font-bold">
+                    Итого: ₽${parseFloat(order.total || 0).toLocaleString('ru-RU')}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-2 mt-6">
+          <button class="close-modal px-4 py-2 rounded-lg border">Закрыть</button>
+        </div>
+      </div>
+    `;
+
+    modal.querySelectorAll('.close-modal').forEach(btn => {
+      btn.addEventListener('click', () => {
+        modal.close();
+        modal.remove();
+      });
+    });
+
+    document.body.appendChild(modal);
+    modal.showModal();
   }
 }
