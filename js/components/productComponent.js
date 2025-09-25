@@ -1,6 +1,7 @@
 import { cartService } from '../services/cartService.js';
 import { ColorService } from '../services/colorService.js';
 import { productsService } from '../services/productsService.js';
+import { colorMap } from '../data/products.js';
 
 const ProductComponent = {
   eventListeners: [],

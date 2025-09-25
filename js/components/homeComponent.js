@@ -3,6 +3,7 @@ import { cartService } from '../services/cartService.js';
 import SwiperService from '../services/swiperService.js';
 import { ColorService } from '../services/colorService.js';
 import { productsService } from '../services/productsService.js';
+import { PublicProductsComponent } from './publicProductsComponent.js';
 
 const HomeComponent = {
   swipersById: {},
@@ -59,6 +60,28 @@ const HomeComponent = {
   addEventListenerWithCleanup(element, event, handler) {
     element.addEventListener(event, handler);
     this.eventListeners.push({ element, event, handler });
+  },
+
+  // Загрузка каталога товаров  
+  async loadProductsCatalog(container) {
+    const catalogContainer = container.querySelector('#products-catalog-container');
+    if (catalogContainer) {
+      try {
+        const catalogHTML = await PublicProductsComponent.render();
+        catalogContainer.innerHTML = catalogHTML;
+        console.log('Products catalog loaded successfully');
+      } catch (error) {
+        console.error('Error loading products catalog:', error);
+        catalogContainer.innerHTML = `
+          <div class="text-center py-8">
+            <p class="text-gray-500">Ошибка загрузки каталога товаров</p>
+            <button onclick="location.reload()" class="mt-4 bg-blue-600 text-white px-4 py-2 rounded">
+              Повторить попытку
+            </button>
+          </div>
+        `;
+      }
+    }
   },
   
   async render(container) {
@@ -263,56 +286,16 @@ const HomeComponent = {
   </div>
 </section>
 
-      <div id="catalog" class="container mx-auto px-4 py-8">
-        <h1 class="text-4xl font-bold text-center mb-12 text-gray-800">Коллекция подарочных упаковок</h1>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          ${categories.map(category => {
-            const [name, sizeTypeRaw] = category.split(' (');
-            const sizeType = (sizeTypeRaw || '').slice(0, -1);
-            
-            // Находим "продукт по умолчанию" (первый цвет)
-            const product = this.productsWithPrices.find(p => p.name === name && p.sizeType === sizeType);
-            if (!product) return '';
-
-            return `
-              <div class="bg-white rounded-lg shadow-lg overflow-hidden transform transition duration-300 hover:scale-110">
-                <div class="relative">
-                  <div id="product-slider-${product.id}" class="swiper">
-                    <div class="swiper-wrapper">
-                    ${product.photo.map(image => `
-                      <div class="swiper-slide">
-                        <img src="${image}" alt="${category}" class="w-full h-80 object-contain hover:scale-105" />
-                      </div>
-                    `).join('')}
-                    </div>
-                    <!-- Элементы управления слайдером -->
-                    <div class="swiper-pagination"></div>
-                    <div class="swiper-button-prev"></div>
-                    <div class="swiper-button-next"></div>
-                  </div>
-                </div>
-
-                <div class="p-6">
-                  <h2 class="text-xl font-semibold text-gray-800 mb-2">${category}</h2>
-                  <div class="mb-6">
-                    <h2 class="font-semibold text-gray-800 mb-2">Цвета в наличии:</h2>
-                    <div class="flex flex-wrap gap-2 mb-4" id="color-buttons-${product.id}">
-                    <!-- Цвета будут загружены асинхронно -->
-                    </div>
-
-                    <button
-                      data-product-id="${product.id}"
-                      class="view-all-btn w-full bg-blue-200 text-white-800 px-4 py-2 rounded hover:bg-blue-300 transition duration-300"
-                    >
-                      Подробно
-                    </button>
-                  </div>
-                </div>
-              </div>
-            `;
-          }).join('')}
+      <section id="catalog" class="bg-white py-16 px-4">
+        <div class="max-w-6xl mx-auto">
+          <h2 class="text-3xl md:text-4xl font-bold text-center text-gray-900 mb-12">
+            Коллекция подарочных упаковок
+          </h2>
+          <div id="products-catalog-container">
+            <!-- Здесь будет загружен компонент группировки товаров по категориям -->
+          </div>
         </div>
-      </div>
+      </section>
       ${cartHTML}
       
       <footer class="bg-blue-950 text-white py-8 mt-12">
