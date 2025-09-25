@@ -72,6 +72,7 @@ export type Database = {
           id: string
           is_active: boolean
           name: string
+          russian_name: string | null
           sort_order: number
           updated_at: string | null
         }
@@ -81,6 +82,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           name: string
+          russian_name?: string | null
           sort_order?: number
           updated_at?: string | null
         }
@@ -90,6 +92,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           name?: string
+          russian_name?: string | null
           sort_order?: number
           updated_at?: string | null
         }

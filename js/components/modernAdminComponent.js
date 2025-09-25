@@ -308,8 +308,13 @@ export class ModernAdminComponent {
               <input type="hidden" name="id" />
               
               <label class="block">
-                <span class="text-sm font-medium">Название *</span>
+                <span class="text-sm font-medium">Название (EN) *</span>
                 <input name="name" required class="mt-1 w-full px-3 py-2 rounded-xl border">
+              </label>
+
+              <label class="block">
+                <span class="text-sm font-medium">Название (RU) *</span>
+                <input name="russian_name" required class="mt-1 w-full px-3 py-2 rounded-xl border">
               </label>
 
               <label class="block">
@@ -445,6 +450,12 @@ export class ModernAdminComponent {
     } else {
       this.hideLoginModal();
       await this.loadMeta();
+      // Show products tab by default
+      this.currentTab = 'products';
+      document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.add('hidden');
+      });
+      document.getElementById('productsTab').classList.remove('hidden');
       await this.loadPage(true);
     }
   }
@@ -504,8 +515,8 @@ export class ModernAdminComponent {
     const { data: categories } = await this.supabase.from('categories').select('id,name,slug').order('sort_order', { ascending: true });
     this.categories = categories || [];
     
-    // Load colors
-    const { data: colors } = await this.supabase.from('colors').select('id,name,hex_code,is_active,sort_order').order('sort_order', { ascending: true });
+    // Load colors with russian names
+    const { data: colors } = await this.supabase.from('colors').select('id,name,hex_code,russian_name,is_active,sort_order').order('sort_order', { ascending: true });
     this.colors = colors || [];
 
     // No need to populate filter dropdown as it's now hardcoded
@@ -641,7 +652,10 @@ export class ModernAdminComponent {
             }">${product.is_active ? 'Активен' : 'Скрыт'}</span>
           </td>
           <td class="px-3 py-2 text-right">
-            <button class="px-3 py-1.5 rounded-lg border text-sm hover:bg-slate-50" data-edit="${product.id}">Изменить</button>
+            <div class="flex gap-1">
+              ${product.id_wb ? `<a href="https://www.wildberries.ru/catalog/${product.id_wb}/detail.aspx" target="_blank" class="px-2 py-1 rounded-lg bg-purple-600 text-white text-sm hover:bg-purple-700" title="Посмотреть на WB">WB</a>` : ''}
+              <button class="px-3 py-1.5 rounded-lg border text-sm hover:bg-slate-50" data-edit="${product.id}">Изменить</button>
+            </div>
           </td>
         </tr>
       `;
@@ -825,8 +839,25 @@ export class ModernAdminComponent {
     
     this.currentTab = e.currentTarget.dataset.tab;
     
-    // TODO: Implement different tab content
-    console.log('Переключено на вкладку:', this.currentTab);
+    // Hide all tab content
+    document.querySelectorAll('.tab-content').forEach(content => {
+      content.classList.add('hidden');
+    });
+    
+    // Show selected tab content
+    const tabContent = document.getElementById(this.currentTab + 'Tab');
+    if (tabContent) {
+      tabContent.classList.remove('hidden');
+      
+      // Load content based on tab
+      if (this.currentTab === 'products') {
+        this.loadPage(true);
+      } else if (this.currentTab === 'colors') {
+        this.loadColors();
+      } else if (this.currentTab === 'categories') {
+        this.loadCategories();
+      }
+    }
   }
 
   debounce(func, wait) {
@@ -839,5 +870,170 @@ export class ModernAdminComponent {
       clearTimeout(timeout);
       timeout = setTimeout(later, wait);
     };
+  }
+
+  // Colors management methods
+  async loadColors() {
+    const { data: colors, error } = await this.supabase
+      .from('colors')
+      .select('*')
+      .order('sort_order', { ascending: true });
+
+    if (error) {
+      console.error('Ошибка загрузки цветов:', error);
+      return;
+    }
+
+    this.renderColors(colors || []);
+  }
+
+  renderColors(colors) {
+    const grid = document.getElementById('colorsGrid');
+    
+    const html = colors.map(color => `
+      <div class="bg-white rounded-2xl border p-4 flex flex-col gap-3">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-xl border shadow-sm" style="background-color: ${color.hex_code}"></div>
+          <div class="flex-1 min-w-0">
+            <h3 class="font-medium">${color.name}</h3>
+            <p class="text-sm text-slate-500">${color.russian_name || ''}</p>
+            <p class="text-xs text-slate-400 font-mono">${color.hex_code}</p>
+          </div>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-xs ${color.is_active ? 'text-green-600' : 'text-red-600'}">
+            ${color.is_active ? 'Активен' : 'Неактивен'}
+          </span>
+          <button class="px-3 py-1.5 rounded-lg border text-sm hover:bg-slate-50" 
+                  onclick="window.adminComponent.openColor('${color.id}')">
+            Изменить
+          </button>
+        </div>
+      </div>
+    `).join('');
+    
+    grid.innerHTML = html;
+  }
+
+  async openColor(colorId = null) {
+    this.currentColorId = colorId;
+    const form = document.getElementById('frmColor');
+    const title = document.getElementById('dlgColorTitle');
+    
+    form.reset();
+    
+    if (colorId) {
+      title.textContent = 'Изменить цвет';
+      
+      const { data: color, error } = await this.supabase
+        .from('colors')
+        .select('*')
+        .eq('id', colorId)
+        .single();
+      
+      if (error) {
+        console.error('Ошибка загрузки цвета:', error);
+        return;
+      }
+      
+      form.id.value = color.id;
+      form.name.value = color.name || '';
+      form.russian_name.value = color.russian_name || '';
+      form.hex_code.value = color.hex_code || '#000000';
+      form.hex_code_text.value = color.hex_code || '#000000';
+      form.sort_order.value = color.sort_order || 0;
+      form.is_active.checked = color.is_active;
+    } else {
+      title.textContent = 'Добавить цвет';
+      form.hex_code.value = '#000000';
+      form.hex_code_text.value = '#000000';
+      form.is_active.checked = true;
+    }
+    
+    document.getElementById('dlgColor').showModal();
+  }
+
+  async onSaveColor(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(e.target);
+    const colorId = formData.get('id');
+    
+    const colorData = {
+      name: formData.get('name').trim(),
+      russian_name: formData.get('russian_name').trim(),
+      hex_code: formData.get('hex_code_text'),
+      sort_order: parseInt(formData.get('sort_order')) || 0,
+      is_active: formData.has('is_active')
+    };
+
+    let result;
+    if (colorId) {
+      result = await this.supabase.from('colors').update(colorData).eq('id', colorId);
+    } else {
+      result = await this.supabase.from('colors').insert([colorData]);
+    }
+
+    if (result.error) {
+      alert('Ошибка сохранения: ' + result.error.message);
+      return;
+    }
+
+    document.getElementById('dlgColor').close();
+    await this.loadColors();
+  }
+
+  async onDeleteColor() {
+    if (!this.currentColorId) return;
+    
+    if (!confirm('Вы уверены, что хотите удалить этот цвет?')) return;
+    
+    const { error } = await this.supabase.from('colors').delete().eq('id', this.currentColorId);
+    
+    if (error) {
+      alert('Ошибка удаления: ' + error.message);
+      return;
+    }
+    
+    document.getElementById('dlgColor').close();
+    await this.loadColors();
+  }
+
+  async loadCategories() {
+    const { data: categories, error } = await this.supabase
+      .from('categories')
+      .select('*')
+      .order('sort_order', { ascending: true });
+
+    if (error) {
+      console.error('Ошибка загрузки категорий:', error);
+      return;
+    }
+
+    this.renderCategories(categories || []);
+  }
+
+  renderCategories(categories) {
+    const grid = document.getElementById('categoriesGrid');
+    
+    const html = categories.map(category => `
+      <div class="bg-white rounded-2xl border p-4 flex flex-col gap-3">
+        <div class="flex-1">
+          <h3 class="font-medium">${category.name}</h3>
+          <p class="text-sm text-slate-500">${category.slug}</p>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-xs ${category.is_active ? 'text-green-600' : 'text-red-600'}">
+            ${category.is_active ? 'Активна' : 'Неактивна'}
+          </span>
+          <button class="px-3 py-1.5 rounded-lg border text-sm hover:bg-slate-50" 
+                  onclick="alert('Функциональность категорий будет добавлена позже')">
+            Изменить
+          </button>
+        </div>
+      </div>
+    `).join('');
+    
+    grid.innerHTML = html;
   }
 }
