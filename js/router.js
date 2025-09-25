@@ -75,7 +75,7 @@ class Router {
         ${categoryHTML}
       </div>
     `;
-  },
+  }
   
   clearContainer() {
     const container = this.getMainContainer();
