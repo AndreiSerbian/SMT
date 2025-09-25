@@ -9,6 +9,8 @@ export class ModernAdminComponent {
     this.currentTab = 'products';
     this.isLoading = false;
     this.currentProductId = null;
+    this.sortField = null;
+    this.sortDirection = 'asc';
   }
 
   async mount(container) {
@@ -134,10 +136,26 @@ export class ModernAdminComponent {
                 <thead class="bg-slate-50 text-slate-600">
                   <tr>
                     <th class="px-3 py-2 text-left">Товар</th>
-                    <th class="px-3 py-2 text-left">Артикул</th>
+                    <th class="px-3 py-2 text-left cursor-pointer hover:bg-slate-100" onclick="adminComponent.toggleSort('artikul')">
+                      <div class="flex items-center gap-1">
+                        Артикул
+                        <div class="flex flex-col text-xs">
+                          <span class="text-slate-400" id="sort-artikul-up">▲</span>
+                          <span class="text-slate-400" id="sort-artikul-down">▼</span>
+                        </div>
+                      </div>
+                    </th>
                     <th class="px-3 py-2 text-left">Размер</th>
                     <th class="px-3 py-2 text-left">Цвет</th>
-                    <th class="px-3 py-2 text-left">Цена, ₽</th>
+                    <th class="px-3 py-2 text-left cursor-pointer hover:bg-slate-100" onclick="adminComponent.toggleSort('price_rub')">
+                      <div class="flex items-center gap-1">
+                        Цена, ₽
+                        <div class="flex flex-col text-xs">
+                          <span class="text-slate-400" id="sort-price_rub-up">▲</span>
+                          <span class="text-slate-400" id="sort-price_rub-down">▼</span>
+                        </div>
+                      </div>
+                    </th>
                     <th class="px-3 py-2 text-left">Статус</th>
                     <th class="px-3 py-2 text-right">Действия</th>
                   </tr>
@@ -533,9 +551,16 @@ export class ModernAdminComponent {
 
     let query = this.supabase
       .from('products')
-      .select('id, name, artikul, size, price_rub, weight, dimensions, color_hex, is_active, photos, videos, id_wb')
-      .order('name')
-      .range(this.page * this.PAGE_SIZE, this.page * this.PAGE_SIZE + this.PAGE_SIZE - 1);
+      .select('id, name, artikul, size, price_rub, weight, dimensions, color_hex, is_active, photos, videos, id_wb');
+
+    // Apply sorting
+    if (this.sortField) {
+      query = query.order(this.sortField, { ascending: this.sortDirection === 'asc' });
+    } else {
+      query = query.order('name');
+    }
+    
+    query = query.range(this.page * this.PAGE_SIZE, this.page * this.PAGE_SIZE + this.PAGE_SIZE - 1);
 
     // Apply search filter
     const searchTerm = document.getElementById('search').value.trim();
@@ -568,6 +593,7 @@ export class ModernAdminComponent {
 
     this.renderCards(data || []);
     this.renderTable(data || []);
+    this.updateSortIndicators();
     this.page++;
 
     const btnLoadMore = document.getElementById('btnLoadMore');
@@ -827,6 +853,38 @@ export class ModernAdminComponent {
     
     document.getElementById('dlgProduct').close();
     await this.loadPage(true);
+  }
+
+  toggleSort(field) {
+    if (this.sortField === field) {
+      // Toggle direction if same field
+      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      // New field, start with ascending
+      this.sortField = field;
+      this.sortDirection = 'asc';
+    }
+    
+    this.updateSortIndicators();
+    this.loadPage(true);
+  }
+
+  updateSortIndicators() {
+    // Reset all arrows
+    document.querySelectorAll('[id^="sort-"]').forEach(arrow => {
+      arrow.classList.remove('text-slate-700');
+      arrow.classList.add('text-slate-400');
+    });
+
+    // Highlight active arrow
+    if (this.sortField) {
+      const arrowId = `sort-${this.sortField}-${this.sortDirection === 'asc' ? 'up' : 'down'}`;
+      const arrow = document.getElementById(arrowId);
+      if (arrow) {
+        arrow.classList.remove('text-slate-400');
+        arrow.classList.add('text-slate-700');
+      }
+    }
   }
 
   onTabChange(e) {
