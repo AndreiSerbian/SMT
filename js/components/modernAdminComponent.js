@@ -96,48 +96,93 @@ export class ModernAdminComponent {
         <!-- CONTENT -->
         <main class="max-w-7xl mx-auto px-4 py-4 space-y-4">
 
-          <!-- ACTION BAR -->
-          <section class="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <div class="flex-1 flex gap-2">
-              <input id="search" type="search" placeholder="Поиск: название / артикул"
-                     class="w-full px-3 py-2 rounded-xl border outline-none focus:ring focus:ring-slate-200">
-              <select id="filterCategory" class="px-3 py-2 rounded-xl border">
-                <option value="">Все категории</option>
-              </select>
-              <select id="filterStatus" class="px-3 py-2 rounded-xl border">
-                <option value="">Все</option>
-                <option value="active">Активные</option>
-                <option value="hidden">Скрытые</option>
-              </select>
+          <!-- PRODUCTS TAB -->
+          <div id="productsTab" class="tab-content">
+
+            <!-- ACTION BAR -->
+            <section class="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <div class="flex-1 flex gap-2">
+                <input id="search" type="search" placeholder="Поиск: название / артикул"
+                       class="w-full px-3 py-2 rounded-xl border outline-none focus:ring focus:ring-slate-200">
+                <select id="filterCategory" class="px-3 py-2 rounded-xl border bg-white">
+                  <option value="">Все категории</option>
+                  <option value="small">Малая коробка</option>
+                  <option value="medium">Средняя коробка</option>
+                  <option value="big">Большая коробка</option>
+                  <option value="with_handle">Коробка с ручками</option>
+                </select>
+                <select id="filterStatus" class="px-3 py-2 rounded-xl border bg-white">
+                  <option value="">Все</option>
+                  <option value="active">Активные</option>
+                  <option value="hidden">Скрытые</option>
+                </select>
+              </div>
+              <div class="flex gap-2">
+                <button id="btnAddProduct" class="px-3 py-2 rounded-xl bg-emerald-600 text-white">Добавить товар</button>
+              </div>
+            </section>
+
+            <!-- LIST: CARDS (mobile) -->
+            <section id="cards" class="grid grid-cols-1 sm:hidden gap-3"></section>
+
+            <!-- LIST: TABLE (desktop) -->
+            <section class="hidden sm:block overflow-auto rounded-2xl border bg-white">
+              <table class="min-w-full text-sm">
+                <thead class="bg-slate-50 text-slate-600">
+                  <tr>
+                    <th class="px-3 py-2 text-left">Товар</th>
+                    <th class="px-3 py-2 text-left">Артикул</th>
+                    <th class="px-3 py-2 text-left">Размер</th>
+                    <th class="px-3 py-2 text-left">Цвет</th>
+                    <th class="px-3 py-2 text-left">Цена, ₽</th>
+                    <th class="px-3 py-2 text-left">Статус</th>
+                    <th class="px-3 py-2 text-right">Действия</th>
+                  </tr>
+                </thead>
+                <tbody id="tableBody" class="divide-y"></tbody>
+              </table>
+            </section>
+
+            <!-- PAGINATION -->
+            <div class="flex justify-center">
+              <button id="btnLoadMore" class="px-4 py-2 rounded-xl border bg-white hidden">Загрузить ещё</button>
             </div>
-            <div class="flex gap-2">
-              <button id="btnAddProduct" class="px-3 py-2 rounded-xl bg-emerald-600 text-white">Добавить товар</button>
+          </div>
+
+          <!-- COLORS TAB -->
+          <div id="colorsTab" class="tab-content hidden">
+            <div class="flex flex-col gap-4">
+              <div class="flex justify-between items-center">
+                <h2 class="text-xl font-semibold">Управление цветами</h2>
+                <button id="btnAddColor" class="px-3 py-2 rounded-xl bg-emerald-600 text-white">Добавить цвет</button>
+              </div>
+              
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="colorsGrid">
+                <!-- Colors will be loaded here -->
+              </div>
             </div>
-          </section>
+          </div>
 
-          <!-- LIST: CARDS (mobile) -->
-          <section id="cards" class="grid grid-cols-1 sm:hidden gap-3"></section>
+          <!-- CATEGORIES TAB -->
+          <div id="categoriesTab" class="tab-content hidden">
+            <div class="flex flex-col gap-4">
+              <div class="flex justify-between items-center">
+                <h2 class="text-xl font-semibold">Управление категориями</h2>
+                <button id="btnAddCategory" class="px-3 py-2 rounded-xl bg-emerald-600 text-white">Добавить категорию</button>
+              </div>
+              
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="categoriesGrid">
+                <!-- Categories will be loaded here -->
+              </div>
+            </div>
+          </div>
 
-          <!-- LIST: TABLE (desktop) -->
-          <section class="hidden sm:block overflow-auto rounded-2xl border bg-white">
-            <table class="min-w-full text-sm">
-              <thead class="bg-slate-50 text-slate-600">
-                <tr>
-                  <th class="px-3 py-2 text-left">Товар</th>
-                  <th class="px-3 py-2 text-left">Артикул</th>
-                  <th class="px-3 py-2 text-left">Размер</th>
-                  <th class="px-3 py-2 text-left">Цена, ₽</th>
-                  <th class="px-3 py-2 text-left">Статус</th>
-                  <th class="px-3 py-2 text-right">Действия</th>
-                </tr>
-              </thead>
-              <tbody id="tableBody" class="divide-y"></tbody>
-            </table>
-          </section>
-
-          <!-- PAGINATION -->
-          <div class="flex justify-center">
-            <button id="btnLoadMore" class="px-4 py-2 rounded-xl border bg-white hidden">Загрузить ещё</button>
+          <!-- ORDERS TAB -->
+          <div id="ordersTab" class="tab-content hidden">
+            <div class="flex flex-col gap-4">
+              <h2 class="text-xl font-semibold">Заказы</h2>
+              <p class="text-slate-600">Функциональность заказов будет добавлена позже</p>
+            </div>
           </div>
         </main>
 
