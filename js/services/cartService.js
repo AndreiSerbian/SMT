@@ -1,5 +1,4 @@
 
-import { fetchProducts } from './productPriceService.js';
 import { eventBus } from '../utils/eventBus.js';
 import { env } from '../utils/env.js';
 

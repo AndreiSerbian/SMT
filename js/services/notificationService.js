@@ -1,9 +1,8 @@
-
 // В этом файле оставим функциональность для прямой отправки уведомлений,
 // но она больше не будет использоваться для оформления заказов,
 // так как теперь это делается через Supabase Edge Functions.
 
-import { products } from '../data/products.js';
+import { productsService } from './productsService.js';
 
 export const NotificationService = {
   async sendTelegramMessage(message, isAdminNotification = false) {
@@ -28,14 +27,42 @@ export const NotificationService = {
       console.error('Error sending Telegram message:', error);
       throw error;
     }
+  },
+
+  // Форматирование товара для сообщения
+  async formatProductForMessage(item) {
+    try {
+      const allProducts = await productsService.getActiveProducts();
+      const product = allProducts.find(p => p.id === item.id);
+      return product ? 
+        `${product.name} (${product.color}, ${product.sizeType}) - ${item.quantity} шт.` :
+        `Товар ID: ${item.id} - ${item.quantity} шт.`;
+    } catch (error) {
+      console.error('Ошибка получения данных товара:', error);
+      return `Товар ID: ${item.id} - ${item.quantity} шт.`;
+    }
+  },
+
+  // Форматирование корзины для сообщения
+  async formatCartForMessage(cartItems) {
+    if (!cartItems || cartItems.length === 0) return 'Корзина пуста';
+    
+    const formattedItems = await Promise.all(
+      cartItems.map(item => this.formatProductForMessage(item))
+    );
+    
+    return formattedItems.join('\n');
   }
 };
 
 export const notificationService = {
-  // Отправка уведомления в Телеграм
-  sendTelegramNotification(order) {
+  // Отправка уведомления в Телеграм (устаревший метод)
+  async sendTelegramNotification(order) {
     const botToken = "7304653990:AAE0bmI6O8L_8-9WlBplisvFiy-lOoNLtSQ";
     const chatId = "-4656195871"; // ID чата или группы
+    
+    const allProducts = await productsService.getActiveProducts();
+    
     const message = `
 📦 *Новый заказ!*
 👤 *Имя:* ${order.customerName}
@@ -43,7 +70,7 @@ export const notificationService = {
 ✉️ *Email:* ${order.email}
 🏠 *Адрес:* ${order.yandexAddress || 'Не указан'}
 🛍 *Товары:* ${order.cart.map(item => {
-  const product = products.find(p => p.id === item.id);
+  const product = allProducts.find(p => p.id === item.id);
   return product ? `\n- ${product.name} (${product.color}) [Артикул: ${product.artikul}] x${item.quantity}` : '';
 }).join('')}
 💰 *Сумма заказа:* ${order.total ? `${order.total} ₽` : 'Ошибка при расчете суммы'}
@@ -54,19 +81,14 @@ export const notificationService = {
 
     fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json'
+      },
       body: JSON.stringify({
         chat_id: chatId,
         text: message,
-        parse_mode: "Markdown"
+        parse_mode: 'Markdown'
       })
-    })
-    .then(response => response.json())
-    .then(data => {
-      console.log("Уведомление отправлено в Телеграм:", data);
-    })
-    .catch(error => {
-      console.error("Ошибка отправки в Телеграм:", error);
-    });
+    }).catch(error => console.error('Error sending Telegram notification:', error));
   }
 };

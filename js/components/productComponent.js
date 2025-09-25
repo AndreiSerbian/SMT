@@ -1,8 +1,6 @@
-import { products } from '../data/products.js';
 import { cartService } from '../services/cartService.js';
-import { colorMap } from '../data/products.js';
 import { ColorService } from '../services/colorService.js';
-import { fetchProducts } from '../services/productPriceService.js';
+import { productsService } from '../services/productsService.js';
 
 const ProductComponent = {
   eventListeners: [],
@@ -85,10 +83,10 @@ const ProductComponent = {
 
   async loadProductsWithPrices() {
     try {
-      this.productsWithPrices = await fetchProducts();
+      this.productsWithPrices = await productsService.getActiveProducts();
     } catch (error) {
-      console.error('Ошибка загрузки цен:', error);
-      this.productsWithPrices = products.map(p => ({ ...p, price: undefined }));
+      console.error('Ошибка загрузки товаров:', error);
+      this.productsWithPrices = [];
     }
   },
 

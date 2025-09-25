@@ -1,14 +1,32 @@
 
-import { products, colorMap } from '../data/products.js';
 import SwiperService from './swiperService.js';
 import { eventBus } from '../utils/eventBus.js';
+import { productsService } from './productsService.js';
 
 export const ColorService = {
   // Сохраняем выбранный цвет для каждого продукта
   selectedColors: {},
   
+  // Получаем цветовую карту из Supabase
+  async getColorMap() {
+    try {
+      const colors = await productsService.getActiveColors();
+      const colorMap = {};
+      colors.forEach(color => {
+        colorMap[color.russian_name || color.name] = color.hex_code;
+      });
+      return colorMap;
+    } catch (error) {
+      console.error('Ошибка загрузки цветов:', error);
+      return {};
+    }
+  },
+  
   // Render color buttons for product card
-  renderColorButtons(product) {
+  async renderColorButtons(product) {
+    const colorMap = await this.getColorMap();
+    const allProducts = await productsService.getActiveProducts();
+    
     // Subscribe to color change events
     eventBus.subscribe('color-changed', (data) => {
       if (data.productId === product.id) {
@@ -18,7 +36,7 @@ export const ColorService = {
     
     return Object.entries(colorMap)
       .filter(([color]) =>
-        products.some(p =>
+        allProducts.some(p =>
           p.name === product.name &&
           p.sizeType === product.sizeType &&
           p.color === color
@@ -77,8 +95,9 @@ export const ColorService = {
   },
   
   // Update color button states
-  updateButtonColor(productId, color) {
-    const product = products.find(p => p.id === productId);
+  async updateButtonColor(productId, color) {
+    const allProducts = await productsService.getActiveProducts();
+    const product = allProducts.find(p => p.id === productId);
     if (!product) return;
     
     // Обновляем выбранный цвет
@@ -117,8 +136,9 @@ export const ColorService = {
   },
   
   // Find matching product by parameters
-  findMatchingProduct(baseName, baseSize, color) {
-    return products.find(p =>
+  async findMatchingProduct(baseName, baseSize, color) {
+    const allProducts = await productsService.getActiveProducts();
+    return allProducts.find(p =>
       p.name === baseName &&
       p.sizeType === baseSize &&
       p.color === color
@@ -126,7 +146,7 @@ export const ColorService = {
   },
   
   // Handle color change event
-  handleColorChange(data) {
+  async handleColorChange(data) {
     const { productId, baseName, baseSize, chosenColor } = data;
     
     // Если этот цвет уже выбран (повторный клик), вернем true, что значит "нужен редирект"
@@ -135,7 +155,7 @@ export const ColorService = {
     }
     
     // Find the matching product
-    const matchingProduct = this.findMatchingProduct(baseName, baseSize, chosenColor);
+    const matchingProduct = await this.findMatchingProduct(baseName, baseSize, chosenColor);
     
     if (!matchingProduct) return false;
     
@@ -146,7 +166,7 @@ export const ColorService = {
     SwiperService.updateSliderPhotos(productId, matchingProduct.photo);
     
     // Update button colors
-    this.updateButtonColor(productId, chosenColor);
+    await this.updateButtonColor(productId, chosenColor);
     
     // Восстанавливаем положение скролла после обновления DOM
     requestAnimationFrame(() => {

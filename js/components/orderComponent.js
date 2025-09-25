@@ -1,4 +1,3 @@
-import { fetchProducts } from '../services/productPriceService.js';
 import { cartService } from '../services/cartService.js';
 import { env } from '../utils/env.js';
 

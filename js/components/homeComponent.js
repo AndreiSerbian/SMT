@@ -2,7 +2,7 @@
 import { cartService } from '../services/cartService.js';
 import SwiperService from '../services/swiperService.js';
 import { ColorService } from '../services/colorService.js';
-import { fetchProducts } from '../services/productPriceService.js';
+import { productsService } from '../services/productsService.js';
 
 const HomeComponent = {
   swipersById: {},
@@ -22,7 +22,7 @@ const HomeComponent = {
   // Загрузка товаров с ценами
   async loadProducts() {
     try {
-      this.productsWithPrices = await fetchProducts();
+      this.productsWithPrices = await productsService.getActiveProducts();
       console.log('Товары загружены:', this.productsWithPrices.length);
     } catch (error) {
       console.error('Ошибка загрузки товаров:', error);
@@ -297,7 +297,7 @@ const HomeComponent = {
                   <div class="mb-6">
                     <h2 class="font-semibold text-gray-800 mb-2">Цвета в наличии:</h2>
                     <div class="flex flex-wrap gap-2 mb-4" id="color-buttons-${product.id}">
-                    ${ColorService.renderColorButtons(product)}
+                    <!-- Цвета будут загружены асинхронно -->
                     </div>
 
                     <button
@@ -498,6 +498,36 @@ const HomeComponent = {
     }, 100);
     
     this.timeouts.push(timeoutId);
+    
+    // Асинхронно загружаем кнопки цветов для каждого продукта
+    setTimeout(() => {
+      this.loadColorButtons();
+    }, 200);
+  }
+};
+
+// Добавляем метод для асинхронной загрузки кнопок цветов
+HomeComponent.loadColorButtons = async function() {
+  const categories = this.getCategories();
+  
+  for (const category of categories) {
+    const [name, sizeTypeRaw] = category.split(' (');
+    const sizeType = (sizeTypeRaw || '').slice(0, -1);
+    
+    // Находим продукт по умолчанию
+    const product = this.productsWithPrices.find(p => p.name === name && p.sizeType === sizeType);
+    if (!product) continue;
+    
+    // Загружаем кнопки цветов
+    try {
+      const colorButtons = await ColorService.renderColorButtons(product);
+      const container = document.getElementById(`color-buttons-${product.id}`);
+      if (container) {
+        container.innerHTML = colorButtons;
+      }
+    } catch (error) {
+      console.error('Ошибка загрузки кнопок цветов для продукта:', product.id, error);
+    }
   }
 };
 

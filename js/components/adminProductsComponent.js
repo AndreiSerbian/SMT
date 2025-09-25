@@ -1,5 +1,5 @@
 import { supabase } from '../utils/supabase.js';
-import { products } from '../data/products.js';
+import { productsService } from '../services/productsService.js';
 
 export const AdminProductsComponent = {
   data: {
@@ -257,7 +257,7 @@ export const AdminProductsComponent = {
           </div>
           
           <div class="import-info">
-            <p>Будет импортировано <strong>${products.length}</strong> товаров из файла products.js</p>
+            <p>Будет импортирован файл products.js с товарами</p>
             <p class="warning">⚠️ Существующие товары с такими же артикулами будут обновлены</p>
           </div>
           
@@ -441,6 +441,9 @@ export const AdminProductsComponent = {
     const formData = new FormData(event.target);
     
     try {
+      // Получаем статические данные для импорта
+      const { products } = await import('../data/products.js');
+      
       const response = await supabase.functions.invoke('import-products', {
         body: {
           products: products,

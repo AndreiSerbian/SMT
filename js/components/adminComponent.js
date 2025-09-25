@@ -1,7 +1,6 @@
 import { supabase } from '../utils/supabase.js';
-import { products } from '../data/products.js';
 import { NotificationService } from '../services/notificationService.js';
-import { fetchProducts, savePrice } from '../services/productPriceService.js';
+import { productsService } from '../services/productsService.js';
 
 export class AdminComponent {
   constructor() {
