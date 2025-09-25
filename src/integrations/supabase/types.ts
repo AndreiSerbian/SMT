@@ -271,9 +271,25 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_photo_paths: {
+        Args: { color: string; size_category: string }
+        Returns: string[]
+      }
+      get_color_hex: {
+        Args: { color_name: string }
+        Returns: string
+      }
+      get_product_size: {
+        Args: { category: string; dimensions: Json }
+        Returns: Database["public"]["Enums"]["product_size"]
+      }
       is_admin_user: {
         Args: { login_input: string; password_input: string }
         Returns: boolean
+      }
+      parse_dimensions: {
+        Args: { dimension_str: string }
+        Returns: Json
       }
       storage_public_url: {
         Args: { bucket: string; project_ref: string; rel_path: string }
