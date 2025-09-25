@@ -236,7 +236,43 @@ export class ProductsService {
   }
 
   /**
-   * Группировка товаров по типу коробки (без размера и цвета)
+   * Группировка товаров по категориям через edge-функцию
+   */
+  async getGroupedProductsByCategories() {
+    if (this.cache.has('groupedCategories')) {
+      return this.cache.get('groupedCategories');
+    }
+
+    try {
+      const response = await fetch('https://bsndismiessofvhglzrv.supabase.co/functions/v1/group-products-by-categories', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to group products');
+      }
+
+      this.cache.set('groupedCategories', result.data);
+      return result.data;
+
+    } catch (error) {
+      console.error('Error grouping products by categories:', error);
+      // Fallback к старому методу
+      return this.getGroupedProductsByType();
+    }
+  }
+
+  /**
+   * Группировка товаров по типу коробки (устаревший метод)
    */
   async getGroupedProductsByType() {
     const products = await this.getActiveProducts();

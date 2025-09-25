@@ -23,8 +23,8 @@ export const PublicProductsComponent = {
     try {
       this.data.loading = true;
       
-      // Загружаем сгруппированные товары
-      this.data.groupedProducts = await productsService.getGroupedProductsByType();
+      // Загружаем сгруппированные товары по категориям
+      this.data.groupedProducts = await productsService.getGroupedProductsByCategories();
       this.data.categories = await productsService.getActiveCategories();
       
     } catch (error) {
@@ -111,34 +111,32 @@ export const PublicProductsComponent = {
   },
 
   renderGroupedProductCard(group) {
-    const mainPhoto = group.mainImage || '/images/placeholder.jpg';
-    const sizes = Object.keys(group.sizes);
-    const firstSize = sizes[0];
-    const firstSizeData = group.sizes[firstSize];
+    const mainPhoto = this.getImageUrl(group.mainImage) || '/images/placeholder.jpg';
     
     return `
       <div class="grouped-product-card">
         <div class="product-slider">
           <div class="slider-container">
             <img src="${mainPhoto}" 
-                 alt="${group.baseType}" 
+                 alt="${group.categoryName}" 
                  loading="lazy"
                  onerror="this.src='/images/placeholder.jpg'" />
           </div>
         </div>
         
         <div class="product-info">
-          <h3 class="product-name">${group.baseType}</h3>
+          <h3 class="product-name">${group.categoryName}</h3>
           
           <div class="size-variants">
-            ${sizes.map(size => {
-              const sizeData = group.sizes[size];
+            ${Object.entries(group.sizes).map(([size, products]) => {
+              const sizeRussian = this.mapSizeToRussian(size);
+              const firstProduct = products[0];
               return `
                 <div class="size-variant">
-                  <span class="size-name">${size}</span>
+                  <span class="size-name">${sizeRussian}</span>
                   <div class="size-details">
-                    <span class="dimensions">${sizeData.dimensions.length}×${sizeData.dimensions.width}×${sizeData.dimensions.height} см</span>
-                    <span class="price">${sizeData.price} ₽</span>
+                    <span class="dimensions">${firstProduct.dimensions.length}×${firstProduct.dimensions.width}×${firstProduct.dimensions.height} см</span>
+                    <span class="price">${group.priceRange.min}${group.priceRange.min !== group.priceRange.max ? ` - ${group.priceRange.max}` : ''} ₽</span>
                   </div>
                 </div>
               `;
@@ -148,24 +146,63 @@ export const PublicProductsComponent = {
           <div class="colors-section">
             <p class="colors-title">Цвета в наличии:</p>
             <div class="color-palette">
-              ${firstSizeData.colors.map(color => `
+              ${group.colors.map(hex => `
                 <div class="color-option" 
-                     style="background-color: ${color.hex}"
-                     title="${color.name}"
-                     onclick="PublicProductsComponent.selectColor('${color.artikul}', '${color.hex}', this)">
+                     style="background-color: ${hex}"
+                     title="${this.getColorNameFromHex(hex)}"
+                     onclick="PublicProductsComponent.selectColor('${hex}', this)">
                 </div>
               `).join('')}
             </div>
           </div>
           
           <div class="product-actions">
-            <button class="btn btn-primary" onclick="PublicProductsComponent.showDetails('${group.baseType}')">
+            <button class="btn btn-primary" onclick="PublicProductsComponent.showDetails('${group.categorySlug}')">
               Подробно
             </button>
           </div>
         </div>
       </div>
     `;
+  },
+
+  mapSizeToRussian(size) {
+    const mapping = {
+      'small': 'Малая',
+      'medium': 'Средняя', 
+      'big': 'Большая'
+    };
+    return mapping[size] || size;
+  },
+
+  getColorNameFromHex(hex) {
+    const colorMapping = {
+      '#FFB6C1': 'Розовая',
+      '#1a1a1a': 'Черная',
+      '#FFFFFF': 'Белая', 
+      '#FFD700': 'Золотая',
+      '#C0C0C0': 'Серебряная',
+      '#FF0000': 'Красная',
+      '#FFA500': 'Оранжевая',
+      '#FFCBA4': 'Персиковая',
+      '#B0E0E6': 'Голубая ледяная',
+      '#003366': 'Синяя бархатная',
+      '#0ABAB5': 'Тиффани',
+      '#F3E5AB': 'Ванильная',
+      '#F8F8FF': 'Белая алмазная',
+      '#2F2F2F': 'Черная муар',
+      '#E6E6FA': 'Лавандовая',
+      '#DDA0DD': 'Сиреневая'
+    };
+    return colorMapping[hex] || hex;
+  },
+
+  getImageUrl(photo) {
+    if (!photo) return '';
+    if (photo.startsWith('http')) {
+      return photo;
+    }
+    return `https://bsndismiessofvhglzrv.supabase.co/storage/v1/object/public/product-media/${photo}`;
   },
 
   renderProductCard(product) {
@@ -226,7 +263,7 @@ export const PublicProductsComponent = {
   /**
    * Выбор цвета товара
    */
-  selectColor(artikul, hex, element) {
+  selectColor(hex, element) {
     // Убираем активный класс с других цветов
     const colorOptions = element.parentNode.querySelectorAll('.color-option');
     colorOptions.forEach(option => option.classList.remove('selected'));
@@ -234,16 +271,17 @@ export const PublicProductsComponent = {
     // Добавляем активный класс к выбранному цвету
     element.classList.add('selected');
     
-    this.showNotification(`Выбран цвет: ${hex}`, 'info');
+    const colorName = this.getColorNameFromHex(hex);
+    this.showNotification(`Выбран цвет: ${colorName}`, 'info');
   },
 
   /**
    * Показать детали группы товаров
    */
-  showDetails(baseType) {
+  showDetails(categorySlug) {
     // Здесь можно открыть модальное окно или перейти на страницу с деталями
-    console.log('Show details for:', baseType);
-    this.showNotification(`Просмотр деталей: ${baseType}`, 'info');
+    window.location.hash = `#category/${categorySlug}`;
+    console.log('Show details for category:', categorySlug);
   },
 
   /**
