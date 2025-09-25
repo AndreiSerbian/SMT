@@ -8,6 +8,7 @@ export const PublicProductsComponent = {
   data: {
     products: [],
     groupedProducts: [],
+    categoryCards: [],
     categories: [],
     loading: true,
     error: null,
@@ -15,7 +16,7 @@ export const PublicProductsComponent = {
   },
 
   /**
-   * Рендер всех товаров или товаров по категории
+   * Рендер карточек категорий или товаров по категории
    */
   async render(categorySlug = null) {
     this.data.selectedCategory = categorySlug;
@@ -23,9 +24,14 @@ export const PublicProductsComponent = {
     try {
       this.data.loading = true;
       
-      // Загружаем сгруппированные товары по категориям
-      this.data.groupedProducts = await productsService.getGroupedProductsByCategories();
-      this.data.categories = await productsService.getActiveCategories();
+      if (categorySlug) {
+        // Загружаем товары конкретной категории
+        this.data.products = await this.getProductsByCategory(categorySlug);
+        this.data.categories = await productsService.getActiveCategories();
+      } else {
+        // Создаем карточки категорий по принципу админки
+        this.data.categoryCards = await this.createCategoryCards();
+      }
       
     } catch (error) {
       console.error('Error loading products:', error);
@@ -35,6 +41,121 @@ export const PublicProductsComponent = {
     }
 
     return this.renderHTML();
+  },
+
+  /**
+   * Получение товаров по категории (аналогично логике админки)
+   */
+  async getProductsByCategory(categorySlug) {
+    const allProducts = await productsService.getActiveProducts();
+    
+    switch(categorySlug) {
+      case 'small':
+        return allProducts.filter(product => product.size === 'small' && !product.name.toLowerCase().includes('ручк'));
+      case 'medium':
+        return allProducts.filter(product => product.size === 'medium');
+      case 'big':
+        return allProducts.filter(product => product.size === 'big');
+      case 'with_handle':
+        return allProducts.filter(product => product.name.toLowerCase().includes('ручк'));
+      default:
+        return allProducts;
+    }
+  },
+
+  /**
+   * Создание карточек категорий с данными о товарах
+   */
+  async createCategoryCards() {
+    const allProducts = await productsService.getActiveProducts();
+    const colorMap = await this.getColorMap();
+    
+    const categories = [
+      {
+        slug: 'small',
+        name: 'Малая коробка',
+        description: 'Идеальна для небольших подарков и украшений'
+      },
+      {
+        slug: 'medium', 
+        name: 'Средняя коробка',
+        description: 'Универсальный размер для большинства подарков'
+      },
+      {
+        slug: 'big',
+        name: 'Большая коробка', 
+        description: 'Для объемных подарков и особых случаев'
+      },
+      {
+        slug: 'with_handle',
+        name: 'Коробка с ручками',
+        description: 'Удобно носить, стильно дарить'
+      }
+    ];
+
+    return categories.map(category => {
+      const categoryProducts = this.filterProductsByCategory(allProducts, category.slug);
+      
+      if (categoryProducts.length === 0) return null;
+
+      // Получаем уникальные цвета для категории
+      const categoryColors = [...new Set(categoryProducts.map(p => p.color_hex))];
+      
+      // Диапазон цен
+      const prices = categoryProducts.map(p => p.price_rub);
+      const priceRange = {
+        min: Math.min(...prices),
+        max: Math.max(...prices)
+      };
+
+      // Главное изображение
+      const mainImage = categoryProducts[0]?.photos?.[0] || '';
+
+      return {
+        ...category,
+        products: categoryProducts,
+        colors: categoryColors,
+        colorMap,
+        priceRange,
+        mainImage,
+        totalProducts: categoryProducts.length
+      };
+    }).filter(Boolean);
+  },
+
+  /**
+   * Фильтрация товаров по категории
+   */
+  filterProductsByCategory(products, categorySlug) {
+    switch(categorySlug) {
+      case 'small':
+        return products.filter(product => product.size === 'small' && !product.name.toLowerCase().includes('ручк'));
+      case 'medium':
+        return products.filter(product => product.size === 'medium');
+      case 'big':
+        return products.filter(product => product.size === 'big');
+      case 'with_handle':
+        return products.filter(product => product.name.toLowerCase().includes('ручк'));
+      default:
+        return products;
+    }
+  },
+
+  /**
+   * Получение карты цветов
+   */
+  async getColorMap() {
+    try {
+      const colors = await productsService.getActiveColors();
+      const colorMap = {};
+      colors.forEach(color => {
+        colorMap[color.hex_code] = color.russian_name || color.name;
+      });
+      return colorMap;
+    } catch (error) {
+      console.error('Error loading color map:', error);
+      return {};
+    }
   },
 
   renderHTML() {
@@ -58,33 +179,111 @@ export const PublicProductsComponent = {
       `;
     }
 
-    if (!this.data.groupedProducts || this.data.groupedProducts.length === 0) {
-      const categoryName = this.data.selectedCategory ? 
-        this.getCategoryNameBySlug(this.data.selectedCategory) : 
-        'Товары';
+    // Если выбрана конкретная категория - показываем товары
+    if (this.data.selectedCategory) {
+      return this.renderCategoryProducts();
+    }
+
+    // Иначе показываем карточки категорий
+    return this.renderCategoryCards();
+  },
+
+  /**
+   * Рендер карточек категорий на главной странице
+   */
+  renderCategoryCards() {
+    if (!this.data.categoryCards || this.data.categoryCards.length === 0) {
+      return `
+        <div class="products-empty">
+          <h2>Каталог товаров</h2>
+          <p>Категории товаров временно недоступны</p>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="products-section">
+        <h2 class="products-title">Каталог товаров</h2>
+        
+        <div class="category-cards-grid">
+          ${this.data.categoryCards.map(category => this.renderCategoryCard(category)).join('')}
+        </div>
+      </div>
+    `;
+  },
+
+  /**
+   * Рендер товаров конкретной категории
+   */
+  renderCategoryProducts() {
+    if (!this.data.products || this.data.products.length === 0) {
+      const categoryName = this.getCategoryNameBySlug(this.data.selectedCategory);
         
       return `
         <div class="products-empty">
           <h2>${categoryName}</h2>
           <p>Товары в этой категории временно недоступны</p>
+          <a href="#" class="back-to-catalog">← Вернуться к каталогу</a>
         </div>
       `;
     }
 
-    const categoryName = this.data.selectedCategory ? 
-      this.getCategoryNameBySlug(this.data.selectedCategory) : 
-      'Каталог товаров';
+    const categoryName = this.getCategoryNameBySlug(this.data.selectedCategory);
 
     return `
       <div class="products-section">
-        <h2 class="products-title">${categoryName}</h2>
-        
-        <!-- Навигация по категориям -->
-        ${this.renderCategoriesNav()}
+        <div class="category-header">
+          <a href="#" class="back-to-catalog">← Вернуться к каталогу</a>
+          <h2 class="products-title">${categoryName}</h2>
+        </div>
         
         <!-- Сетка товаров -->
         <div class="products-grid">
-          ${this.data.groupedProducts.map(group => this.renderGroupedProductCard(group)).join('')}
+          ${this.data.products.map(product => this.renderProductCard(product)).join('')}
+        </div>
+      </div>
+    `;
+  },
+
+  /**
+   * Рендер карточки категории
+   */
+  renderCategoryCard(category) {
+    const mainPhoto = this.getImageUrl(category.mainImage) || '/images/placeholder.jpg';
+    
+    return `
+      <div class="category-card">
+        <div class="category-image-container">
+          <img src="${mainPhoto}" alt="${category.name}" class="category-main-image" />
+        </div>
+        
+        <div class="category-info">
+          <h3 class="category-name">${category.name}</h3>
+          <p class="category-description">${category.description}</p>
+          
+          <div class="category-details">
+            <div class="category-colors">
+              <span class="colors-label">Доступные цвета:</span>
+              <div class="color-options">
+                ${category.colors.slice(0, 6).map(hex => `
+                  <div class="color-dot" 
+                       style="background-color: ${hex}" 
+                       title="${category.colorMap[hex] || 'Цвет'}">
+                  </div>
+                `).join('')}
+                ${category.colors.length > 6 ? `<span class="more-colors">+${category.colors.length - 6}</span>` : ''}
+              </div>
+            </div>
+            
+            <div class="category-stats">
+              <span class="products-count">${category.totalProducts} товаров</span>
+              <span class="price-range">от ${category.priceRange.min}₽</span>
+            </div>
+          </div>
+          
+          <button class="category-details-btn" onclick="PublicProductsComponent.viewCategory('${category.slug}')">
+            Подробно
+          </button>
         </div>
       </div>
     `;
@@ -248,9 +447,24 @@ export const PublicProductsComponent = {
     `;
   },
 
+  /**
+   * Получение названия категории по slug
+   */
   getCategoryNameBySlug(slug) {
-    const category = this.data.categories.find(c => c.slug === slug);
-    return category ? category.name : 'Товары';
+    const categories = {
+      'small': 'Малая коробка',
+      'medium': 'Средняя коробка', 
+      'big': 'Большая коробка',
+      'with_handle': 'Коробка с ручками'
+    };
+    return categories[slug] || 'Товары';
+  },
+
+  /**
+   * Переход к просмотру категории
+   */
+  viewCategory(categorySlug) {
+    window.location.hash = `#category/${categorySlug}`;
   },
 
   /**
