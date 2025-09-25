@@ -236,6 +236,77 @@ export class ProductsService {
   }
 
   /**
+   * Группировка товаров по типу коробки (без размера и цвета)
+   */
+  async getGroupedProductsByType() {
+    const products = await this.getActiveProducts();
+    const grouped = {};
+
+    products.forEach(product => {
+      // Извлекаем базовый тип коробки из названия
+      let baseType = this.extractBaseType(product.name);
+      
+      if (!grouped[baseType]) {
+        grouped[baseType] = {
+          baseType: baseType,
+          sizes: {},
+          mainImage: product.photos?.[0] || '',
+          allPhotos: []
+        };
+      }
+
+      // Группируем по размерам
+      const size = this.mapSizeToRussian(product.size);
+      if (!grouped[baseType].sizes[size]) {
+        grouped[baseType].sizes[size] = {
+          colors: [],
+          price: product.price_rub,
+          dimensions: product.dimensions
+        };
+      }
+
+      // Добавляем цвет
+      grouped[baseType].sizes[size].colors.push({
+        hex: product.color_hex,
+        name: this.getColorNameFromHex(product.color_hex),
+        artikul: product.artikul,
+        photos: product.photos || [],
+        price: product.price_rub
+      });
+
+      // Собираем все фото
+      if (product.photos) {
+        grouped[baseType].allPhotos.push(...product.photos);
+      }
+    });
+
+    return Object.values(grouped);
+  }
+
+  /**
+   * Извлекает базовый тип коробки из полного названия
+   */
+  extractBaseType(fullName) {
+    // Убираем размеры из названия
+    let baseName = fullName
+      .replace(/\s+(Большая|Средняя|Малая)\s+/gi, ' ')
+      .replace(/\s+(Big|Medium|Small)\s+/gi, ' ')
+      .replace(/\s+[A-Za-z\s]+$/, '') // убираем цвет в конце
+      .trim();
+
+    // Нормализуем названия
+    if (baseName.includes('бантом на магнитах')) {
+      return 'Подарочная коробка с бантом на магнитах';
+    } else if (baseName.includes('лентой')) {
+      return 'Подарочная коробка с лентой';
+    } else if (baseName.includes('ручкой')) {
+      return 'Подарочная коробка с ручкой';
+    }
+    
+    return baseName;
+  }
+
+  /**
    * Поиск товаров
    */
   async searchProducts(query) {

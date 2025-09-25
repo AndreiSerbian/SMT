@@ -7,6 +7,7 @@ import { productsService } from '../services/productsService.js';
 export const PublicProductsComponent = {
   data: {
     products: [],
+    groupedProducts: [],
     categories: [],
     loading: true,
     error: null,
@@ -22,12 +23,8 @@ export const PublicProductsComponent = {
     try {
       this.data.loading = true;
       
-      if (categorySlug) {
-        this.data.products = await productsService.getProductsByCategory(categorySlug);
-      } else {
-        this.data.products = await productsService.getActiveProducts();
-      }
-      
+      // Загружаем сгруппированные товары
+      this.data.groupedProducts = await productsService.getGroupedProductsByType();
       this.data.categories = await productsService.getActiveCategories();
       
     } catch (error) {
@@ -61,7 +58,7 @@ export const PublicProductsComponent = {
       `;
     }
 
-    if (!this.data.products || this.data.products.length === 0) {
+    if (!this.data.groupedProducts || this.data.groupedProducts.length === 0) {
       const categoryName = this.data.selectedCategory ? 
         this.getCategoryNameBySlug(this.data.selectedCategory) : 
         'Товары';
@@ -76,7 +73,7 @@ export const PublicProductsComponent = {
 
     const categoryName = this.data.selectedCategory ? 
       this.getCategoryNameBySlug(this.data.selectedCategory) : 
-      'Все товары';
+      'Каталог товаров';
 
     return `
       <div class="products-section">
@@ -87,7 +84,7 @@ export const PublicProductsComponent = {
         
         <!-- Сетка товаров -->
         <div class="products-grid">
-          ${this.data.products.map(product => this.renderProductCard(product)).join('')}
+          ${this.data.groupedProducts.map(group => this.renderGroupedProductCard(group)).join('')}
         </div>
       </div>
     `;
@@ -113,6 +110,64 @@ export const PublicProductsComponent = {
     `;
   },
 
+  renderGroupedProductCard(group) {
+    const mainPhoto = group.mainImage || '/images/placeholder.jpg';
+    const sizes = Object.keys(group.sizes);
+    const firstSize = sizes[0];
+    const firstSizeData = group.sizes[firstSize];
+    
+    return `
+      <div class="grouped-product-card">
+        <div class="product-slider">
+          <div class="slider-container">
+            <img src="${mainPhoto}" 
+                 alt="${group.baseType}" 
+                 loading="lazy"
+                 onerror="this.src='/images/placeholder.jpg'" />
+          </div>
+        </div>
+        
+        <div class="product-info">
+          <h3 class="product-name">${group.baseType}</h3>
+          
+          <div class="size-variants">
+            ${sizes.map(size => {
+              const sizeData = group.sizes[size];
+              return `
+                <div class="size-variant">
+                  <span class="size-name">${size}</span>
+                  <div class="size-details">
+                    <span class="dimensions">${sizeData.dimensions.length}×${sizeData.dimensions.width}×${sizeData.dimensions.height} см</span>
+                    <span class="price">${sizeData.price} ₽</span>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+          
+          <div class="colors-section">
+            <p class="colors-title">Цвета в наличии:</p>
+            <div class="color-palette">
+              ${firstSizeData.colors.map(color => `
+                <div class="color-option" 
+                     style="background-color: ${color.hex}"
+                     title="${color.name}"
+                     onclick="PublicProductsComponent.selectColor('${color.artikul}', '${color.hex}', this)">
+                </div>
+              `).join('')}
+            </div>
+          </div>
+          
+          <div class="product-actions">
+            <button class="btn btn-primary" onclick="PublicProductsComponent.showDetails('${group.baseType}')">
+              Подробно
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  },
+
   renderProductCard(product) {
     const mainPhoto = product.photos && product.photos[0] ? product.photos[0] : '';
     const colorStyle = product.colorData?.hex_code ? 
@@ -130,7 +185,7 @@ export const PublicProductsComponent = {
         <div class="product-info">
           <h3 class="product-name">${product.name}</h3>
           <p class="product-color">${product.color}</p>
-          <p class="product-category">${product.categories.name}</p>
+          <p class="product-category">${product.categories?.name || ''}</p>
           
           <div class="product-details">
             <span class="product-dimensions">
@@ -169,10 +224,54 @@ export const PublicProductsComponent = {
   },
 
   /**
+   * Выбор цвета товара
+   */
+  selectColor(artikul, hex, element) {
+    // Убираем активный класс с других цветов
+    const colorOptions = element.parentNode.querySelectorAll('.color-option');
+    colorOptions.forEach(option => option.classList.remove('selected'));
+    
+    // Добавляем активный класс к выбранному цвету
+    element.classList.add('selected');
+    
+    this.showNotification(`Выбран цвет: ${hex}`, 'info');
+  },
+
+  /**
+   * Показать детали группы товаров
+   */
+  showDetails(baseType) {
+    // Здесь можно открыть модальное окно или перейти на страницу с деталями
+    console.log('Show details for:', baseType);
+    this.showNotification(`Просмотр деталей: ${baseType}`, 'info');
+  },
+
+  /**
    * Добавление товара в корзину
    */
   addToCart(artikul) {
-    const product = this.data.products.find(p => p.artikul === artikul);
+    // Ищем товар среди всех сгруппированных товаров
+    let product = null;
+    
+    for (const group of this.data.groupedProducts) {
+      for (const sizeKey of Object.keys(group.sizes)) {
+        const sizeData = group.sizes[sizeKey];
+        const colorData = sizeData.colors.find(c => c.artikul === artikul);
+        if (colorData) {
+          product = {
+            artikul: colorData.artikul,
+            name: `${group.baseType} ${sizeKey}`,
+            color: colorData.name,
+            price_rub: colorData.price,
+            photos: colorData.photos,
+            dimensions: sizeData.dimensions
+          };
+          break;
+        }
+      }
+      if (product) break;
+    }
+    
     if (!product) {
       console.error('Product not found:', artikul);
       return;
@@ -186,8 +285,7 @@ export const PublicProductsComponent = {
         color: product.color,
         price: product.price_rub,
         image: product.photos[0],
-        dimensions: product.dimensions,
-        weight: product.weight
+        dimensions: product.dimensions
       });
       
       this.showNotification(`${product.name} добавлен в корзину`, 'success');
