@@ -251,8 +251,8 @@ export class ModernAdminComponent {
             </div>
             <div class="p-4 space-y-3">
               <label class="block">
-                <span class="text-sm font-medium">Email</span>
-                <input name="email" type="email" required class="mt-1 w-full px-3 py-2 rounded-xl border">
+                <span class="text-sm font-medium">Логин</span>
+                <input name="login" type="text" required class="mt-1 w-full px-3 py-2 rounded-xl border">
               </label>
               <label class="block">
                 <span class="text-sm font-medium">Пароль</span>
@@ -300,8 +300,11 @@ export class ModernAdminComponent {
   }
 
   async checkAuth() {
-    const { data: { session } } = await this.supabase.auth.getSession();
-    if (!session) {
+    // Проверяем авторизацию из localStorage
+    this.isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
+    this.adminLogin = localStorage.getItem('adminLogin');
+    
+    if (!this.isAuthenticated) {
       this.showLoginModal();
     } else {
       this.hideLoginModal();
@@ -321,24 +324,43 @@ export class ModernAdminComponent {
   async onLogin(e) {
     e.preventDefault();
     const formData = new FormData(e.target);
-    const email = formData.get('email');
+    const login = formData.get('login');
     const password = formData.get('password');
 
-    const { error } = await this.supabase.auth.signInWithPassword({ email, password });
+    // Проверяем логин и пароль через функцию базы данных
+    const { data, error } = await this.supabase.rpc('is_admin_user', {
+      login_input: login,
+      password_input: password
+    });
     
     const errorEl = document.getElementById('loginError');
-    if (error) {
-      errorEl.textContent = error.message;
+    if (error || !data) {
+      errorEl.textContent = error?.message || 'Ошибка входа. Проверьте логин и пароль.';
       errorEl.classList.remove('hidden');
-    } else {
+    } else if (data === true) {
+      // Сохраняем статус входа в localStorage
+      localStorage.setItem('adminLogin', login);
+      localStorage.setItem('isAuthenticated', 'true');
+      this.isAuthenticated = true;
+      this.adminLogin = login;
+      
       errorEl.classList.add('hidden');
+      this.hideLoginModal();
       await this.loadMeta();
       await this.loadPage(true);
+    } else {
+      errorEl.textContent = 'Неверный логин или пароль';
+      errorEl.classList.remove('hidden');
     }
   }
 
   async signOut() {
-    await this.supabase.auth.signOut();
+    // Очищаем localStorage
+    localStorage.removeItem('adminLogin');
+    localStorage.removeItem('isAuthenticated');
+    this.isAuthenticated = false;
+    this.adminLogin = null;
+    this.showLoginModal();
   }
 
   async loadMeta() {
