@@ -5,12 +5,12 @@ import OrderComponent from './components/orderComponent.js';
 import ContactsComponent from './components/contactsComponent.js';
 import PrivacyPolicyComponent from './components/privacyPolicyComponent.js';
 import TermsOfUseComponent from './components/termsOfUseComponent.js';
-import { AdminComponent } from './components/adminComponent.js';
+import { ModernAdminComponent } from './components/modernAdminComponent.js';
 
 class Router {
   constructor() {
     this.currentComponent = null;
-    this.adminComponent = new AdminComponent();
+    this.adminComponent = new ModernAdminComponent();
     this.routes = {
       '#': () => HomeComponent.render(this.getMainContainer()),
       '#product': (id) => ProductComponent.render(id, this.getMainContainer()),
