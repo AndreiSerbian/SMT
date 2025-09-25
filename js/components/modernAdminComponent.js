@@ -26,6 +26,9 @@ export class ModernAdminComponent {
     
     // Проверка авторизации
     this.checkAuth();
+    
+    // Сохраняем глобальную ссылку для onclick handlers
+    window.adminComponent = this;
   }
 
   async initSupabase() {
@@ -247,8 +250,13 @@ export class ModernAdminComponent {
               </label>
 
               <label class="block">
-                <span class="text-sm font-medium">Цвет (HEX)</span>
-                <input name="color_hex" type="color" class="mt-1 w-full h-10 rounded-xl border">
+                <span class="text-sm font-medium">Цвет (HEX) *</span>
+                <div class="flex gap-2 mt-1">
+                  <input name="color_hex" type="color" class="w-12 h-10 rounded-xl border cursor-pointer">
+                  <input name="color_hex_text" type="text" placeholder="#000000" 
+                         class="flex-1 px-3 py-2 rounded-xl border font-mono text-sm" 
+                         pattern="^#[0-9A-Fa-f]{6}$">
+                </div>
               </label>
 
               <label class="block">
@@ -288,7 +296,52 @@ export class ModernAdminComponent {
           </form>
         </dialog>
 
-        <!-- LOGIN DIALOG -->
+        <!-- COLOR DIALOG -->
+        <dialog id="dlgColor" class="p-0 rounded-2xl backdrop:bg-black/40 max-w-md">
+          <form id="frmColor" method="dialog" class="bg-white rounded-2xl overflow-hidden">
+            <div class="px-4 py-3 border-b flex items-center justify-between">
+              <h2 id="dlgColorTitle" class="font-semibold">Цвет</h2>
+              <button type="button" class="px-2 py-1 rounded-lg hover:bg-slate-100" data-close-color>✕</button>
+            </div>
+
+            <div class="p-4 space-y-3">
+              <input type="hidden" name="id" />
+              
+              <label class="block">
+                <span class="text-sm font-medium">Название *</span>
+                <input name="name" required class="mt-1 w-full px-3 py-2 rounded-xl border">
+              </label>
+
+              <label class="block">
+                <span class="text-sm font-medium">HEX код *</span>
+                <div class="flex gap-2 mt-1">
+                  <input name="hex_code" type="color" class="w-12 h-10 rounded-xl border cursor-pointer">
+                  <input name="hex_code_text" type="text" placeholder="#000000" required
+                         class="flex-1 px-3 py-2 rounded-xl border font-mono text-sm" 
+                         pattern="^#[0-9A-Fa-f]{6}$">
+                </div>
+              </label>
+
+              <label class="block">
+                <span class="text-sm font-medium">Порядок сортировки</span>
+                <input name="sort_order" type="number" class="mt-1 w-full px-3 py-2 rounded-xl border">
+              </label>
+
+              <label class="flex items-center gap-2">
+                <input name="is_active" type="checkbox" class="rounded">
+                <span class="text-sm font-medium">Активный</span>
+              </label>
+            </div>
+
+            <div class="px-4 py-3 border-t flex justify-between">
+              <button type="button" id="btnDeleteColor" class="px-3 py-2 rounded-lg border border-rose-300 text-rose-700 hover:bg-rose-50">Удалить</button>
+              <div class="flex gap-2">
+                <button type="button" data-close-color class="px-3 py-2 rounded-lg border hover:bg-slate-50">Отмена</button>
+                <button type="submit" class="px-3 py-2 rounded-lg bg-slate-900 text-white hover:bg-slate-800">Сохранить</button>
+              </div>
+            </div>
+          </form>
+        </dialog>
         <dialog id="dlgLogin" class="p-0 rounded-2xl backdrop:bg-black/40">
           <form id="frmLogin" method="dialog" class="bg-white rounded-2xl overflow-hidden">
             <div class="px-4 py-3 border-b">
@@ -342,6 +395,44 @@ export class ModernAdminComponent {
     // Dynamic form elements
     document.getElementById('btnAddImage').addEventListener('click', () => this.addImageInput());
     document.getElementById('btnAddVideo').addEventListener('click', () => this.addVideoInput());
+
+    // Color picker synchronization
+    const colorInput = document.querySelector('input[name="color_hex"]');
+    const colorTextInput = document.querySelector('input[name="color_hex_text"]');
+    if (colorInput && colorTextInput) {
+      colorInput.addEventListener('input', (e) => {
+        colorTextInput.value = e.target.value.toUpperCase();
+      });
+      colorTextInput.addEventListener('input', (e) => {
+        const value = e.target.value;
+        if (/^#[0-9A-Fa-f]{6}$/.test(value)) {
+          colorInput.value = value;
+        }
+      });
+    }
+
+    // Colors management
+    document.getElementById('btnAddColor')?.addEventListener('click', () => this.openColor());
+    document.getElementById('frmColor')?.addEventListener('submit', (e) => this.onSaveColor(e));
+    document.getElementById('btnDeleteColor')?.addEventListener('click', () => this.onDeleteColor());
+    document.querySelectorAll('[data-close-color]').forEach(btn => {
+      btn.addEventListener('click', () => document.getElementById('dlgColor').close());
+    });
+
+    // Color dialog synchronization
+    const dlgColorInput = document.querySelector('#dlgColor input[name="hex_code"]');
+    const dlgColorTextInput = document.querySelector('#dlgColor input[name="hex_code_text"]');
+    if (dlgColorInput && dlgColorTextInput) {
+      dlgColorInput.addEventListener('input', (e) => {
+        dlgColorTextInput.value = e.target.value.toUpperCase();
+      });
+      dlgColorTextInput.addEventListener('input', (e) => {
+        const value = e.target.value;
+        if (/^#[0-9A-Fa-f]{6}$/.test(value)) {
+          dlgColorInput.value = value;
+        }
+      });
+    }
   }
 
   async checkAuth() {
@@ -410,17 +501,14 @@ export class ModernAdminComponent {
 
   async loadMeta() {
     // Load categories
-    const { data: categories } = await this.supabase.from('categories').select('id,name').order('name');
+    const { data: categories } = await this.supabase.from('categories').select('id,name,slug').order('sort_order', { ascending: true });
     this.categories = categories || [];
     
     // Load colors
-    const { data: colors } = await this.supabase.from('colors').select('id,name,hex_code').order('name');
+    const { data: colors } = await this.supabase.from('colors').select('id,name,hex_code,is_active,sort_order').order('sort_order', { ascending: true });
     this.colors = colors || [];
 
-    // Populate filter dropdown
-    const filterCategory = document.getElementById('filterCategory');
-    filterCategory.innerHTML = '<option value="">Все категории</option>' + 
-      this.categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    // No need to populate filter dropdown as it's now hardcoded
   }
 
   async loadPage(reset) {
@@ -444,7 +532,15 @@ export class ModernAdminComponent {
       query = query.or(`name.ilike.%${searchTerm}%,artikul.ilike.%${searchTerm}%`);
     }
 
-    // Apply status filter
+    // Apply category filter by size
+    const categoryFilter = document.getElementById('filterCategory').value;
+    if (categoryFilter) {
+      if (categoryFilter === 'with_handle') {
+        query = query.ilike('name', '%ручк%');
+      } else {
+        query = query.eq('size', categoryFilter);
+      }
+    }
     const statusFilter = document.getElementById('filterStatus').value;
     if (statusFilter === 'active') {
       query = query.eq('is_active', true);
@@ -532,6 +628,12 @@ export class ModernAdminComponent {
               <span class="w-3 h-3 rounded-full border" style="background-color: ${product.color_hex || '#ddd'}"></span>
             </div>
           </td>
+          <td class="px-3 py-2">
+            <div class="flex items-center gap-2">
+              <div class="w-4 h-4 rounded" style="background-color: ${product.color_hex}"></div>
+              <span class="text-sm">${product.color_hex}</span>
+            </div>
+          </td>
           <td class="px-3 py-2">${product.price_rub ? `${product.price_rub} ₽` : '—'}</td>
           <td class="px-3 py-2">
             <span class="inline-flex px-2 py-1 text-xs rounded-full ${
@@ -584,6 +686,9 @@ export class ModernAdminComponent {
       form.size.value = product.size || 'small';
       form.price_rub.value = product.price_rub || '';
       form.color_hex.value = product.color_hex || '#000000';
+      if (form.color_hex_text) {
+        form.color_hex_text.value = product.color_hex || '#000000';
+      }
       form.is_active.value = product.is_active ? 'true' : 'false';
       
       if (product.dimensions) {
@@ -667,7 +772,7 @@ export class ModernAdminComponent {
       size: formData.get('size'),
       price_rub: parseFloat(formData.get('price_rub')) || 0,
       weight: parseFloat(formData.get('weight')) || null,
-      color_hex: formData.get('color_hex'),
+      color_hex: formData.get('color_hex_text') || formData.get('color_hex'),
       is_active: formData.get('is_active') === 'true',
       photos: images,
       videos: videos,
