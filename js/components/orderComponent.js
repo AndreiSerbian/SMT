@@ -1,5 +1,6 @@
 import { cartService } from '../services/cartService.js';
 import { env } from '../utils/env.js';
+import { productsService } from '../services/productsService.js';
 
 const OrderComponent = {
   eventListeners: [],
@@ -33,7 +34,7 @@ const OrderComponent = {
     document.documentElement.style.overflow = '';
     
     // Загружаем товары с ценами
-    const products = await fetchProducts();
+    const products = await productsService.getActiveProducts();
     const cart = cartService.getCart();
     
     // Check minimum order value
@@ -437,7 +438,7 @@ const OrderComponent = {
     const deliveryValue = form.delivery.value;
     
     // Загружаем товары с ценами для формирования заказа
-    const products = await fetchProducts();
+    const products = await productsService.getActiveProducts();
     const cart = cartService.getCart();
     
     // Преобразуем корзину, добавляя информацию о товарах

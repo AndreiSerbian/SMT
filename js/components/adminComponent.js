@@ -336,10 +336,10 @@ export class AdminComponent {
 
   async loadProductsWithPrices() {
     try {
-      this.productsWithPrices = await fetchProducts();
+      this.productsWithPrices = await productsService.getActiveProducts();
     } catch (error) {
       console.error('Failed to load products with prices:', error);
-      this.productsWithPrices = products.map(p => ({ ...p, price: undefined }));
+      this.productsWithPrices = [];
     }
   }
 
@@ -452,13 +452,19 @@ export class AdminComponent {
 
 
   // Метод для получения актуальной цены товара
-  static getProductPrice(productId) {
+  static async getProductPrice(productId) {
     if (window.adminComponent && window.adminComponent.productPrices[productId]) {
       return window.adminComponent.productPrices[productId];
     }
     
-    const product = products.find(p => p.id === productId);
-    return product ? product.price : 0;
+    try {
+      const products = await productsService.getActiveProducts();
+      const product = products.find(p => p.id === productId);
+      return product ? product.price_rub || 0 : 0;
+    } catch (error) {
+      console.error('Error getting product price:', error);
+      return 0;
+    }
   }
 }
 

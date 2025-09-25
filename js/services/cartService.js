@@ -1,6 +1,7 @@
 
 import { eventBus } from '../utils/eventBus.js';
 import { env } from '../utils/env.js';
+import { productsService } from './productsService.js';
 
 // Кеш для загруженных товаров с ценами
 let cachedProducts = null;
@@ -74,14 +75,14 @@ export const cartService = {
   // Get products with prices
   async getProducts() {
     if (!cachedProducts) {
-      cachedProducts = await fetchProducts();
+      cachedProducts = await productsService.getActiveProducts();
     }
     return cachedProducts;
   },
 
   // Refresh products cache
   async refreshProducts() {
-    cachedProducts = await fetchProducts();
+    cachedProducts = await productsService.getActiveProducts();
     return cachedProducts;
   },
   
