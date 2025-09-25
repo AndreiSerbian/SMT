@@ -67,6 +67,14 @@ const HomeComponent = {
     const catalogContainer = container.querySelector('#products-catalog-container');
     if (catalogContainer) {
       try {
+        // Показываем индикатор загрузки
+        catalogContainer.innerHTML = `
+          <div class="text-center py-8">
+            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <p class="mt-2 text-gray-500">Загрузка каталога товаров...</p>
+          </div>
+        `;
+        
         const catalogHTML = await PublicProductsComponent.render();
         catalogContainer.innerHTML = catalogHTML;
         console.log('Products catalog loaded successfully');
@@ -74,8 +82,8 @@ const HomeComponent = {
         console.error('Error loading products catalog:', error);
         catalogContainer.innerHTML = `
           <div class="text-center py-8">
-            <p class="text-gray-500">Ошибка загрузки каталога товаров</p>
-            <button onclick="location.reload()" class="mt-4 bg-blue-600 text-white px-4 py-2 rounded">
+            <p class="text-gray-500">Ошибка загрузки каталога товаров: ${error.message}</p>
+            <button onclick="location.reload()" class="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
               Повторить попытку
             </button>
           </div>
@@ -486,6 +494,11 @@ const HomeComponent = {
     setTimeout(() => {
       this.loadColorButtons();
     }, 200);
+
+    // Загружаем каталог товаров
+    setTimeout(() => {
+      this.loadProductsCatalog(container);
+    }, 300);
   }
 };
 
