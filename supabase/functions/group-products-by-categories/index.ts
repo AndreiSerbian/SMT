@@ -1,53 +1,8 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
-
-interface Product {
-  id: string
-  artikul: string
-  name: string
-  size: 'small' | 'medium' | 'big'
-  color_hex: string
-  price_rub: number
-  photos: string[]
-  videos?: string[]
-  dimensions: {
-    length: number
-    width: number
-    height: number
-  }
-  weight: number
-  is_active: boolean
-  created_at: string
-  updated_at: string
-}
-
-interface Category {
-  id: string
-  name: string
-  slug: string
-  sort_order: number
-  is_active: boolean
-}
-
-interface GroupedProduct {
-  categoryName: string
-  categorySlug: string
-  products: Product[]
-  sizes: {
-    small?: Product[]
-    medium?: Product[]
-    big?: Product[]
-  }
-  colors: string[]
-  priceRange: {
-    min: number
-    max: number
-  }
-  mainImage: string
 }
 
 Deno.serve(async (req) => {
@@ -90,15 +45,15 @@ Deno.serve(async (req) => {
     console.log(`Loaded ${products?.length} products and ${categories?.length} categories`)
 
     // Группируем товары по категориям
-    const groupedProducts: GroupedProduct[] = []
+    const groupedProducts = []
 
-    for (const category of categories as Category[]) {
+    for (const category of categories) {
       // Определяем какие товары относятся к этой категории
-      let categoryProducts: Product[] = []
+      let categoryProducts = []
 
       if (category.name.includes('с ручкой')) {
         // Категория "с ручкой" - только малые коробки с ручками
-        categoryProducts = (products as Product[]).filter(product => 
+        categoryProducts = products.filter(product => 
           product.name.toLowerCase().includes('ручк') && 
           product.size === 'small'
         )
@@ -107,7 +62,7 @@ Deno.serve(async (req) => {
         const categorySize = category.name.includes('малая') ? 'small' : 
                            category.name.includes('средняя') ? 'medium' : 'big'
         
-        categoryProducts = (products as Product[]).filter(product => 
+        categoryProducts = products.filter(product => 
           (product.name.toLowerCase().includes('бант') || 
            product.name.toLowerCase().includes('лент')) &&
           product.size === categorySize
@@ -116,12 +71,12 @@ Deno.serve(async (req) => {
 
       if (categoryProducts.length > 0) {
         // Группируем по размерам
-        const sizes: { small?: Product[], medium?: Product[], big?: Product[] } = {}
+        const sizes: Record<string, any[]> = {}
         for (const product of categoryProducts) {
           if (!sizes[product.size]) {
             sizes[product.size] = []
           }
-          sizes[product.size]!.push(product)
+          sizes[product.size].push(product)
         }
 
         // Получаем уникальные цвета
@@ -156,8 +111,8 @@ Deno.serve(async (req) => {
         success: true,
         data: groupedProducts,
         meta: {
-          totalCategories: categories?.length,
-          totalProducts: products?.length,
+          totalCategories: categories ? categories.length : 0,
+          totalProducts: products ? products.length : 0,
           groupedCategories: groupedProducts.length
         }
       }),
@@ -173,10 +128,12 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('Error in group-products-by-categories:', error)
     
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error'
+    
     return new Response(
       JSON.stringify({
         success: false,
-        error: error.message || 'Internal server error'
+        error: errorMessage
       }),
       {
         headers: { 
