@@ -236,7 +236,7 @@
 
 .category-cards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
   gap: 2rem;
   margin-top: 2rem;
 }
@@ -247,27 +247,77 @@
   box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
   overflow: hidden;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border: 1px solid #e5e7eb;
 }
 
 .category-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 10px 25px -3px rgb(0 0 0 / 0.1);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
 }
 
-.category-image-container {
-  height: 200px;
+/* Слайдер для карточки категории */
+.category-slider-container {
+  position: relative;
+  width: 100%;
+  height: 280px;
   overflow: hidden;
 }
 
-.category-main-image {
+.category-slider-container .swiper {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+}
+
+.category-slide-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #f8f9fa;
   transition: transform 0.3s ease;
 }
 
-.category-card:hover .category-main-image {
-  transform: scale(1.05);
+.category-card:hover .category-slide-image {
+  transform: scale(1.02);
+}
+
+/* Навигация слайдера */
+.category-slider-container .swiper-button-next,
+.category-slider-container .swiper-button-prev {
+  color: #3b82f6;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  width: 35px;
+  height: 35px;
+  margin-top: -17.5px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+}
+
+.category-slider-container .swiper-button-next:hover,
+.category-slider-container .swiper-button-prev:hover {
+  background: rgba(255, 255, 255, 1);
+  transform: scale(1.1);
+}
+
+.category-slider-container .swiper-button-next::after,
+.category-slider-container .swiper-button-prev::after {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* Пагинация слайдера */
+.category-slider-container .swiper-pagination {
+  bottom: 10px;
+}
+
+.category-slider-container .swiper-pagination-bullet {
+  background: rgba(59, 130, 246, 0.7);
+  width: 8px;
+  height: 8px;
+}
+
+.category-slider-container .swiper-pagination-bullet-active {
+  background: #3b82f6;
 }
 
 .category-info {
@@ -310,16 +360,39 @@
 }
 
 .color-dot {
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
   border: 2px solid #e5e7eb;
   cursor: pointer;
-  transition: transform 0.2s ease;
+  transition: all 0.3s ease;
+  position: relative;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .color-dot:hover {
+  transform: scale(1.15);
+  border-color: #3b82f6;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.color-dot.selected {
+  border-color: #3b82f6;
+  border-width: 3px;
   transform: scale(1.1);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.color-dot.selected::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 10px;
+  font-weight: bold;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
 .more-colors {
@@ -347,21 +420,51 @@
   color: #059669;
 }
 
-.category-details-btn {
-  width: 100%;
-  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-  color: white;
+/* Кнопки действий */
+.category-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.category-details-btn,
+.category-product-btn {
+  flex: 1;
   border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
+  text-align: center;
+}
+
+.category-details-btn {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: white;
 }
 
 .category-details-btn:hover {
-  background: linear-gradient(135deg, #1d4ed8, #1e40af);
+  background: linear-gradient(135deg, #2563eb, #1e40af);
   transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+}
+
+.category-product-btn {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+}
+
+.category-product-btn:hover:not(.disabled) {
+  background: linear-gradient(135deg, #059669, #047857);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+}
+
+.category-product-btn.disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .category-header {

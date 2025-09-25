@@ -185,7 +185,14 @@ export const PublicProductsComponent = {
     }
 
     // Иначе показываем карточки категорий
-    return this.renderCategoryCards();
+    const html = this.renderCategoryCards();
+    
+    // Инициализируем слайдеры после рендера
+    setTimeout(() => {
+      this.initCategorySliders();
+    }, 100);
+    
+    return html;
   },
 
   /**
@@ -249,12 +256,35 @@ export const PublicProductsComponent = {
    * Рендер карточки категории
    */
   renderCategoryCard(category) {
-    const mainPhoto = this.getImageUrl(category.mainImage) || '/images/placeholder.jpg';
+    const categoryId = `category-${category.slug}`;
+    const selectedColor = this.selectedColors?.[category.slug] || category.colors[0];
+    
+    // Найти товар выбранного цвета для отображения его фото
+    const selectedProduct = category.products.find(p => p.color_hex === selectedColor);
+    const currentPhotos = selectedProduct?.photos || [category.mainImage];
     
     return `
-      <div class="category-card">
-        <div class="category-image-container">
-          <img src="${mainPhoto}" alt="${category.name}" class="category-main-image" />
+      <div class="category-card" data-category="${category.slug}">
+        <!-- Слайдер с фотографиями -->
+        <div class="category-slider-container">
+          <div class="swiper" id="${categoryId}-slider">
+            <div class="swiper-wrapper">
+              ${currentPhotos.map(photo => `
+                <div class="swiper-slide">
+                  <img src="${this.getImageUrl(photo)}" 
+                       alt="${category.name}" 
+                       class="category-slide-image"
+                       loading="lazy"
+                       onerror="this.src='/images/placeholder.jpg'" />
+                </div>
+              `).join('')}
+            </div>
+            
+            <!-- Навигация слайдера -->
+            <div class="swiper-button-next"></div>
+            <div class="swiper-button-prev"></div>
+            <div class="swiper-pagination"></div>
+          </div>
         </div>
         
         <div class="category-info">
@@ -262,16 +292,20 @@ export const PublicProductsComponent = {
           <p class="category-description">${category.description}</p>
           
           <div class="category-details">
+            <!-- Переключатель цветов -->
             <div class="category-colors">
               <span class="colors-label">Доступные цвета:</span>
               <div class="color-options">
-                ${category.colors.slice(0, 6).map(hex => `
-                  <div class="color-dot" 
+                ${category.colors.map(hex => `
+                  <div class="color-dot ${selectedColor === hex ? 'selected' : ''}" 
                        style="background-color: ${hex}" 
-                       title="${category.colorMap[hex] || 'Цвет'}">
+                       title="${category.colorMap[hex] || 'Цвет'}"
+                       data-color="${hex}"
+                       data-category="${category.slug}"
+                       onclick="PublicProductsComponent.selectCategoryColor('${category.slug}', '${hex}')"
+                       ondblclick="PublicProductsComponent.goToProductByColor('${category.slug}', '${hex}')">
                   </div>
                 `).join('')}
-                ${category.colors.length > 6 ? `<span class="more-colors">+${category.colors.length - 6}</span>` : ''}
               </div>
             </div>
             
@@ -281,9 +315,15 @@ export const PublicProductsComponent = {
             </div>
           </div>
           
-          <button class="category-details-btn" onclick="PublicProductsComponent.viewCategory('${category.slug}')">
-            Подробно
-          </button>
+          <div class="category-actions">
+            <button class="category-details-btn" onclick="PublicProductsComponent.viewCategory('${category.slug}')">
+              Подробно
+            </button>
+            <button class="category-product-btn ${selectedColor ? '' : 'disabled'}" 
+                    ${selectedColor ? `onclick="PublicProductsComponent.goToProductByColor('${category.slug}', '${selectedColor}')"` : ''}>
+              К товару
+            </button>
+          </div>
         </div>
       </div>
     `;
@@ -472,6 +512,127 @@ export const PublicProductsComponent = {
    */
   viewProduct(artikul) {
     window.location.hash = `#product/${artikul}`;
+  },
+
+  /**
+   * Выбор цвета в карточке категории
+   */
+  selectCategoryColor(categorySlug, colorHex) {
+    // Сохраняем выбранный цвет
+    if (!this.selectedColors) this.selectedColors = {};
+    this.selectedColors[categorySlug] = colorHex;
+    
+    // Обновляем активный цвет
+    const categoryCard = document.querySelector(`[data-category="${categorySlug}"]`);
+    if (categoryCard) {
+      const colorDots = categoryCard.querySelectorAll('.color-dot');
+      colorDots.forEach(dot => {
+        if (dot.dataset.color === colorHex) {
+          dot.classList.add('selected');
+        } else {
+          dot.classList.remove('selected');
+        }
+      });
+      
+      // Находим товар выбранного цвета
+      const category = this.data.categoryCards.find(c => c.slug === categorySlug);
+      if (category) {
+        const selectedProduct = category.products.find(p => p.color_hex === colorHex);
+        if (selectedProduct && selectedProduct.photos) {
+          this.updateCategorySlider(categorySlug, selectedProduct.photos);
+        }
+      }
+      
+      // Активируем кнопку "К товару"
+      const productBtn = categoryCard.querySelector('.category-product-btn');
+      if (productBtn) {
+        productBtn.classList.remove('disabled');
+        productBtn.onclick = () => this.goToProductByColor(categorySlug, colorHex);
+      }
+    }
+    
+    const colorName = this.data.categoryCards
+      .find(c => c.slug === categorySlug)?.colorMap?.[colorHex] || 'Цвет';
+    this.showNotification(`Выбран цвет: ${colorName}`, 'info');
+  },
+
+  /**
+   * Переход к товару по выбранному цвету
+   */
+  goToProductByColor(categorySlug, colorHex) {
+    const category = this.data.categoryCards.find(c => c.slug === categorySlug);
+    if (category) {
+      const selectedProduct = category.products.find(p => p.color_hex === colorHex);
+      if (selectedProduct) {
+        this.viewProduct(selectedProduct.artikul);
+      }
+    }
+  },
+
+  /**
+   * Обновление слайдера категории с новыми фотографиями
+   */
+  updateCategorySlider(categorySlug, newPhotos) {
+    const sliderId = `category-${categorySlug}-slider`;
+    const swiperElement = document.getElementById(sliderId);
+    
+    if (swiperElement && swiperElement.swiper) {
+      const swiper = swiperElement.swiper;
+      
+      // Удаляем старые слайды
+      swiper.removeAllSlides();
+      
+      // Добавляем новые слайды
+      newPhotos.forEach(photo => {
+        swiper.appendSlide(`
+          <div class="swiper-slide">
+            <img src="${this.getImageUrl(photo)}" 
+                 alt="Товар" 
+                 class="category-slide-image"
+                 loading="lazy"
+                 onerror="this.src='/images/placeholder.jpg'" />
+          </div>
+        `);
+      });
+      
+      // Обновляем слайдер
+      swiper.update();
+    }
+  },
+
+  /**
+   * Инициализация слайдеров для карточек категорий
+   */
+  initCategorySliders() {
+    // Ждем немного чтобы DOM обновился
+    setTimeout(() => {
+      const categorySliders = document.querySelectorAll('[id$="-slider"]');
+      categorySliders.forEach(sliderEl => {
+        if (sliderEl.swiper) {
+          sliderEl.swiper.destroy(true, true);
+        }
+        
+        const slidesCount = sliderEl.querySelectorAll('.swiper-slide').length;
+        
+        const swiperInstance = new Swiper(sliderEl, {
+          loop: slidesCount > 1,
+          pagination: {
+            el: sliderEl.querySelector('.swiper-pagination'),
+            clickable: true,
+          },
+          navigation: {
+            nextEl: sliderEl.querySelector('.swiper-button-next'),
+            prevEl: sliderEl.querySelector('.swiper-button-prev'),
+          },
+          autoplay: false,
+          on: {
+            slideChange: function() {
+              // Можно добавить логику при смене слайда
+            }
+          }
+        });
+      });
+    }, 100);
   },
 
   /**
