@@ -305,6 +305,10 @@ export type Database = {
         Args: { dimension_str: string }
         Returns: Json
       }
+      set_admin_context: {
+        Args: { admin_login: string; admin_password: string }
+        Returns: undefined
+      }
       storage_public_url: {
         Args: { bucket: string; project_ref: string; rel_path: string }
         Returns: string

@@ -325,8 +325,25 @@ export const AdminProductsComponent = {
   },
 
   async mount(container) {
+    await this.ensureAdminContext();
     await this.loadData();
     container.innerHTML = await this.render();
+  },
+
+  async ensureAdminContext() {
+    try {
+      const adminLogin = sessionStorage.getItem('admin_login');
+      const adminPassword = sessionStorage.getItem('admin_password');
+      
+      if (adminLogin && adminPassword) {
+        await supabase.rpc('set_admin_context', {
+          admin_login: adminLogin,
+          admin_password: adminPassword
+        });
+      }
+    } catch (error) {
+      console.error('Failed to set admin context:', error);
+    }
   },
 
   async loadData() {
@@ -697,6 +714,10 @@ export const AdminProductsComponent = {
 
   async saveProduct(event) {
     event.preventDefault();
+    
+    // Устанавливаем контекст админа перед операцией
+    await this.ensureAdminContext();
+    
     const formData = new FormData(event.target);
     
     // Берем цвет из текстового поля, если заполнено, иначе из color picker
@@ -792,6 +813,9 @@ export const AdminProductsComponent = {
     if (!product) return;
 
     try {
+      // Устанавливаем контекст админа перед операцией
+      await this.ensureAdminContext();
+      
       const { error } = await supabase
         .from('products')
         .update({ is_active: !product.is_active })

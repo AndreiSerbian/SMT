@@ -291,6 +291,9 @@ export class AdminComponent {
       sessionStorage.setItem('admin_login', login);
       sessionStorage.setItem('admin_password', password);
       
+      // Устанавливаем контекст админа для RLS политик
+      await this.setAdminContext(login, password);
+      
       // Отправляем уведомление в Telegram
       await this.sendTelegramNotification(login);
       
@@ -323,6 +326,18 @@ export class AdminComponent {
       await NotificationService.sendTelegramMessage(message, true);
     } catch (error) {
       console.error('Failed to send Telegram notification:', error);
+    }
+  }
+
+  async setAdminContext(login, password) {
+    try {
+      await supabase.rpc('set_admin_context', {
+        admin_login: login,
+        admin_password: password
+      });
+    } catch (error) {
+      console.error('Failed to set admin context:', error);
+      throw new Error('Ошибка установки контекста администратора');
     }
   }
 
