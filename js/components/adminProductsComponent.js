@@ -1,5 +1,6 @@
 import { supabase } from '../utils/supabase.js';
 import { productsService } from '../services/productsService.js';
+import { StorageHelper } from '../utils/storageHelper.js';
 
 export const AdminProductsComponent = {
   data: {
@@ -183,12 +184,26 @@ export const AdminProductsComponent = {
             <div class="form-section">
               <h4>Изображения товара</h4>
               <div class="image-upload-section">
+                <div class="upload-info">
+                  <p class="info-text">
+                    <strong>Организованное размещение:</strong> Фотографии автоматически размещаются в папки по категориям и цветам.
+                    Сначала выберите размер и цвет товара.
+                  </p>
+                </div>
                 <input type="file" id="imageUpload" multiple accept="image/webp,image/jpeg,image/png" 
                        onchange="AdminProductsComponent.handleImageUpload(event)" class="hidden">
-                <button type="button" onclick="document.getElementById('imageUpload').click()" 
-                        class="btn btn-secondary" ${this.data.uploadingImage ? 'disabled' : ''}>
-                  ${this.data.uploadingImage ? 'Загрузка...' : 'Добавить изображения'}
-                </button>
+                <div class="upload-actions">
+                  <button type="button" onclick="document.getElementById('imageUpload').click()" 
+                          class="btn btn-secondary" ${this.data.uploadingImage ? 'disabled' : ''}>
+                    ${this.data.uploadingImage ? 'Загрузка...' : 'Добавить изображения'}
+                  </button>
+                  ${this.data.editingProduct?.id ? `
+                    <button type="button" onclick="AdminProductsComponent.reorganizePhotos()" 
+                            class="btn btn-outline" title="Переместить существующие фото в правильные папки">
+                      Реорганизовать фото
+                    </button>
+                  ` : ''}
+                </div>
                 <small class="help-text">Поддерживаются форматы: WebP, JPEG, PNG. Рекомендуемый размер: 800x800px</small>
                 
                 <div class="current-images">
@@ -199,6 +214,9 @@ export const AdminProductsComponent = {
                       <button type="button" onclick="AdminProductsComponent.removeImage(${index})" 
                               class="remove-image">×</button>
                       <span class="image-order">${index + 1}</span>
+                      <div class="image-path-info" title="${photo}">
+                        ${this.getImagePathInfo(photo)}
+                      </div>
                     </div>
                   `).join('')}
                 </div>
@@ -350,26 +368,92 @@ export const AdminProductsComponent = {
     return `https://bsndismiessofvhglzrv.supabase.co/storage/v1/object/public/product-media/${photo}`;
   },
 
+  getImagePathInfo(photo) {
+    if (photo.startsWith('images/')) {
+      const pathParts = photo.split('/');
+      if (pathParts.length >= 3) {
+        const sizeFolder = pathParts[1];
+        const colorFolder = pathParts[2];
+        return `📁 ${sizeFolder}/${colorFolder}`;
+      }
+    }
+    return '📁 products/ (старая структура)';
+  },
+
+  async reorganizePhotos() {
+    if (!this.data.editingProduct?.photos?.length) {
+      this.showNotification('Нет фотографий для реорганизации', 'warning');
+      return;
+    }
+
+    const sizeSelect = document.querySelector('[name="size"]');
+    const colorHexInput = document.querySelector('[name="color_hex_text"]') || document.querySelector('[name="color_hex"]');
+    
+    const size = sizeSelect?.value;
+    const colorHex = colorHexInput?.value;
+
+    if (!size || !colorHex) {
+      this.showNotification('Пожалуйста, выберите размер и цвет товара перед реорганизацией', 'warning');
+      return;
+    }
+
+    try {
+      this.showNotification('Начинаем реорганизацию фотографий...', 'info');
+      
+      const reorganizedPhotos = await StorageHelper.reorganizeProductFiles(
+        this.data.editingProduct.photos, 
+        size, 
+        colorHex
+      );
+      
+      this.data.editingProduct.photos = reorganizedPhotos;
+      this.showNotification('Фотографии успешно реорганизованы', 'success');
+      this.rerender();
+      
+    } catch (error) {
+      console.error('Error reorganizing photos:', error);
+      this.showNotification('Ошибка реорганизации фотографий: ' + error.message, 'error');
+    }
+  },
+
   async handleImageUpload(event) {
     const files = Array.from(event.target.files);
     if (!files.length) return;
+
+    // Проверяем, что размер и цвет уже выбраны для организованного размещения
+    const sizeSelect = document.querySelector('[name="size"]');
+    const colorHexInput = document.querySelector('[name="color_hex_text"]') || document.querySelector('[name="color_hex"]');
+    
+    const size = sizeSelect?.value;
+    const colorHex = colorHexInput?.value;
+
+    if (!size || !colorHex) {
+      this.showNotification('Пожалуйста, сначала выберите размер и цвет товара для правильной организации фото', 'warning');
+      return;
+    }
 
     this.data.uploadingImage = true;
     this.rerender();
 
     try {
       const uploadPromises = files.map(async (file) => {
-        // Генерируем уникальное имя файла
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-        const filePath = `products/${fileName}`;
+        try {
+          // Используем StorageHelper для организованной загрузки
+          return await StorageHelper.uploadOrganizedFile(file, size, colorHex);
+        } catch (error) {
+          console.error(`Error uploading ${file.name}:`, error);
+          // Fallback: загружаем в старую структуру
+          const fileExt = file.name.split('.').pop();
+          const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+          const filePath = `products/${fileName}`;
 
-        const { data, error } = await supabase.storage
-          .from('product-media')
-          .upload(filePath, file);
+          const { data, error: uploadError } = await supabase.storage
+            .from('product-media')
+            .upload(filePath, file);
 
-        if (error) throw error;
-        return filePath;
+          if (uploadError) throw uploadError;
+          return filePath;
+        }
       });
 
       const uploadedPaths = await Promise.all(uploadPromises);
@@ -381,7 +465,7 @@ export const AdminProductsComponent = {
         this.data.selectedImages = [...(this.data.selectedImages || []), ...uploadedPaths];
       }
 
-      this.showNotification(`Загружено ${uploadedPaths.length} изображений`, 'success');
+      this.showNotification(`Загружено ${uploadedPaths.length} изображений в организованную структуру папок`, 'success');
     } catch (error) {
       console.error('Error uploading images:', error);
       this.showNotification('Ошибка загрузки изображений: ' + error.message, 'error');
@@ -392,9 +476,28 @@ export const AdminProductsComponent = {
     }
   },
 
-  removeImage(index) {
+  async removeImage(index) {
     if (this.data.editingProduct) {
+      const removedPhoto = this.data.editingProduct.photos[index];
       this.data.editingProduct.photos.splice(index, 1);
+      
+      // Попытаемся удалить файл из storage
+      try {
+        await supabase.storage
+          .from('product-media')
+          .remove([removedPhoto]);
+        
+        // Если это был последний файл в папке, очистим пустые папки
+        const sizeSelect = document.querySelector('[name="size"]');
+        const colorHexInput = document.querySelector('[name="color_hex_text"]') || document.querySelector('[name="color_hex"]');
+        
+        if (sizeSelect?.value && colorHexInput?.value) {
+          await StorageHelper.deleteEmptyFolders(sizeSelect.value, colorHexInput.value);
+        }
+      } catch (error) {
+        console.error('Error removing file from storage:', error);
+        // Продолжаем работу даже если не удалось удалить файл
+      }
     } else {
       this.data.selectedImages.splice(index, 1);
     }
@@ -529,6 +632,26 @@ export const AdminProductsComponent = {
     }
 
     try {
+      // Если это редактирование существующего товара, проверяем изменение размера/цвета
+      if (this.data.editingProduct.id && 
+          (this.data.editingProduct.size !== productData.size || 
+           this.data.editingProduct.color_hex !== productData.color_hex)) {
+        
+        this.showNotification('Обнаружено изменение размера или цвета. Реорганизуем фотографии...', 'info');
+        
+        // Реорганизуем фотографии в соответствии с новыми параметрами
+        try {
+          productData.photos = await StorageHelper.reorganizeProductFiles(
+            productData.photos, 
+            productData.size, 
+            productData.color_hex
+          );
+        } catch (error) {
+          console.error('Error reorganizing photos during save:', error);
+          this.showNotification('Предупреждение: не удалось реорганизовать все фотографии', 'warning');
+        }
+      }
+
       let result;
       if (this.data.editingProduct.id) {
         // Обновление
