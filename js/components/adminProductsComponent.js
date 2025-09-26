@@ -208,6 +208,12 @@ export const AdminProductsComponent = {
                           class="btn btn-secondary" ${this.data.uploadingImage ? 'disabled' : ''}>
                     ${this.data.uploadingImage ? 'Загрузка...' : 'Выбрать фото из галереи'}
                   </button>
+                  <span class="upload-separator">или</span>
+                  <input type="text" placeholder="https://example.com/image.jpg" 
+                         class="photo-input" style="flex: 1; min-width: 200px;">
+                  <button type="button" onclick="AdminProductsComponent.addPhotoUrl()" class="btn btn-secondary">
+                    Добавить по ссылке
+                  </button>
                   ${this.data.editingProduct?.id ? `
                     <button type="button" onclick="AdminProductsComponent.reorganizePhotos()" 
                             class="btn btn-outline" title="Переместить существующие фото в правильные папки">
@@ -245,8 +251,8 @@ export const AdminProductsComponent = {
                     ${this.data.uploadingVideo ? 'Загрузка видео...' : 'Выбрать видео из галереи'}
                   </button>
                   <span class="upload-separator">или</span>
-                  <input type="text" name="video_url" placeholder="Ссылка на видео" 
-                         class="video-input">
+                  <input type="text" name="video_url" placeholder="https://example.com/video.mp4" 
+                         class="video-input" style="flex: 1; min-width: 200px;">
                   <button type="button" onclick="AdminProductsComponent.addVideoUrl()" class="btn btn-secondary">
                     Добавить по ссылке
                   </button>
@@ -571,6 +577,41 @@ export const AdminProductsComponent = {
     
     videoInput.value = '';
     this.rerender();
+  },
+
+  addPhotoUrl() {
+    const photoInput = document.querySelector('.photo-input');
+    const photoUrl = photoInput.value.trim();
+    
+    if (!photoUrl) {
+      this.showNotification('Введите ссылку на фото', 'error');
+      return;
+    }
+
+    // Проверяем, что это валидный URL изображения
+    if (!this.isValidImageUrl(photoUrl)) {
+      this.showNotification('Неверный формат ссылки. Используйте прямую ссылку на изображение', 'error');
+      return;
+    }
+
+    if (this.data.editingProduct) {
+      this.data.editingProduct.photos = [...(this.data.editingProduct.photos || []), photoUrl];
+    } else {
+      this.data.selectedImages = [...(this.data.selectedImages || []), photoUrl];
+    }
+    
+    photoInput.value = '';
+    this.showNotification('Фото добавлено по ссылке', 'success');
+    this.rerender();
+  },
+
+  isValidImageUrl(url) {
+    try {
+      const urlObj = new URL(url);
+      return /\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i.test(urlObj.pathname);
+    } catch {
+      return false;
+    }
   },
 
   async handleVideoUpload(event) {

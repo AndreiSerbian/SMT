@@ -27,6 +27,16 @@
   gap: 10px;
   margin-bottom: 15px;
   flex-wrap: wrap;
+  align-items: center;
+}
+
+.photo-input, .video-input {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  flex: 1;
+  min-width: 200px;
 }
 
 .btn-outline {
@@ -213,6 +223,11 @@
 @keyframes shimmer {
   0% { left: -100%; }
   100% { left: 100%; }
+}
+
+/* Hidden input files */
+.hidden {
+  display: none !important;
 }
 
 /* Video upload styles */
