@@ -482,6 +482,3 @@ export class AdminComponent {
     }
   }
 }
-
-// Глобальный экземпляр для доступа к ценам из других компонентов
-window.adminComponent = new AdminComponent();

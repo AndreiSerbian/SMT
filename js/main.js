@@ -91,18 +91,13 @@ export function initApp() {
     
     // Инициализируем UI корзины
     cartService.updateCartUI();
-    
-    // Проверяем режим технических работ при загрузке
-    if (window.adminComponent) {
-      await window.adminComponent.loadSettings();
-      window.adminComponent.checkMaintenanceMode();
-    }
   });
 }
 
-// Добавляем обработчик изменения хеша для проверки режима технических работ
+// Добавляем обработчик изменения хеша
 window.addEventListener('hashchange', () => {
-  if (window.adminComponent) {
-    window.adminComponent.checkMaintenanceMode();
+  // Обновляем UI корзины при смене страницы
+  if (cartService) {
+    cartService.updateCartUI();
   }
 });
