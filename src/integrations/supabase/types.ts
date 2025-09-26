@@ -200,6 +200,7 @@ export type Database = {
       products: {
         Row: {
           artikul: string
+          category_id: string | null
           color_hex: string
           created_at: string | null
           dimensions: Json
@@ -216,6 +217,7 @@ export type Database = {
         }
         Insert: {
           artikul: string
+          category_id?: string | null
           color_hex?: string
           created_at?: string | null
           dimensions: Json
@@ -232,6 +234,7 @@ export type Database = {
         }
         Update: {
           artikul?: string
+          category_id?: string | null
           color_hex?: string
           created_at?: string | null
           dimensions?: Json
@@ -246,7 +249,15 @@ export type Database = {
           videos?: string[] | null
           weight?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       site_settings: {
         Row: {
