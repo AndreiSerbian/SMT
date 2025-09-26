@@ -127,6 +127,16 @@ export const AdminProductsComponent = {
               </div>
               
               <div class="form-group">
+                <label>Категория*</label>
+                <select name="category_id" required onchange="AdminProductsComponent.onCategoryChange(this.value)">
+                  <option value="">Выберите категорию</option>
+                  ${this.data.categories.map(cat => `
+                    <option value="${cat.id}" ${product.category_id === cat.id ? 'selected' : ''}>${cat.name}</option>
+                  `).join('')}
+                </select>
+              </div>
+              
+              <div class="form-group">
                 <label>Размер*</label>
                 <select name="size" required>
                   <option value="">Выберите размер</option>
@@ -187,7 +197,7 @@ export const AdminProductsComponent = {
                 <div class="upload-info">
                   <p class="info-text">
                     <strong>Организованное размещение:</strong> Фотографии автоматически размещаются в папки по категориям и цветам.
-                    Сначала выберите размер и цвет товара.
+                    Сначала выберите категорию, размер и цвет товара.
                   </p>
                 </div>
                 <input type="file" id="imageUpload" multiple accept="image/webp,image/jpeg,image/png" 
@@ -195,7 +205,7 @@ export const AdminProductsComponent = {
                 <div class="upload-actions">
                   <button type="button" onclick="document.getElementById('imageUpload').click()" 
                           class="btn btn-secondary" ${this.data.uploadingImage ? 'disabled' : ''}>
-                    ${this.data.uploadingImage ? 'Загрузка...' : 'Добавить изображения'}
+                    ${this.data.uploadingImage ? 'Загрузка...' : 'Выбрать фото из галереи'}
                   </button>
                   ${this.data.editingProduct?.id ? `
                     <button type="button" onclick="AdminProductsComponent.reorganizePhotos()" 
@@ -312,15 +322,24 @@ export const AdminProductsComponent = {
     this.data.loading = true;
     
     try {
-      // Загружаем только продукты
-      const productsResult = await supabase
-        .from('products')
-        .select('*')
-        .order('created_at', { ascending: false });
+      // Загружаем продукты и категории
+      const [productsResult, categoriesResult] = await Promise.all([
+        supabase
+          .from('products')
+          .select('*')
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('categories')
+          .select('*')
+          .eq('is_active', true)
+          .order('sort_order', { ascending: true })
+      ]);
 
       if (productsResult.error) throw productsResult.error;
+      if (categoriesResult.error) throw categoriesResult.error;
 
       this.data.products = productsResult.data;
+      this.data.categories = categoriesResult.data;
       
     } catch (error) {
       console.error('Error loading data:', error);
@@ -420,17 +439,22 @@ export const AdminProductsComponent = {
     const files = Array.from(event.target.files);
     if (!files.length) return;
 
-    // Проверяем, что размер и цвет уже выбраны для организованного размещения
+    // Проверяем, что категория, размер и цвет уже выбраны для организованного размещения
+    const categorySelect = document.querySelector('[name="category_id"]');
     const sizeSelect = document.querySelector('[name="size"]');
     const colorHexInput = document.querySelector('[name="color_hex_text"]') || document.querySelector('[name="color_hex"]');
     
+    const categoryId = categorySelect?.value;
     const size = sizeSelect?.value;
     const colorHex = colorHexInput?.value;
 
-    if (!size || !colorHex) {
-      this.showNotification('Пожалуйста, сначала выберите размер и цвет товара для правильной организации фото', 'warning');
+    if (!categoryId || !size || !colorHex) {
+      this.showNotification('Пожалуйста, сначала выберите категорию, размер и цвет товара для правильной организации фото', 'warning');
       return;
     }
+
+    // Получаем информацию о выбранной категории
+    const selectedCategory = this.data.categories.find(cat => cat.id === categoryId);
 
     this.data.uploadingImage = true;
     this.rerender();
@@ -438,8 +462,8 @@ export const AdminProductsComponent = {
     try {
       const uploadPromises = files.map(async (file) => {
         try {
-          // Используем StorageHelper для организованной загрузки
-          return await StorageHelper.uploadOrganizedFile(file, size, colorHex);
+          // Используем StorageHelper для организованной загрузки с категорией
+          return await StorageHelper.uploadOrganizedFileWithCategory(file, selectedCategory, size, colorHex);
         } catch (error) {
           console.error(`Error uploading ${file.name}:`, error);
           // Fallback: загружаем в старую структуру
@@ -573,6 +597,7 @@ export const AdminProductsComponent = {
     this.data.editingProduct = {
       artikul: '',
       name: '',
+      category_id: '',
       size: '',
       color_hex: '#000000',
       price_rub: '',
@@ -584,6 +609,12 @@ export const AdminProductsComponent = {
       is_active: true
     };
     this.rerender();
+  },
+
+  onCategoryChange(categoryId) {
+    if (this.data.editingProduct) {
+      this.data.editingProduct.category_id = categoryId;
+    }
   },
 
   editProduct(productId) {
@@ -610,6 +641,7 @@ export const AdminProductsComponent = {
     const productData = {
       artikul: formData.get('artikul'),
       name: formData.get('name'),
+      category_id: formData.get('category_id'),
       size: formData.get('size'),
       color_hex: colorHex,
       price_rub: parseFloat(formData.get('price_rub')),

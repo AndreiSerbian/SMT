@@ -179,6 +179,39 @@ export const StorageHelper = {
   },
 
   /**
+   * Загружает файл в организованную структуру папок с категорией
+   * @param {File} file - файл для загрузки
+   * @param {Object} category - объект категории
+   * @param {string} size - размер товара
+   * @param {string} colorHex - hex код цвета
+   * @returns {Promise<string>} - путь к загруженному файлу
+   */
+  async uploadOrganizedFileWithCategory(file, category, size, colorHex) {
+    try {
+      // Генерируем имя файла
+      const fileExt = file.name.split('.').pop();
+      const fileName = `slide${Date.now()}.${fileExt}`;
+      
+      // Создаем путь на основе категории
+      const sizeFolder = this.getSizeFolder(size);
+      const colorFolder = this.getColorFolder(colorHex);
+      const organizedPath = `images/${sizeFolder}/${colorFolder}/${fileName}`;
+
+      // Загружаем файл
+      const { data, error } = await supabase.storage
+        .from('product-media')
+        .upload(organizedPath, file);
+
+      if (error) throw error;
+      return organizedPath;
+
+    } catch (error) {
+      console.error('Error uploading organized file with category:', error);
+      throw error;
+    }
+  },
+
+  /**
    * Получает название папки размера
    * @param {string} size - размер товара
    * @returns {string} - название папки
