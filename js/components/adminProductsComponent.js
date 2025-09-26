@@ -12,6 +12,7 @@ export const AdminProductsComponent = {
     showImportModal: false,
     editingProduct: null,
     uploadingImage: false,
+    uploadingVideo: false,
     selectedImages: []
   },
 
@@ -236,11 +237,21 @@ export const AdminProductsComponent = {
             <div class="form-section">
               <h4>Видео товара</h4>
               <div class="video-section">
-                <input type="text" name="video_url" placeholder="Ссылка на видео или путь к файлу" 
-                       class="video-input">
-                <button type="button" onclick="AdminProductsComponent.addVideo()" class="btn btn-secondary">
-                  Добавить видео
-                </button>
+                <div class="video-upload-options">
+                  <input type="file" id="videoUpload" multiple accept="video/mp4,video/webm,video/mov,video/avi" 
+                         onchange="AdminProductsComponent.handleVideoUpload(event)" class="hidden">
+                  <button type="button" onclick="document.getElementById('videoUpload').click()" 
+                          class="btn btn-secondary" ${this.data.uploadingVideo ? 'disabled' : ''}>
+                    ${this.data.uploadingVideo ? 'Загрузка видео...' : 'Выбрать видео из галереи'}
+                  </button>
+                  <span class="upload-separator">или</span>
+                  <input type="text" name="video_url" placeholder="Ссылка на видео" 
+                         class="video-input">
+                  <button type="button" onclick="AdminProductsComponent.addVideoUrl()" class="btn btn-secondary">
+                    Добавить по ссылке
+                  </button>
+                </div>
+                <small class="help-text">Поддерживаются форматы видео: MP4, WebM, MOV, AVI. Максимальный размер: 100MB</small>
                 
                 <div class="current-videos">
                   ${(product.videos || []).map((video, index) => `
@@ -528,7 +539,7 @@ export const AdminProductsComponent = {
     this.rerender();
   },
 
-  addVideo() {
+  addVideoUrl() {
     const videoInput = document.querySelector('.video-input');
     const videoUrl = videoInput.value.trim();
     
@@ -543,6 +554,59 @@ export const AdminProductsComponent = {
     
     videoInput.value = '';
     this.rerender();
+  },
+
+  async handleVideoUpload(event) {
+    const files = Array.from(event.target.files);
+    if (!files.length) return;
+
+    // Проверяем размер файлов (максимум 100MB на файл)
+    const maxSize = 100 * 1024 * 1024; // 100MB
+    const oversizedFiles = files.filter(file => file.size > maxSize);
+    
+    if (oversizedFiles.length > 0) {
+      this.showNotification(`Файлы слишком большие (максимум 100MB): ${oversizedFiles.map(f => f.name).join(', ')}`, 'error');
+      return;
+    }
+
+    this.data.uploadingVideo = true;
+    this.rerender();
+
+    try {
+      const uploadPromises = files.map(async (file) => {
+        try {
+          const fileExt = file.name.split('.').pop().toLowerCase();
+          const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+          const filePath = `videos/${fileName}`;
+
+          const { data, error: uploadError } = await supabase.storage
+            .from('product-media')
+            .upload(filePath, file);
+
+          if (uploadError) throw uploadError;
+          return filePath;
+        } catch (error) {
+          console.error(`Error uploading ${file.name}:`, error);
+          throw error;
+        }
+      });
+
+      const uploadedPaths = await Promise.all(uploadPromises);
+      
+      // Добавляем новые пути к существующим видео
+      if (this.data.editingProduct) {
+        this.data.editingProduct.videos = [...(this.data.editingProduct.videos || []), ...uploadedPaths];
+      }
+
+      this.showNotification(`Загружено ${uploadedPaths.length} видео файлов`, 'success');
+    } catch (error) {
+      console.error('Error uploading videos:', error);
+      this.showNotification('Ошибка загрузки видео: ' + error.message, 'error');
+    } finally {
+      this.data.uploadingVideo = false;
+      event.target.value = ''; // Очищаем input
+      this.rerender();
+    }
   },
 
   removeVideo(index) {
