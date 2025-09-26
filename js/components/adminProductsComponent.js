@@ -356,6 +356,9 @@ export const AdminProductsComponent = {
     this.data.loading = true;
     
     try {
+      // Устанавливаем контекст админа перед загрузкой данных
+      await this.ensureAdminContext();
+      
       // Загружаем продукты и категории
       const [productsResult, categoriesResult] = await Promise.all([
         supabase
@@ -369,15 +372,22 @@ export const AdminProductsComponent = {
           .order('sort_order', { ascending: true })
       ]);
 
-      if (productsResult.error) throw productsResult.error;
-      if (categoriesResult.error) throw categoriesResult.error;
+      if (productsResult.error) {
+        console.error('Products query error:', productsResult.error);
+        throw productsResult.error;
+      }
+      if (categoriesResult.error) {
+        console.error('Categories query error:', categoriesResult.error);
+        throw categoriesResult.error;
+      }
 
+      console.log('Products loaded:', productsResult.data.length);
       this.data.products = productsResult.data;
       this.data.categories = categoriesResult.data;
       
     } catch (error) {
       console.error('Error loading data:', error);
-      this.showNotification('Ошибка загрузки данных', 'error');
+      this.showNotification('Ошибка загрузки данных: ' + error.message, 'error');
     }
     
     this.data.loading = false;
