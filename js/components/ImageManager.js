@@ -844,6 +844,8 @@ export class ImageManager {
     } finally {
       this.setLoading(false);
     }
+  }
+
   // Метод для загрузки фото из БД
   async loadFromDatabase() {
     if (!this.productId) {
