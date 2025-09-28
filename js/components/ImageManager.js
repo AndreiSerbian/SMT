@@ -69,7 +69,7 @@ export class ImageManager {
             <div class="flex gap-2">
               <button type="button" id="addUrlPhoto" class="text-sm px-2 py-1 rounded-lg border hover:bg-slate-50">+ URL</button>
               <label for="photoInput" class="text-sm px-2 py-1 rounded-lg border hover:bg-slate-50 cursor-pointer">+ Загрузить</label>
-              <input type="file" id="photoInput" multiple accept="image/jpeg,image/jpg,image/png,image/webp,image/gif" class="hidden">
+              <input type="file" id="photoInput" multiple accept="image/jpeg,image/jpg,image/png,image/webp,image/gif">
               ${photos.length > 0 ? '<button type="button" id="previewPhotosBtn" class="text-sm px-2 py-1 rounded-lg bg-blue-600 text-white hover:bg-blue-700">Предпросмотр</button>' : ''}
             </div>
           </div>
