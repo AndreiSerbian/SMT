@@ -182,75 +182,6 @@ export class ImageManager {
     `;
   }
 
-  renderPreviewModal() {
-    if (!this.showPreview || !this.media.length) return '';
-
-    let filteredMedia = this.media;
-    let currentFilteredIndex = this.currentPreviewIndex;
-    
-    if (this.currentPreviewType === 'photo') {
-      filteredMedia = this.media.filter(item => !this.isVideoType(item.image_url));
-      const currentMedia = this.media[this.currentPreviewIndex];
-      currentFilteredIndex = filteredMedia.indexOf(currentMedia);
-    } else if (this.currentPreviewType === 'video') {
-      filteredMedia = this.media.filter(item => this.isVideoType(item.image_url));
-      const currentMedia = this.media[this.currentPreviewIndex];
-      currentFilteredIndex = filteredMedia.indexOf(currentMedia);
-    }
-
-    const currentMedia = this.media[this.currentPreviewIndex];
-    const isVideo = this.isVideoType(currentMedia.image_url);
-
-    return `
-      <div id="mediaPreviewModal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50" style="z-index: 9999;">
-        <div class="relative max-w-4xl max-h-[90vh] mx-4">
-          <button id="closePreview" class="absolute -top-10 right-0 text-white text-2xl hover:text-gray-300">
-            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-            </svg>
-          </button>
-          
-          <div id="previewStage" class="relative bg-black rounded-lg overflow-hidden">
-            ${isVideo ? `
-              <video class="max-w-full max-h-[80vh] object-contain" controls autoplay muted>
-                <source src="${currentMedia.image_url}" type="video/mp4">
-                Your browser does not support video playback.
-              </video>
-            ` : `
-              <img src="${currentMedia.image_url}" alt="Preview" class="max-w-full max-h-[80vh] object-contain" loading="eager">
-            `}
-          </div>
-
-          ${filteredMedia.length > 1 ? `
-            <button id="prevMedia" class="absolute left-2 top-1/2 transform -translate-y-1/2 text-white text-3xl hover:text-gray-300 bg-black bg-opacity-50 rounded-full p-2">
-              <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-              </svg>
-            </button>
-            <button id="nextMedia" class="absolute right-2 top-1/2 transform -translate-y-1/2 text-white text-3xl hover:text-gray-300 bg-black bg-opacity-50 rounded-full p-2">
-              <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-              </svg>
-            </button>
-          ` : ''}
-
-          <div class="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white text-center">
-            <div class="bg-black bg-opacity-50 px-3 py-1 rounded mb-2">
-              ${currentFilteredIndex + 1} / ${filteredMedia.length}
-              ${this.currentPreviewType !== 'all' ? ` (${this.currentPreviewType === 'photo' ? 'Фото' : 'Видео'})` : ''}
-            </div>
-            <button id="loadFromDb" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded transition-colors duration-200">
-              <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-              </svg>
-              Загрузить из БД
-            </button>
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
   isVideoType(url) {
     return /\.(mp4|mov|avi|webm)(\?|$)/i.test(url) || url.includes('video/');
   }
@@ -329,6 +260,10 @@ export class ImageManager {
       // Загрузка из БД
       const loadFromDbBtn = document.getElementById('loadFromDb');
       loadFromDbBtn?.addEventListener('click', () => this.loadFromDatabase());
+
+      // Обновление медиа
+      const refreshBtn = document.getElementById('refreshMedia');
+      refreshBtn?.addEventListener('click', () => this.refreshMedia());
 
       // Закрытие по клику на фон
       const modal = document.getElementById('mediaPreviewModal');
@@ -737,12 +672,97 @@ export class ImageManager {
       existingModal.remove();
     }
 
-    // Создаем новое модальное окно
-    const modalHtml = this.renderPreviewModal();
-    if (modalHtml) {
-      document.body.insertAdjacentHTML('beforeend', modalHtml);
+    // Создаем новое модальное окно напрямую в DOM
+    if (!this.showPreview || !this.media.length) return;
+
+    const modal = this.createPreviewModalElement();
+    document.body.appendChild(modal);
+    
+    // Принудительно показываем модалку и предотвращаем её исчезновение
+    requestAnimationFrame(() => {
+      modal.style.display = 'flex';
+      modal.style.opacity = '1';
       this.attachPreviewEvents();
+    });
+  }
+
+  // Создание элемента модального окна через DOM API
+  createPreviewModalElement() {
+    let filteredMedia = this.media;
+    let currentFilteredIndex = this.currentPreviewIndex;
+    
+    if (this.currentPreviewType === 'photo') {
+      filteredMedia = this.media.filter(item => !this.isVideoType(item.image_url));
+      const currentMedia = this.media[this.currentPreviewIndex];
+      currentFilteredIndex = filteredMedia.indexOf(currentMedia);
+    } else if (this.currentPreviewType === 'video') {
+      filteredMedia = this.media.filter(item => this.isVideoType(item.image_url));
+      const currentMedia = this.media[this.currentPreviewIndex];
+      currentFilteredIndex = filteredMedia.indexOf(currentMedia);
     }
+
+    const currentMedia = this.media[this.currentPreviewIndex];
+    const isVideo = this.isVideoType(currentMedia.image_url);
+
+    const modal = document.createElement('div');
+    modal.id = 'mediaPreviewModal';
+    modal.className = 'fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50';
+    modal.style.zIndex = '9999';
+
+    modal.innerHTML = `
+      <div class="relative max-w-4xl max-h-[90vh] mx-4">
+        <button id="closePreview" class="absolute -top-10 right-0 text-white text-2xl hover:text-gray-300">
+          <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+        
+        <div id="previewStage" class="relative bg-black rounded-lg overflow-hidden">
+          ${isVideo ? `
+            <video class="max-w-full max-h-[80vh] object-contain" controls autoplay muted>
+              <source src="${currentMedia.image_url}" type="video/mp4">
+              Your browser does not support video playback.
+            </video>
+          ` : `
+            <img src="${currentMedia.image_url}" alt="Preview" class="max-w-full max-h-[80vh] object-contain" loading="eager">
+          `}
+        </div>
+
+        ${filteredMedia.length > 1 ? `
+          <button id="prevMedia" class="absolute left-2 top-1/2 transform -translate-y-1/2 text-white text-3xl hover:text-gray-300 bg-black bg-opacity-50 rounded-full p-2">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+          </button>
+          <button id="nextMedia" class="absolute right-2 top-1/2 transform -translate-y-1/2 text-white text-3xl hover:text-gray-300 bg-black bg-opacity-50 rounded-full p-2">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+            </svg>
+          </button>
+        ` : ''}
+
+        <div class="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white text-center">
+          <div class="bg-black bg-opacity-50 px-3 py-1 rounded mb-2">
+            ${currentFilteredIndex + 1} / ${filteredMedia.length}
+            ${this.currentPreviewType !== 'all' ? ` (${this.currentPreviewType === 'photo' ? 'Фото' : 'Видео'})` : ''}
+          </div>
+          <button id="loadFromDb" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded transition-colors duration-200 mr-2">
+            <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+            </svg>
+            Загрузить из БД
+          </button>
+          <button id="refreshMedia" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded transition-colors duration-200">
+            <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+            </svg>
+            Обновить
+          </button>
+        </div>
+      </div>
+    `;
+
+    return modal;
   }
 
   // Метод для обновления только содержимого модального окна
@@ -787,8 +807,43 @@ export class ImageManager {
         ${this.currentPreviewType !== 'all' ? ` (${this.currentPreviewType === 'photo' ? 'Фото' : 'Видео'})` : ''}
       `;
     }
+
+    // Убираем/добавляем кнопки навигации в зависимости от количества медиа
+    const prevBtn = modal.querySelector('#prevMedia');
+    const nextBtn = modal.querySelector('#nextMedia');
+    
+    if (filteredMedia.length <= 1) {
+      if (prevBtn) prevBtn.style.display = 'none';
+      if (nextBtn) nextBtn.style.display = 'none';
+    } else {
+      if (prevBtn) prevBtn.style.display = 'block';
+      if (nextBtn) nextBtn.style.display = 'block';
+    }
   }
 
+  // Метод для обновления медиа в предпросмотре
+  async refreshMedia() {
+    if (!this.productId) {
+      this.showNotification('Не выбран товар', 'error');
+      return;
+    }
+
+    try {
+      this.setLoading(true);
+      await this.loadImages();
+      
+      // Если предпросмотр открыт, обновляем его содержимое
+      if (this.showPreview) {
+        this.updatePreviewContent();
+      }
+      
+      this.showNotification('Медиа обновлены', 'success');
+    } catch (error) {
+      console.error('Refresh error:', error);
+      this.showNotification('Ошибка обновления медиа', 'error');
+    } finally {
+      this.setLoading(false);
+    }
   // Метод для загрузки фото из БД
   async loadFromDatabase() {
     if (!this.productId) {
@@ -809,9 +864,12 @@ export class ImageManager {
 
       if (error) throw error;
 
+      // Проверяем правильность ответа API
+      const mediaList = data.images || data || [];
+      
       // Фильтруем новые медиа (которых еще нет в текущем списке)
       const existingUrls = this.media.map(item => item.image_url);
-      const newMedia = data.filter(item => !existingUrls.includes(item.image_url));
+      const newMedia = mediaList.filter(item => !existingUrls.includes(item.image_url));
 
       if (newMedia.length === 0) {
         this.showNotification('Все медиа из БД уже загружены', 'info');
