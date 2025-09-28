@@ -1,0 +1,216 @@
+/* Стили для организованного управления фотографиями */
+
+.image-upload-section {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 20px;
+  margin: 15px 0;
+  background-color: #fafafa;
+}
+
+.upload-info {
+  margin-bottom: 15px;
+  padding: 12px;
+  background-color: #e8f4fd;
+  border-left: 4px solid #2196F3;
+  border-radius: 4px;
+}
+
+.upload-info .info-text {
+  margin: 0;
+  font-size: 14px;
+  color: #1976D2;
+}
+
+.upload-actions {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+  flex-wrap: wrap;
+}
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid #ddd;
+  color: #666;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.btn-outline:hover {
+  background-color: #f5f5f5;
+  border-color: #bbb;
+}
+
+.current-images {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 15px;
+  margin-top: 15px;
+}
+
+.image-item {
+  position: relative;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  overflow: hidden;
+  background: white;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transition: transform 0.2s ease;
+}
+
+.image-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.image-preview {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  display: block;
+}
+
+.remove-image {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background: rgba(255, 0, 0, 0.8);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  line-height: 1;
+  transition: background-color 0.2s ease;
+}
+
+.remove-image:hover {
+  background: rgba(255, 0, 0, 1);
+}
+
+.image-order {
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.image-path-info {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(transparent, rgba(0,0,0,0.8));
+  color: white;
+  padding: 8px 6px 4px;
+  font-size: 11px;
+  text-align: center;
+  font-weight: 500;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .current-images {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 10px;
+  }
+  
+  .image-preview {
+    height: 100px;
+  }
+  
+  .upload-actions {
+    flex-direction: column;
+  }
+  
+  .upload-actions button {
+    width: 100%;
+  }
+}
+
+/* Анимация загрузки */
+.uploading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.uploading::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Подсказки */
+.help-text {
+  color: #666;
+  font-size: 13px;
+  margin-top: 8px;
+  display: block;
+}
+
+/* Статус организации папок */
+.folder-status {
+  margin: 10px 0;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.folder-status.organized {
+  background-color: #e8f5e8;
+  color: #2e7d32;
+  border: 1px solid #c8e6c9;
+}
+
+.folder-status.needs-organization {
+  background-color: #fff3e0;
+  color: #f57c00;
+  border: 1px solid #ffcc02;
+}
+
+/* Индикатор процесса реорганизации */
+.reorganizing {
+  position: relative;
+  overflow: hidden;
+}
+
+.reorganizing::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}

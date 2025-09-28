@@ -12,3 +12,6 @@ verify_jwt = false
 
 [functions.update-price]
 verify_jwt = false
+
+[functions.storage-manager]
+verify_jwt = false
