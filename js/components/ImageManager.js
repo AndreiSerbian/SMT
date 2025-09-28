@@ -122,7 +122,6 @@ export class ImageManager {
           </div>
         </div>
 
-        ${this.renderPreviewModal()}
       </div>
     `;
   }
@@ -211,7 +210,7 @@ export class ImageManager {
             </svg>
           </button>
           
-          <div class="relative bg-black rounded-lg overflow-hidden">
+          <div id="previewStage" class="relative bg-black rounded-lg overflow-hidden">
             ${isVideo ? `
               <video class="max-w-full max-h-[80vh] object-contain" controls autoplay muted>
                 <source src="${currentMedia.image_url}" type="video/mp4">
@@ -393,6 +392,7 @@ export class ImageManager {
     // Находим текущий индекс в отфильтрованном массиве
     const currentMediaItem = this.media[this.currentPreviewIndex];
     let currentFilteredIndex = filteredMedia.indexOf(currentMediaItem);
+    if (currentFilteredIndex < 0) currentFilteredIndex = 0;
     
     // Переходим к следующему/предыдущему
     currentFilteredIndex += direction;
@@ -757,7 +757,7 @@ export class ImageManager {
     const isVideo = this.isVideoType(currentMedia.image_url);
 
     // Обновляем содержимое медиа
-    const mediaContainer = modal.querySelector('.relative.bg-black');
+    const mediaContainer = document.getElementById('previewStage');
     if (mediaContainer) {
       mediaContainer.innerHTML = isVideo ? `
         <video class="max-w-full max-h-[80vh] object-contain" controls autoplay muted>
