@@ -275,3 +275,52 @@ body.modal-open {
   transform: scale(1.1);
   background-color: rgba(0, 0, 0, 0.8) !important;
 }
+
+/* Стили для секций фото и видео */
+.photo-section, .video-section {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+  background: #f8fafc;
+}
+
+.photo-section .image-manager-header,
+.video-section .image-manager-header {
+  margin-bottom: 12px;
+}
+
+.photos-grid, .videos-grid {
+  min-height: 60px;
+}
+
+.photos-grid:empty::after,
+.videos-grid:empty::after {
+  content: "Нет загруженных файлов";
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  font-size: 14px;
+  height: 60px;
+  border: 2px dashed #cbd5e1;
+  border-radius: 8px;
+  background: #f1f5f9;
+}
+
+.video-section .videos-grid:empty::after {
+  content: "Нет загруженных видео";
+}
+
+/* Улучшенные стили для URL секций */
+#photoUrlInputSection, #videoUrlInputSection {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 12px;
+  margin-top: 8px;
+}
+
+#photoUrlInputSection.hidden, #videoUrlInputSection.hidden {
+  display: none;
+}

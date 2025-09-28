@@ -12,6 +12,7 @@ export class ImageManager {
     this.isLoading = false;
     this.showPreview = false;
     this.currentPreviewIndex = 0;
+    this.currentPreviewType = 'all'; // Добавляем тип предпросмотра
     this.init();
   }
 
@@ -52,34 +53,69 @@ export class ImageManager {
   }
 
   render() {
+    const photos = this.media.filter(item => !this.isVideoType(item.image_url));
+    const videos = this.media.filter(item => this.isVideoType(item.image_url));
+
     this.container.innerHTML = `
       <div class="image-manager">
-        <div class="image-manager-header flex items-center justify-between mb-3">
-          <span class="text-sm font-medium">Медиа товара (Фото и Видео)</span>
-          <div class="flex gap-2">
-            <button type="button" id="addUrlImage" class="text-sm px-2 py-1 rounded-lg border hover:bg-slate-50">+ URL</button>
-            <label for="fileInput" class="text-sm px-2 py-1 rounded-lg border hover:bg-slate-50 cursor-pointer">+ Загрузить</label>
-            <input type="file" id="fileInput" multiple accept="${this.options.acceptedTypes.join(',')}" class="hidden">
-            ${this.media.length > 0 ? '<button type="button" id="previewBtn" class="text-sm px-2 py-1 rounded-lg bg-blue-600 text-white hover:bg-blue-700">Предпросмотр</button>' : ''}
+        <!-- Секция фото -->
+        <div class="photo-section mb-6">
+          <div class="image-manager-header flex items-center justify-between mb-3">
+            <span class="text-sm font-medium">Медиа товара (Фото и Видео)</span>
+            <div class="flex gap-2">
+              <button type="button" id="addUrlPhoto" class="text-sm px-2 py-1 rounded-lg border hover:bg-slate-50">+ URL</button>
+              <label for="photoInput" class="text-sm px-2 py-1 rounded-lg border hover:bg-slate-50 cursor-pointer">+ Загрузить</label>
+              <input type="file" id="photoInput" multiple accept="image/jpeg,image/jpg,image/png,image/webp,image/gif" class="hidden">
+              ${photos.length > 0 ? '<button type="button" id="previewPhotosBtn" class="text-sm px-2 py-1 rounded-lg bg-blue-600 text-white hover:bg-blue-700">Предпросмотр</button>' : ''}
+            </div>
+          </div>
+
+          ${this.isLoading && !this.showPreview ? this.renderLoading() : ''}
+          
+          <div class="photos-grid grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-3">
+            ${photos.map((item, index) => this.renderMediaCard(item, this.media.indexOf(item))).join('')}
+          </div>
+
+          <div id="photoUrlInputSection" class="hidden mb-3">
+            <div class="flex gap-2">
+              <input type="url" id="photoUrlInput" placeholder="https://example.com/photo.jpg" class="flex-1 px-3 py-2 rounded-lg border text-sm">
+              <button type="button" id="addPhotoUrlBtn" class="px-3 py-2 rounded-lg bg-blue-600 text-white text-sm">Добавить</button>
+              <button type="button" id="cancelPhotoUrlBtn" class="px-3 py-2 rounded-lg border text-sm">Отмена</button>
+            </div>
+          </div>
+
+          <div class="text-xs text-slate-500 mb-3">
+            Фото: JPG, PNG, WebP, GIF | Макс. размер: 10MB
           </div>
         </div>
 
-        ${this.isLoading ? this.renderLoading() : ''}
-        
-        <div class="images-grid grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-3">
-          ${this.media.map((item, index) => this.renderMediaCard(item, index)).join('')}
-        </div>
-
-        <div id="urlInputSection" class="hidden mb-3">
-          <div class="flex gap-2">
-            <input type="url" id="urlInput" placeholder="https://example.com/media.jpg или .mp4" class="flex-1 px-3 py-2 rounded-lg border text-sm">
-            <button type="button" id="addUrlBtn" class="px-3 py-2 rounded-lg bg-blue-600 text-white text-sm">Добавить</button>
-            <button type="button" id="cancelUrlBtn" class="px-3 py-2 rounded-lg border text-sm">Отмена</button>
+        <!-- Секция видео -->
+        <div class="video-section mb-6">
+          <div class="image-manager-header flex items-center justify-between mb-3">
+            <span class="text-sm font-medium">Видео (URL)</span>
+            <div class="flex gap-2">
+              <button type="button" id="addUrlVideo" class="text-sm px-2 py-1 rounded-lg border hover:bg-slate-50">+ видео</button>
+              <label for="videoInput" class="text-sm px-2 py-1 rounded-lg border hover:bg-slate-50 cursor-pointer">+ Загрузить</label>
+              <input type="file" id="videoInput" multiple accept="video/mp4,video/mov,video/avi,video/webm" class="hidden">
+              ${videos.length > 0 ? '<button type="button" id="previewVideosBtn" class="text-sm px-2 py-1 rounded-lg bg-blue-600 text-white hover:bg-blue-700">Предпросмотр</button>' : ''}
+            </div>
           </div>
-        </div>
+          
+          <div class="videos-grid grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-3">
+            ${videos.map((item, index) => this.renderMediaCard(item, this.media.indexOf(item))).join('')}
+          </div>
 
-        <div class="text-xs text-slate-500">
-          Фото: JPG, PNG, WebP, GIF | Видео: MP4, MOV, AVI, WebM | Макс. размер: 10MB
+          <div id="videoUrlInputSection" class="hidden mb-3">
+            <div class="flex gap-2">
+              <input type="url" id="videoUrlInput" placeholder="https://example.com/video.mp4" class="flex-1 px-3 py-2 rounded-lg border text-sm">
+              <button type="button" id="addVideoUrlBtn" class="px-3 py-2 rounded-lg bg-blue-600 text-white text-sm">Добавить</button>
+              <button type="button" id="cancelVideoUrlBtn" class="px-3 py-2 rounded-lg border text-sm">Отмена</button>
+            </div>
+          </div>
+
+          <div class="text-xs text-slate-500">
+            Видео: MP4, MOV, AVI, WebM | Макс. размер: 10MB
+          </div>
         </div>
 
         ${this.renderPreviewModal()}
@@ -146,6 +182,19 @@ export class ImageManager {
   renderPreviewModal() {
     if (!this.showPreview || !this.media.length) return '';
 
+    let filteredMedia = this.media;
+    let currentFilteredIndex = this.currentPreviewIndex;
+    
+    if (this.currentPreviewType === 'photo') {
+      filteredMedia = this.media.filter(item => !this.isVideoType(item.image_url));
+      const currentMedia = this.media[this.currentPreviewIndex];
+      currentFilteredIndex = filteredMedia.indexOf(currentMedia);
+    } else if (this.currentPreviewType === 'video') {
+      filteredMedia = this.media.filter(item => this.isVideoType(item.image_url));
+      const currentMedia = this.media[this.currentPreviewIndex];
+      currentFilteredIndex = filteredMedia.indexOf(currentMedia);
+    }
+
     const currentMedia = this.media[this.currentPreviewIndex];
     const isVideo = this.isVideoType(currentMedia.image_url);
 
@@ -169,7 +218,7 @@ export class ImageManager {
             `}
           </div>
 
-          ${this.media.length > 1 ? `
+          ${filteredMedia.length > 1 ? `
             <button id="prevMedia" class="absolute left-2 top-1/2 transform -translate-y-1/2 text-white text-3xl hover:text-gray-300 bg-black bg-opacity-50 rounded-full p-2">
               <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
@@ -184,7 +233,8 @@ export class ImageManager {
 
           <div class="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white text-center">
             <div class="bg-black bg-opacity-50 px-3 py-1 rounded">
-              ${this.currentPreviewIndex + 1} / ${this.media.length}
+              ${currentFilteredIndex + 1} / ${filteredMedia.length}
+              ${this.currentPreviewType !== 'all' ? ` (${this.currentPreviewType === 'photo' ? 'Фото' : 'Видео'})` : ''}
             </div>
           </div>
         </div>
@@ -197,23 +247,40 @@ export class ImageManager {
   }
 
   attachEvents() {
-    // Загрузка файлов
-    const fileInput = this.container.querySelector('#fileInput');
-    fileInput?.addEventListener('change', (e) => this.handleFileUpload(e));
+    // Загрузка фото
+    const photoInput = this.container.querySelector('#photoInput');
+    photoInput?.addEventListener('change', (e) => this.handleFileUpload(e, 'photo'));
 
-    // URL добавление
-    const addUrlBtn = this.container.querySelector('#addUrlImage');
-    addUrlBtn?.addEventListener('click', () => this.showUrlInput());
+    // Загрузка видео
+    const videoInput = this.container.querySelector('#videoInput');
+    videoInput?.addEventListener('change', (e) => this.handleFileUpload(e, 'video'));
 
-    const addUrlBtnConfirm = this.container.querySelector('#addUrlBtn');
-    addUrlBtnConfirm?.addEventListener('click', () => this.addUrlImage());
+    // URL добавление фото
+    const addPhotoUrlBtn = this.container.querySelector('#addUrlPhoto');
+    addPhotoUrlBtn?.addEventListener('click', () => this.showUrlInput('photo'));
 
-    const cancelUrlBtn = this.container.querySelector('#cancelUrlBtn');
-    cancelUrlBtn?.addEventListener('click', () => this.hideUrlInput());
+    const addPhotoUrlBtnConfirm = this.container.querySelector('#addPhotoUrlBtn');
+    addPhotoUrlBtnConfirm?.addEventListener('click', () => this.addUrlMedia('photo'));
 
-    // Кнопка предпросмотра
-    const previewBtn = this.container.querySelector('#previewBtn');
-    previewBtn?.addEventListener('click', () => this.openPreview(0));
+    const cancelPhotoUrlBtn = this.container.querySelector('#cancelPhotoUrlBtn');
+    cancelPhotoUrlBtn?.addEventListener('click', () => this.hideUrlInput('photo'));
+
+    // URL добавление видео
+    const addVideoUrlBtn = this.container.querySelector('#addUrlVideo');
+    addVideoUrlBtn?.addEventListener('click', () => this.showUrlInput('video'));
+
+    const addVideoUrlBtnConfirm = this.container.querySelector('#addVideoUrlBtn');
+    addVideoUrlBtnConfirm?.addEventListener('click', () => this.addUrlMedia('video'));
+
+    const cancelVideoUrlBtn = this.container.querySelector('#cancelVideoUrlBtn');
+    cancelVideoUrlBtn?.addEventListener('click', () => this.hideUrlInput('video'));
+
+    // Кнопки предпросмотра
+    const previewPhotosBtn = this.container.querySelector('#previewPhotosBtn');
+    previewPhotosBtn?.addEventListener('click', () => this.openPreview(0, 'photo'));
+
+    const previewVideosBtn = this.container.querySelector('#previewVideosBtn');
+    previewVideosBtn?.addEventListener('click', () => this.openPreview(0, 'video'));
 
     // Обработка кнопок на карточках медиа
     this.container.addEventListener('click', (e) => {
@@ -269,9 +336,23 @@ export class ImageManager {
     }, 100);
   }
 
-  openPreview(index) {
-    this.currentPreviewIndex = index;
+  openPreview(index, mediaType = 'all') {
+    let filteredMedia = this.media;
+    
+    if (mediaType === 'photo') {
+      filteredMedia = this.media.filter(item => !this.isVideoType(item.image_url));
+    } else if (mediaType === 'video') {
+      filteredMedia = this.media.filter(item => this.isVideoType(item.image_url));
+    }
+    
+    if (!filteredMedia.length) return;
+    
+    // Находим индекс в полном массиве медиа
+    const actualIndex = mediaType === 'all' ? index : this.media.indexOf(filteredMedia[index]);
+    this.currentPreviewIndex = actualIndex;
+    this.currentPreviewType = mediaType;
     this.showPreview = true;
+    
     // Отключаем прокрутку фона и добавляем класс для предотвращения скроллинга
     document.body.style.overflow = 'hidden';
     document.body.classList.add('modal-open');
@@ -283,6 +364,7 @@ export class ImageManager {
 
   closePreview() {
     this.showPreview = false;
+    this.currentPreviewType = 'all'; // Сбрасываем тип предпросмотра
     // Восстанавливаем прокрутку фона
     document.body.style.overflow = '';
     document.body.classList.remove('modal-open');
@@ -292,24 +374,52 @@ export class ImageManager {
   }
 
   navigatePreview(direction) {
-    this.currentPreviewIndex += direction;
+    let filteredMedia = this.media;
     
-    if (this.currentPreviewIndex < 0) {
-      this.currentPreviewIndex = this.media.length - 1;
-    } else if (this.currentPreviewIndex >= this.media.length) {
-      this.currentPreviewIndex = 0;
+    if (this.currentPreviewType === 'photo') {
+      filteredMedia = this.media.filter(item => !this.isVideoType(item.image_url));
+    } else if (this.currentPreviewType === 'video') {
+      filteredMedia = this.media.filter(item => this.isVideoType(item.image_url));
     }
+    
+    if (!filteredMedia.length) return;
+    
+    // Находим текущий индекс в отфильтрованном массиве
+    const currentMediaItem = this.media[this.currentPreviewIndex];
+    let currentFilteredIndex = filteredMedia.indexOf(currentMediaItem);
+    
+    // Переходим к следующему/предыдущему
+    currentFilteredIndex += direction;
+    
+    if (currentFilteredIndex < 0) {
+      currentFilteredIndex = filteredMedia.length - 1;
+    } else if (currentFilteredIndex >= filteredMedia.length) {
+      currentFilteredIndex = 0;
+    }
+    
+    // Находим индекс в полном массиве
+    this.currentPreviewIndex = this.media.indexOf(filteredMedia[currentFilteredIndex]);
     
     this.render();
     this.attachPreviewEvents();
   }
 
-  async handleFileUpload(event) {
+  async handleFileUpload(event, mediaType = 'all') {
     const files = Array.from(event.target.files);
     if (!files.length) return;
 
+    // Фильтруем файлы по типу
+    let acceptedTypes = [];
+    if (mediaType === 'photo') {
+      acceptedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+    } else if (mediaType === 'video') {
+      acceptedTypes = ['video/mp4', 'video/mov', 'video/avi', 'video/webm'];
+    } else {
+      acceptedTypes = this.options.acceptedTypes;
+    }
+
     // Проверяем типы файлов
-    const invalidFiles = files.filter(file => !this.options.acceptedTypes.includes(file.type));
+    const invalidFiles = files.filter(file => !acceptedTypes.includes(file.type));
     if (invalidFiles.length) {
       this.showNotification(`Неподдерживаемые форматы файлов: ${invalidFiles.map(f => f.name).join(', ')}`, 'error');
       return;
@@ -411,31 +521,38 @@ export class ImageManager {
     return colorMap[colorHex] || 'black';
   }
 
-  showUrlInput() {
-    const urlSection = this.container.querySelector('#urlInputSection');
+  showUrlInput(mediaType = 'photo') {
+    const sectionId = mediaType === 'photo' ? '#photoUrlInputSection' : '#videoUrlInputSection';
+    const inputId = mediaType === 'photo' ? '#photoUrlInput' : '#videoUrlInput';
+    
+    const urlSection = this.container.querySelector(sectionId);
     urlSection?.classList.remove('hidden');
-    const urlInput = this.container.querySelector('#urlInput');
+    const urlInput = this.container.querySelector(inputId);
     urlInput?.focus();
   }
 
-  hideUrlInput() {
-    const urlSection = this.container.querySelector('#urlInputSection');
+  hideUrlInput(mediaType = 'photo') {
+    const sectionId = mediaType === 'photo' ? '#photoUrlInputSection' : '#videoUrlInputSection';
+    const inputId = mediaType === 'photo' ? '#photoUrlInput' : '#videoUrlInput';
+    
+    const urlSection = this.container.querySelector(sectionId);
     urlSection?.classList.add('hidden');
-    const urlInput = this.container.querySelector('#urlInput');
+    const urlInput = this.container.querySelector(inputId);
     if (urlInput) urlInput.value = '';
   }
 
-  async addUrlImage() {
-    const urlInput = this.container.querySelector('#urlInput');
+  async addUrlMedia(mediaType = 'photo') {
+    const inputId = mediaType === 'photo' ? '#photoUrlInput' : '#videoUrlInput';
+    const urlInput = this.container.querySelector(inputId);
     const url = urlInput?.value.trim();
     
     if (!url) {
-      this.showNotification('Введите URL изображения', 'error');
+      this.showNotification('Введите URL медиафайла', 'error');
       return;
     }
 
-    if (!this.isValidImageUrl(url)) {
-      this.showNotification('Некорректный URL изображения', 'error');
+    if (!this.isValidMediaUrl(url, mediaType)) {
+      this.showNotification(`Некорректный URL ${mediaType === 'photo' ? 'изображения' : 'видео'}`, 'error');
       return;
     }
 
@@ -452,14 +569,20 @@ export class ImageManager {
     this.media.push(newMedia);
     this.render();
     this.attachEvents();
-    this.hideUrlInput();
-    this.showNotification('URL медиафайл добавлен', 'success');
+    this.hideUrlInput(mediaType);
+    this.showNotification(`URL ${mediaType === 'photo' ? 'изображение' : 'видео'} добавлено`, 'success');
   }
 
-  isValidImageUrl(url) {
+  isValidMediaUrl(url, mediaType = 'all') {
     try {
       new URL(url);
-      return /\.(jpg|jpeg|png|webp|gif|mp4|mov|avi|webm)(\?|$)/i.test(url);
+      if (mediaType === 'photo') {
+        return /\.(jpg|jpeg|png|webp|gif)(\?|$)/i.test(url);
+      } else if (mediaType === 'video') {
+        return /\.(mp4|mov|avi|webm)(\?|$)/i.test(url) || url.includes('video/');
+      } else {
+        return /\.(jpg|jpeg|png|webp|gif|mp4|mov|avi|webm)(\?|$)/i.test(url);
+      }
     } catch {
       return false;
     }
