@@ -798,6 +798,17 @@ export class ModernAdminComponent {
     if (productId) {
       title.textContent = 'Изменить товар';
       
+      const { data: product, error } = await this.supabase
+        .from('products')
+        .select('*')
+        .eq('id', productId)
+        .single();
+      
+      if (error) {
+        console.error('Ошибка загрузки продукта:', error);
+        return;
+      }
+      
       this.currentProduct = product;
       
       // Fill form fields
