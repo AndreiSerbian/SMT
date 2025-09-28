@@ -214,3 +214,33 @@
   0% { left: -100%; }
   100% { left: 100%; }
 }
+
+/* Стили для предотвращения прокрутки фона когда модалка открыта */
+body.modal-open {
+  overflow: hidden;
+}
+
+/* Стили для предпросмотра медиа в модалке */
+.media-preview-overlay {
+  backdrop-filter: blur(4px);
+}
+
+.media-preview-content video,
+.media-preview-content img {
+  max-width: 90vw;
+  max-height: 80vh;
+  border-radius: 8px;
+  box-shadow: 0 10px 50px rgba(0, 0, 0, 0.5);
+}
+
+.media-preview-controls {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 8px 16px;
+  border-radius: 20px;
+}

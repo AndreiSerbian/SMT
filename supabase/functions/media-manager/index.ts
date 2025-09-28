@@ -99,14 +99,17 @@ async function uploadImages(supabaseClient: any, request: UploadImageRequest) {
     try {
       // Определяем расширение файла по MIME типу
       const extension = getExtensionFromMimeType(file.type);
+      const isVideo = file.type.startsWith('video/');
       
       // Генерируем имя файла
       const timestamp = Date.now();
       const random = Math.random().toString(36).substring(2, 15);
       const filename = `${timestamp}-${random}.${extension}`;
       
-      // Формируем путь
-      const storagePath = `${category}/${color}/${filename}`;
+      // Формируем путь - видео в отдельную папку
+      const storagePath = isVideo 
+        ? `videos/${filename}` 
+        : `images/${category}/${color}/${filename}`;
       
       // Конвертируем base64 в Uint8Array
       const base64Data = file.data.split(',')[1];
