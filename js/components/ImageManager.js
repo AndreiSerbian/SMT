@@ -43,7 +43,11 @@ export class ImageManager {
 
       if (error) throw error;
       this.media = data.images || [];
-      this.render();
+      
+      // Не перерисовываем если открыт предпросмотр
+      if (!this.showPreview) {
+        this.render();
+      }
     } catch (error) {
       console.error('Error loading media:', error);
       this.showNotification('Ошибка загрузки медиа', 'error');
@@ -357,9 +361,8 @@ export class ImageManager {
     document.body.style.overflow = 'hidden';
     document.body.classList.add('modal-open');
     
-    // Сначала рендерим, потом добавляем обработчики
-    this.render();
-    this.attachPreviewEvents();
+    // Обновляем только предпросмотр, не весь компонент
+    this.updatePreviewModal();
   }
 
   closePreview() {
@@ -369,8 +372,11 @@ export class ImageManager {
     document.body.style.overflow = '';
     document.body.classList.remove('modal-open');
     
-    this.render();
-    this.attachEvents();
+    // Удаляем только модальное окно
+    const modal = document.getElementById('mediaPreviewModal');
+    if (modal) {
+      modal.remove();
+    }
   }
 
   navigatePreview(direction) {
@@ -400,8 +406,8 @@ export class ImageManager {
     // Находим индекс в полном массиве
     this.currentPreviewIndex = this.media.indexOf(filteredMedia[currentFilteredIndex]);
     
-    this.render();
-    this.attachPreviewEvents();
+    // Обновляем только содержимое модального окна
+    this.updatePreviewContent();
   }
 
   async handleFileUpload(event, mediaType = 'all') {
@@ -567,8 +573,13 @@ export class ImageManager {
     };
 
     this.media.push(newMedia);
-    this.render();
-    this.attachEvents();
+    
+    // Обновляем компонент только если не открыт предпросмотр
+    if (!this.showPreview) {
+      this.render();
+      this.attachEvents();
+    }
+    
     this.hideUrlInput(mediaType);
     this.showNotification(`URL ${mediaType === 'photo' ? 'изображение' : 'видео'} добавлено`, 'success');
   }
@@ -624,8 +635,13 @@ export class ImageManager {
       // Если это URL медиафайл, удаляем локально
       if (imageId.startsWith('url_')) {
         this.media = this.media.filter(item => item.id !== imageId);
-        this.render();
-        this.attachEvents();
+        
+        // Обновляем только если не открыт предпросмотр
+        if (!this.showPreview) {
+          this.render();
+          this.attachEvents();
+        }
+        
         this.showNotification('Медиафайл удален', 'success');
         return;
       }
@@ -695,7 +711,71 @@ export class ImageManager {
   // Метод для установки медиафайлов при загрузке товара
   setImages(media) {
     this.media = media || [];
-    this.render();
-    this.attachEvents();
+    
+    // Обновляем только если не открыт предпросмотр
+    if (!this.showPreview) {
+      this.render();
+      this.attachEvents();
+    }
+  }
+
+  // Метод для создания и отображения модального окна предпросмотра
+  updatePreviewModal() {
+    // Удаляем существующее модальное окно если есть
+    const existingModal = document.getElementById('mediaPreviewModal');
+    if (existingModal) {
+      existingModal.remove();
+    }
+
+    // Создаем новое модальное окно
+    const modalHtml = this.renderPreviewModal();
+    if (modalHtml) {
+      document.body.insertAdjacentHTML('beforeend', modalHtml);
+      this.attachPreviewEvents();
+    }
+  }
+
+  // Метод для обновления только содержимого модального окна
+  updatePreviewContent() {
+    const modal = document.getElementById('mediaPreviewModal');
+    if (!modal || !this.showPreview) return;
+
+    let filteredMedia = this.media;
+    let currentFilteredIndex = this.currentPreviewIndex;
+    
+    if (this.currentPreviewType === 'photo') {
+      filteredMedia = this.media.filter(item => !this.isVideoType(item.image_url));
+      const currentMedia = this.media[this.currentPreviewIndex];
+      currentFilteredIndex = filteredMedia.indexOf(currentMedia);
+    } else if (this.currentPreviewType === 'video') {
+      filteredMedia = this.media.filter(item => this.isVideoType(item.image_url));
+      const currentMedia = this.media[this.currentPreviewIndex];
+      currentFilteredIndex = filteredMedia.indexOf(currentMedia);
+    }
+
+    const currentMedia = this.media[this.currentPreviewIndex];
+    const isVideo = this.isVideoType(currentMedia.image_url);
+
+    // Обновляем содержимое медиа
+    const mediaContainer = modal.querySelector('.relative.bg-black');
+    if (mediaContainer) {
+      mediaContainer.innerHTML = isVideo ? `
+        <video class="max-w-full max-h-[80vh] object-contain" controls autoplay muted>
+          <source src="${currentMedia.image_url}" type="video/mp4">
+          Your browser does not support video playback.
+        </video>
+      ` : `
+        <img src="${currentMedia.image_url}" alt="Preview" class="max-w-full max-h-[80vh] object-contain" loading="eager">
+      `;
+    }
+
+    // Обновляем счетчик
+    const counter = modal.querySelector('.absolute.bottom-4 .bg-black.bg-opacity-50');
+    if (counter) {
+      counter.innerHTML = `
+        ${currentFilteredIndex + 1} / ${filteredMedia.length}
+        ${this.currentPreviewType !== 'all' ? ` (${this.currentPreviewType === 'photo' ? 'Фото' : 'Видео'})` : ''}
+      `;
+    }
   }
 }
