@@ -217,7 +217,9 @@
 
 /* Стили для предотвращения прокрутки фона когда модалка открыта */
 body.modal-open {
-  overflow: hidden;
+  overflow: hidden !important;
+  position: fixed;
+  width: 100%;
 }
 
 /* Стили для предпросмотра медиа в модалке */
@@ -243,4 +245,33 @@ body.modal-open {
   background: rgba(0, 0, 0, 0.7);
   padding: 8px 16px;
   border-radius: 20px;
+}
+
+/* Дополнительные стили для медиа предпросмотра */
+#mediaPreviewModal {
+  position: fixed !important;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999 !important;
+  backdrop-filter: blur(2px);
+}
+
+#mediaPreviewModal video,
+#mediaPreviewModal img {
+  max-width: 90vw;
+  max-height: 80vh;
+  border-radius: 8px;
+  box-shadow: 0 10px 50px rgba(0, 0, 0, 0.7);
+}
+
+#mediaPreviewModal button {
+  transition: all 0.2s ease;
+  backdrop-filter: blur(4px);
+}
+
+#mediaPreviewModal button:hover {
+  transform: scale(1.1);
+  background-color: rgba(0, 0, 0, 0.8) !important;
 }

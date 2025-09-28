@@ -158,24 +158,25 @@ export class ImageManager {
             </svg>
           </button>
           
-          <div class="relative">
+          <div class="relative bg-black rounded-lg overflow-hidden">
             ${isVideo ? `
-              <video class="max-w-full max-h-[80vh] object-contain" controls autoplay>
+              <video class="max-w-full max-h-[80vh] object-contain" controls autoplay muted>
                 <source src="${currentMedia.image_url}" type="video/mp4">
+                Your browser does not support video playback.
               </video>
             ` : `
-              <img src="${currentMedia.image_url}" alt="Preview" class="max-w-full max-h-[80vh] object-contain">
+              <img src="${currentMedia.image_url}" alt="Preview" class="max-w-full max-h-[80vh] object-contain" loading="eager">
             `}
           </div>
 
           ${this.media.length > 1 ? `
-            <button id="prevMedia" class="absolute left-2 top-1/2 transform -translate-y-1/2 text-white text-3xl hover:text-gray-300">
-              <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <button id="prevMedia" class="absolute left-2 top-1/2 transform -translate-y-1/2 text-white text-3xl hover:text-gray-300 bg-black bg-opacity-50 rounded-full p-2">
+              <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
               </svg>
             </button>
-            <button id="nextMedia" class="absolute right-2 top-1/2 transform -translate-y-1/2 text-white text-3xl hover:text-gray-300">
-              <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <button id="nextMedia" class="absolute right-2 top-1/2 transform -translate-y-1/2 text-white text-3xl hover:text-gray-300 bg-black bg-opacity-50 rounded-full p-2">
+              <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
               </svg>
             </button>
@@ -271,15 +272,21 @@ export class ImageManager {
   openPreview(index) {
     this.currentPreviewIndex = index;
     this.showPreview = true;
-    document.body.style.overflow = 'hidden'; // Предотвращаем прокрутку фона
+    // Отключаем прокрутку фона и добавляем класс для предотвращения скроллинга
+    document.body.style.overflow = 'hidden';
+    document.body.classList.add('modal-open');
+    
+    // Сначала рендерим, потом добавляем обработчики
     this.render();
-    // Не вызываем attachEvents(), чтобы не перебивать обработчики
     this.attachPreviewEvents();
   }
 
   closePreview() {
     this.showPreview = false;
-    document.body.style.overflow = ''; // Восстанавливаем прокрутку
+    // Восстанавливаем прокрутку фона
+    document.body.style.overflow = '';
+    document.body.classList.remove('modal-open');
+    
     this.render();
     this.attachEvents();
   }
@@ -523,6 +530,10 @@ export class ImageManager {
 
   setLoading(loading) {
     this.isLoading = loading;
+    
+    // Не показываем состояние загрузки если открыт preview
+    if (this.showPreview) return;
+    
     if (loading) {
       const loadingEl = this.container.querySelector('.images-grid');
       if (loadingEl) {
