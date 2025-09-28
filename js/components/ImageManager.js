@@ -236,33 +236,36 @@ export class ImageManager {
   }
 
   attachPreviewEvents() {
-    // Закрытие предпросмотра
-    const closeBtn = document.getElementById('closePreview');
-    closeBtn?.addEventListener('click', () => this.closePreview());
+    // Используем setTimeout чтобы убедиться, что DOM элементы существуют
+    setTimeout(() => {
+      // Закрытие предпросмотра
+      const closeBtn = document.getElementById('closePreview');
+      closeBtn?.addEventListener('click', () => this.closePreview());
 
-    // Навигация по медиа
-    const prevBtn = document.getElementById('prevMedia');
-    const nextBtn = document.getElementById('nextMedia');
-    
-    prevBtn?.addEventListener('click', () => this.navigatePreview(-1));
-    nextBtn?.addEventListener('click', () => this.navigatePreview(1));
+      // Навигация по медиа
+      const prevBtn = document.getElementById('prevMedia');
+      const nextBtn = document.getElementById('nextMedia');
+      
+      prevBtn?.addEventListener('click', () => this.navigatePreview(-1));
+      nextBtn?.addEventListener('click', () => this.navigatePreview(1));
 
-    // Закрытие по клику на фон
-    const modal = document.getElementById('mediaPreviewModal');
-    modal?.addEventListener('click', (e) => {
-      if (e.target === modal) {
-        this.closePreview();
-      }
-    });
+      // Закрытие по клику на фон
+      const modal = document.getElementById('mediaPreviewModal');
+      modal?.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          this.closePreview();
+        }
+      });
 
-    // Закрытие по ESC
-    const escHandler = (e) => {
-      if (e.key === 'Escape') {
-        this.closePreview();
-        document.removeEventListener('keydown', escHandler);
-      }
-    };
-    document.addEventListener('keydown', escHandler);
+      // Закрытие по ESC
+      const escHandler = (e) => {
+        if (e.key === 'Escape') {
+          this.closePreview();
+          document.removeEventListener('keydown', escHandler);
+        }
+      };
+      document.addEventListener('keydown', escHandler);
+    }, 100);
   }
 
   openPreview(index) {
@@ -270,7 +273,8 @@ export class ImageManager {
     this.showPreview = true;
     document.body.style.overflow = 'hidden'; // Предотвращаем прокрутку фона
     this.render();
-    this.attachEvents();
+    // Не вызываем attachEvents(), чтобы не перебивать обработчики
+    this.attachPreviewEvents();
   }
 
   closePreview() {
@@ -290,7 +294,7 @@ export class ImageManager {
     }
     
     this.render();
-    this.attachEvents();
+    this.attachPreviewEvents();
   }
 
   async handleFileUpload(event) {
