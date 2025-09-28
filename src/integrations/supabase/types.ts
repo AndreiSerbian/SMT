@@ -35,6 +35,44 @@ export type Database = {
         }
         Relationships: []
       }
+      box_images: {
+        Row: {
+          created_at: string
+          id: string
+          image_url: string
+          is_primary: boolean
+          product_id: string
+          storage_path: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_url: string
+          is_primary?: boolean
+          product_id: string
+          storage_path: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_url?: string
+          is_primary?: boolean
+          product_id?: string
+          storage_path?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "box_images_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       categories: {
         Row: {
           created_at: string | null
@@ -200,6 +238,7 @@ export type Database = {
       products: {
         Row: {
           artikul: string
+          category_id: string | null
           color_hex: string
           created_at: string | null
           dimensions: Json
@@ -216,6 +255,7 @@ export type Database = {
         }
         Insert: {
           artikul: string
+          category_id?: string | null
           color_hex?: string
           created_at?: string | null
           dimensions: Json
@@ -232,6 +272,7 @@ export type Database = {
         }
         Update: {
           artikul?: string
+          category_id?: string | null
           color_hex?: string
           created_at?: string | null
           dimensions?: Json
@@ -246,7 +287,15 @@ export type Database = {
           videos?: string[] | null
           weight?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       site_settings: {
         Row: {
@@ -293,6 +342,10 @@ export type Database = {
       parse_dimensions: {
         Args: { dimension_str: string }
         Returns: Json
+      }
+      set_admin_context: {
+        Args: { admin_login: string; admin_password: string }
+        Returns: undefined
       }
       storage_public_url: {
         Args: { bucket: string; project_ref: string; rel_path: string }
