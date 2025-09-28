@@ -235,10 +235,16 @@ export class ImageManager {
           ` : ''}
 
           <div class="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white text-center">
-            <div class="bg-black bg-opacity-50 px-3 py-1 rounded">
+            <div class="bg-black bg-opacity-50 px-3 py-1 rounded mb-2">
               ${currentFilteredIndex + 1} / ${filteredMedia.length}
               ${this.currentPreviewType !== 'all' ? ` (${this.currentPreviewType === 'photo' ? 'Фото' : 'Видео'})` : ''}
             </div>
+            <button id="loadFromDb" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded transition-colors duration-200">
+              <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+              </svg>
+              Загрузить из БД
+            </button>
           </div>
         </div>
       </div>
@@ -319,6 +325,10 @@ export class ImageManager {
       
       prevBtn?.addEventListener('click', () => this.navigatePreview(-1));
       nextBtn?.addEventListener('click', () => this.navigatePreview(1));
+
+      // Загрузка из БД
+      const loadFromDbBtn = document.getElementById('loadFromDb');
+      loadFromDbBtn?.addEventListener('click', () => this.loadFromDatabase());
 
       // Закрытие по клику на фон
       const modal = document.getElementById('mediaPreviewModal');
@@ -776,6 +786,56 @@ export class ImageManager {
         ${currentFilteredIndex + 1} / ${filteredMedia.length}
         ${this.currentPreviewType !== 'all' ? ` (${this.currentPreviewType === 'photo' ? 'Фото' : 'Видео'})` : ''}
       `;
+    }
+  }
+
+  // Метод для загрузки фото из БД
+  async loadFromDatabase() {
+    if (!this.productId) {
+      this.showNotification('Не выбран товар', 'error');
+      return;
+    }
+
+    try {
+      this.setLoading(true);
+
+      // Загружаем все медиа для товара из БД
+      const { data, error } = await this.supabase.functions.invoke('media-manager', {
+        body: {
+          action: 'list_images',
+          product_id: this.productId
+        }
+      });
+
+      if (error) throw error;
+
+      // Фильтруем новые медиа (которых еще нет в текущем списке)
+      const existingUrls = this.media.map(item => item.image_url);
+      const newMedia = data.filter(item => !existingUrls.includes(item.image_url));
+
+      if (newMedia.length === 0) {
+        this.showNotification('Все медиа из БД уже загружены', 'info');
+        return;
+      }
+
+      // Добавляем новые медиа к существующему списку
+      this.media = [...this.media, ...newMedia];
+
+      // Обновляем содержимое предпросмотра если он открыт
+      if (this.showPreview) {
+        this.updatePreviewContent();
+      } else {
+        this.render();
+        this.attachEvents();
+      }
+
+      this.showNotification(`Загружено ${newMedia.length} медиафайлов из БД`, 'success');
+
+    } catch (error) {
+      console.error('Load from DB error:', error);
+      this.showNotification('Ошибка загрузки из БД', 'error');
+    } finally {
+      this.setLoading(false);
     }
   }
 }
