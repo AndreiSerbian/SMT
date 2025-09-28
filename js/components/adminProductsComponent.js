@@ -1,6 +1,5 @@
 import { supabase } from '../utils/supabase.js';
 import { productsService } from '../services/productsService.js';
-import { StorageHelper } from '../utils/storageHelper.js';
 
 export const AdminProductsComponent = {
   data: {
@@ -12,7 +11,6 @@ export const AdminProductsComponent = {
     showImportModal: false,
     editingProduct: null,
     uploadingImage: false,
-    uploadingVideo: false,
     selectedImages: []
   },
 
@@ -128,16 +126,6 @@ export const AdminProductsComponent = {
               </div>
               
               <div class="form-group">
-                <label>Категория*</label>
-                <select name="category_id" required onchange="AdminProductsComponent.onCategoryChange(this.value)">
-                  <option value="">Выберите категорию</option>
-                  ${this.data.categories.map(cat => `
-                    <option value="${cat.id}" ${product.category_id === cat.id ? 'selected' : ''}>${cat.name}</option>
-                  `).join('')}
-                </select>
-              </div>
-              
-              <div class="form-group">
                 <label>Размер*</label>
                 <select name="size" required>
                   <option value="">Выберите размер</option>
@@ -195,32 +183,12 @@ export const AdminProductsComponent = {
             <div class="form-section">
               <h4>Изображения товара</h4>
               <div class="image-upload-section">
-                <div class="upload-info">
-                  <p class="info-text">
-                    <strong>Организованное размещение:</strong> Фотографии автоматически размещаются в папки по категориям и цветам.
-                    Сначала выберите категорию, размер и цвет товара.
-                  </p>
-                </div>
                 <input type="file" id="imageUpload" multiple accept="image/webp,image/jpeg,image/png" 
                        onchange="AdminProductsComponent.handleImageUpload(event)" class="hidden">
-                <div class="upload-actions">
-                  <button type="button" onclick="document.getElementById('imageUpload').click()" 
-                          class="btn btn-secondary" ${this.data.uploadingImage ? 'disabled' : ''}>
-                    ${this.data.uploadingImage ? 'Загрузка...' : 'Выбрать фото из галереи'}
-                  </button>
-                  <span class="upload-separator">или</span>
-                  <input type="text" placeholder="https://example.com/image.jpg" 
-                         class="photo-input" style="flex: 1; min-width: 200px;">
-                  <button type="button" onclick="AdminProductsComponent.addPhotoUrl()" class="btn btn-secondary">
-                    Добавить по ссылке
-                  </button>
-                  ${this.data.editingProduct?.id ? `
-                    <button type="button" onclick="AdminProductsComponent.reorganizePhotos()" 
-                            class="btn btn-outline" title="Переместить существующие фото в правильные папки">
-                      Реорганизовать фото
-                    </button>
-                  ` : ''}
-                </div>
+                <button type="button" onclick="document.getElementById('imageUpload').click()" 
+                        class="btn btn-secondary" ${this.data.uploadingImage ? 'disabled' : ''}>
+                  ${this.data.uploadingImage ? 'Загрузка...' : 'Добавить изображения'}
+                </button>
                 <small class="help-text">Поддерживаются форматы: WebP, JPEG, PNG. Рекомендуемый размер: 800x800px</small>
                 
                 <div class="current-images">
@@ -231,9 +199,6 @@ export const AdminProductsComponent = {
                       <button type="button" onclick="AdminProductsComponent.removeImage(${index})" 
                               class="remove-image">×</button>
                       <span class="image-order">${index + 1}</span>
-                      <div class="image-path-info" title="${photo}">
-                        ${this.getImagePathInfo(photo)}
-                      </div>
                     </div>
                   `).join('')}
                 </div>
@@ -243,21 +208,11 @@ export const AdminProductsComponent = {
             <div class="form-section">
               <h4>Видео товара</h4>
               <div class="video-section">
-                <div class="video-upload-options">
-                  <input type="file" id="videoUpload" multiple accept="video/mp4,video/webm,video/mov,video/avi" 
-                         onchange="AdminProductsComponent.handleVideoUpload(event)" class="hidden">
-                  <button type="button" onclick="document.getElementById('videoUpload').click()" 
-                          class="btn btn-secondary" ${this.data.uploadingVideo ? 'disabled' : ''}>
-                    ${this.data.uploadingVideo ? 'Загрузка видео...' : 'Выбрать видео из галереи'}
-                  </button>
-                  <span class="upload-separator">или</span>
-                  <input type="text" name="video_url" placeholder="https://example.com/video.mp4" 
-                         class="video-input" style="flex: 1; min-width: 200px;">
-                  <button type="button" onclick="AdminProductsComponent.addVideoUrl()" class="btn btn-secondary">
-                    Добавить по ссылке
-                  </button>
-                </div>
-                <small class="help-text">Поддерживаются форматы видео: MP4, WebM, MOV, AVI. Максимальный размер: 100MB</small>
+                <input type="text" name="video_url" placeholder="Ссылка на видео или путь к файлу" 
+                       class="video-input">
+                <button type="button" onclick="AdminProductsComponent.addVideo()" class="btn btn-secondary">
+                  Добавить видео
+                </button>
                 
                 <div class="current-videos">
                   ${(product.videos || []).map((video, index) => `
@@ -331,63 +286,27 @@ export const AdminProductsComponent = {
   },
 
   async mount(container) {
-    await this.ensureAdminContext();
     await this.loadData();
     container.innerHTML = await this.render();
-  },
-
-  async ensureAdminContext() {
-    try {
-      const adminLogin = sessionStorage.getItem('admin_login');
-      const adminPassword = sessionStorage.getItem('admin_password');
-      
-      if (adminLogin && adminPassword) {
-        await supabase.rpc('set_admin_context', {
-          admin_login: adminLogin,
-          admin_password: adminPassword
-        });
-      }
-    } catch (error) {
-      console.error('Failed to set admin context:', error);
-    }
   },
 
   async loadData() {
     this.data.loading = true;
     
     try {
-      // Устанавливаем контекст админа перед загрузкой данных
-      await this.ensureAdminContext();
-      
-      // Загружаем продукты и категории
-      const [productsResult, categoriesResult] = await Promise.all([
-        supabase
-          .from('products')
-          .select('*')
-          .order('created_at', { ascending: false }),
-        supabase
-          .from('categories')
-          .select('*')
-          .eq('is_active', true)
-          .order('sort_order', { ascending: true })
-      ]);
+      // Загружаем только продукты
+      const productsResult = await supabase
+        .from('products')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-      if (productsResult.error) {
-        console.error('Products query error:', productsResult.error);
-        throw productsResult.error;
-      }
-      if (categoriesResult.error) {
-        console.error('Categories query error:', categoriesResult.error);
-        throw categoriesResult.error;
-      }
+      if (productsResult.error) throw productsResult.error;
 
-      console.log('Products loaded:', productsResult.data.length);
       this.data.products = productsResult.data;
-      this.data.categories = categoriesResult.data;
       
     } catch (error) {
       console.error('Error loading data:', error);
-      this.showNotification('Ошибка загрузки данных: ' + error.message, 'error');
+      this.showNotification('Ошибка загрузки данных', 'error');
     }
     
     this.data.loading = false;
@@ -431,97 +350,26 @@ export const AdminProductsComponent = {
     return `https://bsndismiessofvhglzrv.supabase.co/storage/v1/object/public/product-media/${photo}`;
   },
 
-  getImagePathInfo(photo) {
-    if (photo.startsWith('images/')) {
-      const pathParts = photo.split('/');
-      if (pathParts.length >= 3) {
-        const sizeFolder = pathParts[1];
-        const colorFolder = pathParts[2];
-        return `📁 ${sizeFolder}/${colorFolder}`;
-      }
-    }
-    return '📁 products/ (старая структура)';
-  },
-
-  async reorganizePhotos() {
-    if (!this.data.editingProduct?.photos?.length) {
-      this.showNotification('Нет фотографий для реорганизации', 'warning');
-      return;
-    }
-
-    const sizeSelect = document.querySelector('[name="size"]');
-    const colorHexInput = document.querySelector('[name="color_hex_text"]') || document.querySelector('[name="color_hex"]');
-    
-    const size = sizeSelect?.value;
-    const colorHex = colorHexInput?.value;
-
-    if (!size || !colorHex) {
-      this.showNotification('Пожалуйста, выберите размер и цвет товара перед реорганизацией', 'warning');
-      return;
-    }
-
-    try {
-      this.showNotification('Начинаем реорганизацию фотографий...', 'info');
-      
-      const reorganizedPhotos = await StorageHelper.reorganizeProductFiles(
-        this.data.editingProduct.photos, 
-        size, 
-        colorHex
-      );
-      
-      this.data.editingProduct.photos = reorganizedPhotos;
-      this.showNotification('Фотографии успешно реорганизованы', 'success');
-      this.rerender();
-      
-    } catch (error) {
-      console.error('Error reorganizing photos:', error);
-      this.showNotification('Ошибка реорганизации фотографий: ' + error.message, 'error');
-    }
-  },
-
   async handleImageUpload(event) {
     const files = Array.from(event.target.files);
     if (!files.length) return;
-
-    // Проверяем, что категория, размер и цвет уже выбраны для организованного размещения
-    const categorySelect = document.querySelector('[name="category_id"]');
-    const sizeSelect = document.querySelector('[name="size"]');
-    const colorHexInput = document.querySelector('[name="color_hex_text"]') || document.querySelector('[name="color_hex"]');
-    
-    const categoryId = categorySelect?.value;
-    const size = sizeSelect?.value;
-    const colorHex = colorHexInput?.value;
-
-    if (!categoryId || !size || !colorHex) {
-      this.showNotification('Пожалуйста, сначала выберите категорию, размер и цвет товара для правильной организации фото', 'warning');
-      return;
-    }
-
-    // Получаем информацию о выбранной категории
-    const selectedCategory = this.data.categories.find(cat => cat.id === categoryId);
 
     this.data.uploadingImage = true;
     this.rerender();
 
     try {
       const uploadPromises = files.map(async (file) => {
-        try {
-          // Используем StorageHelper для организованной загрузки с категорией
-          return await StorageHelper.uploadOrganizedFileWithCategory(file, selectedCategory, size, colorHex);
-        } catch (error) {
-          console.error(`Error uploading ${file.name}:`, error);
-          // Fallback: загружаем в старую структуру
-          const fileExt = file.name.split('.').pop();
-          const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-          const filePath = `products/${fileName}`;
+        // Генерируем уникальное имя файла
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+        const filePath = `products/${fileName}`;
 
-          const { data, error: uploadError } = await supabase.storage
-            .from('product-media')
-            .upload(filePath, file);
+        const { data, error } = await supabase.storage
+          .from('product-media')
+          .upload(filePath, file);
 
-          if (uploadError) throw uploadError;
-          return filePath;
-        }
+        if (error) throw error;
+        return filePath;
       });
 
       const uploadedPaths = await Promise.all(uploadPromises);
@@ -533,7 +381,7 @@ export const AdminProductsComponent = {
         this.data.selectedImages = [...(this.data.selectedImages || []), ...uploadedPaths];
       }
 
-      this.showNotification(`Загружено ${uploadedPaths.length} изображений в организованную структуру папок`, 'success');
+      this.showNotification(`Загружено ${uploadedPaths.length} изображений`, 'success');
     } catch (error) {
       console.error('Error uploading images:', error);
       this.showNotification('Ошибка загрузки изображений: ' + error.message, 'error');
@@ -544,35 +392,16 @@ export const AdminProductsComponent = {
     }
   },
 
-  async removeImage(index) {
+  removeImage(index) {
     if (this.data.editingProduct) {
-      const removedPhoto = this.data.editingProduct.photos[index];
       this.data.editingProduct.photos.splice(index, 1);
-      
-      // Попытаемся удалить файл из storage
-      try {
-        await supabase.storage
-          .from('product-media')
-          .remove([removedPhoto]);
-        
-        // Если это был последний файл в папке, очистим пустые папки
-        const sizeSelect = document.querySelector('[name="size"]');
-        const colorHexInput = document.querySelector('[name="color_hex_text"]') || document.querySelector('[name="color_hex"]');
-        
-        if (sizeSelect?.value && colorHexInput?.value) {
-          await StorageHelper.deleteEmptyFolders(sizeSelect.value, colorHexInput.value);
-        }
-      } catch (error) {
-        console.error('Error removing file from storage:', error);
-        // Продолжаем работу даже если не удалось удалить файл
-      }
     } else {
       this.data.selectedImages.splice(index, 1);
     }
     this.rerender();
   },
 
-  addVideoUrl() {
+  addVideo() {
     const videoInput = document.querySelector('.video-input');
     const videoUrl = videoInput.value.trim();
     
@@ -587,94 +416,6 @@ export const AdminProductsComponent = {
     
     videoInput.value = '';
     this.rerender();
-  },
-
-  addPhotoUrl() {
-    const photoInput = document.querySelector('.photo-input');
-    const photoUrl = photoInput.value.trim();
-    
-    if (!photoUrl) {
-      this.showNotification('Введите ссылку на фото', 'error');
-      return;
-    }
-
-    // Проверяем, что это валидный URL изображения
-    if (!this.isValidImageUrl(photoUrl)) {
-      this.showNotification('Неверный формат ссылки. Используйте прямую ссылку на изображение', 'error');
-      return;
-    }
-
-    if (this.data.editingProduct) {
-      this.data.editingProduct.photos = [...(this.data.editingProduct.photos || []), photoUrl];
-    } else {
-      this.data.selectedImages = [...(this.data.selectedImages || []), photoUrl];
-    }
-    
-    photoInput.value = '';
-    this.showNotification('Фото добавлено по ссылке', 'success');
-    this.rerender();
-  },
-
-  isValidImageUrl(url) {
-    try {
-      const urlObj = new URL(url);
-      return /\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i.test(urlObj.pathname);
-    } catch {
-      return false;
-    }
-  },
-
-  async handleVideoUpload(event) {
-    const files = Array.from(event.target.files);
-    if (!files.length) return;
-
-    // Проверяем размер файлов (максимум 100MB на файл)
-    const maxSize = 100 * 1024 * 1024; // 100MB
-    const oversizedFiles = files.filter(file => file.size > maxSize);
-    
-    if (oversizedFiles.length > 0) {
-      this.showNotification(`Файлы слишком большие (максимум 100MB): ${oversizedFiles.map(f => f.name).join(', ')}`, 'error');
-      return;
-    }
-
-    this.data.uploadingVideo = true;
-    this.rerender();
-
-    try {
-      const uploadPromises = files.map(async (file) => {
-        try {
-          const fileExt = file.name.split('.').pop().toLowerCase();
-          const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-          const filePath = `videos/${fileName}`;
-
-          const { data, error: uploadError } = await supabase.storage
-            .from('product-media')
-            .upload(filePath, file);
-
-          if (uploadError) throw uploadError;
-          return filePath;
-        } catch (error) {
-          console.error(`Error uploading ${file.name}:`, error);
-          throw error;
-        }
-      });
-
-      const uploadedPaths = await Promise.all(uploadPromises);
-      
-      // Добавляем новые пути к существующим видео
-      if (this.data.editingProduct) {
-        this.data.editingProduct.videos = [...(this.data.editingProduct.videos || []), ...uploadedPaths];
-      }
-
-      this.showNotification(`Загружено ${uploadedPaths.length} видео файлов`, 'success');
-    } catch (error) {
-      console.error('Error uploading videos:', error);
-      this.showNotification('Ошибка загрузки видео: ' + error.message, 'error');
-    } finally {
-      this.data.uploadingVideo = false;
-      event.target.value = ''; // Очищаем input
-      this.rerender();
-    }
   },
 
   removeVideo(index) {
@@ -729,7 +470,6 @@ export const AdminProductsComponent = {
     this.data.editingProduct = {
       artikul: '',
       name: '',
-      category_id: '',
       size: '',
       color_hex: '#000000',
       price_rub: '',
@@ -741,12 +481,6 @@ export const AdminProductsComponent = {
       is_active: true
     };
     this.rerender();
-  },
-
-  onCategoryChange(categoryId) {
-    if (this.data.editingProduct) {
-      this.data.editingProduct.category_id = categoryId;
-    }
   },
 
   editProduct(productId) {
@@ -765,10 +499,6 @@ export const AdminProductsComponent = {
 
   async saveProduct(event) {
     event.preventDefault();
-    
-    // Устанавливаем контекст админа перед операцией
-    await this.ensureAdminContext();
-    
     const formData = new FormData(event.target);
     
     // Берем цвет из текстового поля, если заполнено, иначе из color picker
@@ -777,7 +507,6 @@ export const AdminProductsComponent = {
     const productData = {
       artikul: formData.get('artikul'),
       name: formData.get('name'),
-      category_id: formData.get('category_id'),
       size: formData.get('size'),
       color_hex: colorHex,
       price_rub: parseFloat(formData.get('price_rub')),
@@ -800,26 +529,6 @@ export const AdminProductsComponent = {
     }
 
     try {
-      // Если это редактирование существующего товара, проверяем изменение размера/цвета
-      if (this.data.editingProduct.id && 
-          (this.data.editingProduct.size !== productData.size || 
-           this.data.editingProduct.color_hex !== productData.color_hex)) {
-        
-        this.showNotification('Обнаружено изменение размера или цвета. Реорганизуем фотографии...', 'info');
-        
-        // Реорганизуем фотографии в соответствии с новыми параметрами
-        try {
-          productData.photos = await StorageHelper.reorganizeProductFiles(
-            productData.photos, 
-            productData.size, 
-            productData.color_hex
-          );
-        } catch (error) {
-          console.error('Error reorganizing photos during save:', error);
-          this.showNotification('Предупреждение: не удалось реорганизовать все фотографии', 'warning');
-        }
-      }
-
       let result;
       if (this.data.editingProduct.id) {
         // Обновление
@@ -864,9 +573,6 @@ export const AdminProductsComponent = {
     if (!product) return;
 
     try {
-      // Устанавливаем контекст админа перед операцией
-      await this.ensureAdminContext();
-      
       const { error } = await supabase
         .from('products')
         .update({ is_active: !product.is_active })
