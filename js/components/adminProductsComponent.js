@@ -603,7 +603,7 @@ export const AdminProductsComponent = {
       if (error) throw error;
 
       this.showNotification(`Загружено ${files.length} изображений`, 'success');
-      await this.loadProductImages(product.id || product.artikul);
+      await this.loadProductMedia(product.id || product.artikul);
       
     } catch (error) {
       console.error('Error uploading images:', error);
@@ -632,7 +632,7 @@ export const AdminProductsComponent = {
       if (error) throw error;
 
       this.showNotification('Основное изображение установлено', 'success');
-      await this.loadProductImages(product.id || product.artikul);
+      await this.loadProductMedia(product.id || product.artikul);
       this.rerender();
       
     } catch (error) {
@@ -660,7 +660,7 @@ export const AdminProductsComponent = {
       if (error) throw error;
 
       this.showNotification('Изображение удалено', 'success');
-      await this.loadProductImages(product.id || product.artikul);
+      await this.loadProductMedia(product.id || product.artikul);
       this.rerender();
       
     } catch (error) {
@@ -943,8 +943,8 @@ export const AdminProductsComponent = {
     const product = this.data.products.find(p => p.id === productId);
     if (product) {
       this.data.editingProduct = { ...product };
-      // Загружаем изображения из box_images
-      await this.loadProductImages(productId);
+      // Загружаем медиа из products
+      await this.loadProductMedia(productId);
       await this.loadCategories();
       await this.loadColors();
       this.rerender();

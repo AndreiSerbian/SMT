@@ -9,28 +9,21 @@ const corsHeaders = {
 interface UploadImageRequest {
   action: 'upload_images';
   product_id: string;
-  category: string;
-  color: string;
   files: Array<{
     name: string;
     content: string; // base64
     content_type: string;
   }>;
-  primary_index?: number;
 }
 
-interface DeleteImageRequest {
-  action: 'delete_image';
-  image_id: string;
+interface UploadVideoRequest {
+  action: 'upload_videos';
+  product_id: string;
+  videos: string[];
 }
 
-interface SetPrimaryRequest {
-  action: 'set_primary';
-  image_id: string;
-}
-
-interface GetImagesRequest {
-  action: 'get_images';
+interface GetMediaRequest {
+  action: 'get_media';
   product_id: string;
 }
 
@@ -52,12 +45,10 @@ serve(async (req) => {
     switch (body.action) {
       case 'upload_images':
         return await uploadImages(supabaseClient, body as UploadImageRequest)
-      case 'delete_image':
-        return await deleteImage(supabaseClient, body as DeleteImageRequest)
-      case 'set_primary':
-        return await setPrimaryImage(supabaseClient, body as SetPrimaryRequest)
-      case 'get_images':
-        return await getImages(supabaseClient, body as GetImagesRequest)
+      case 'upload_videos':
+        return await uploadVideos(supabaseClient, body as UploadVideoRequest)
+      case 'get_media':
+        return await getMedia(supabaseClient, body as GetMediaRequest)
       default:
         return new Response(
           JSON.stringify({ error: 'Unknown action' }),
@@ -80,24 +71,30 @@ serve(async (req) => {
 })
 
 async function uploadImages(supabaseClient: any, request: UploadImageRequest) {
-  const { product_id, category, color, files, primary_index = 0 } = request
+  const { product_id, files } = request
 
   console.log(`Uploading ${files.length} images for product ${product_id}`)
 
-  // Get existing images count for this product to continue numbering
-  const { data: existingImages } = await supabaseClient
-    .from('box_images')
-    .select('storage_path')
-    .eq('product_id', product_id)
+  // Get current product data
+  const { data: product, error: productError } = await supabaseClient
+    .from('products')
+    .select('photos')
+    .eq('id', product_id)
+    .single()
 
-  let slideNumber = (existingImages?.length || 0) + 1
-  const uploadedImages = []
+  if (productError) {
+    throw new Error(`Product not found: ${productError.message}`)
+  }
+
+  const currentPhotos = product.photos || []
+  const newPhotos = []
 
   for (let i = 0; i < files.length; i++) {
     const file = files[i]
     const fileExtension = file.name.split('.').pop() || 'webp'
-    const filename = `slide${slideNumber}.${fileExtension}`
-    const storagePath = `images/${category}/${color}/${filename}`
+    const timestamp = Date.now()
+    const filename = `${product_id}_${timestamp}_${i + 1}.${fileExtension}`
+    const storagePath = `images/${filename}`
     
     console.log(`Uploading to path: ${storagePath}`)
 
@@ -123,43 +120,31 @@ async function uploadImages(supabaseClient: any, request: UploadImageRequest) {
       .from('product-media')
       .getPublicUrl(storagePath)
 
-    // Create database record
-    const { data: imageRecord, error: dbError } = await supabaseClient
-      .from('box_images')
-      .insert({
-        product_id,
-        image_url: urlData.publicUrl,
-        storage_path: storagePath,
-        is_primary: i === primary_index
-      })
-      .select()
-      .single()
-
-    if (dbError) {
-      console.error('Database error:', dbError)
-      // Clean up uploaded file
-      await supabaseClient.storage.from('product-media').remove([storagePath])
-      throw new Error(`Failed to create database record: ${dbError.message}`)
-    }
-
-    uploadedImages.push(imageRecord)
-    slideNumber++
+    newPhotos.push(urlData.publicUrl)
   }
 
-  // If setting a primary image, unset all other primary flags for this product
-  if (primary_index >= 0 && uploadedImages[primary_index]) {
-    await supabaseClient
-      .from('box_images')
-      .update({ is_primary: false })
-      .eq('product_id', product_id)
-      .neq('id', uploadedImages[primary_index].id)
+  // Update product with new photos
+  const updatedPhotos = [...currentPhotos, ...newPhotos]
+  const { error: updateError } = await supabaseClient
+    .from('products')
+    .update({ photos: updatedPhotos })
+    .eq('id', product_id)
+
+  if (updateError) {
+    console.error('Update error:', updateError)
+    // Clean up uploaded files
+    for (const photo of newPhotos) {
+      const path = photo.split('/').pop()
+      await supabaseClient.storage.from('product-media').remove([`images/${path}`])
+    }
+    throw new Error(`Failed to update product: ${updateError.message}`)
   }
 
   return new Response(
     JSON.stringify({ 
       success: true, 
-      uploaded_images: uploadedImages.length,
-      images: uploadedImages
+      uploaded_images: newPhotos.length,
+      photos: updatedPhotos
     }),
     { 
       status: 200, 
@@ -168,105 +153,37 @@ async function uploadImages(supabaseClient: any, request: UploadImageRequest) {
   )
 }
 
-async function deleteImage(supabaseClient: any, request: DeleteImageRequest) {
-  const { image_id } = request
+async function uploadVideos(supabaseClient: any, request: UploadVideoRequest) {
+  const { product_id, videos } = request
 
-  console.log(`Deleting image ${image_id}`)
+  console.log(`Updating videos for product ${product_id}`)
 
-  // Get image info first
-  const { data: imageData, error: fetchError } = await supabaseClient
-    .from('box_images')
-    .select('*')
-    .eq('id', image_id)
+  // Get current product data
+  const { data: product, error: productError } = await supabaseClient
+    .from('products')
+    .select('videos')
+    .eq('id', product_id)
     .single()
 
-  if (fetchError || !imageData) {
-    throw new Error('Image not found')
+  if (productError) {
+    throw new Error(`Product not found: ${productError.message}`)
   }
 
-  const { product_id, storage_path, is_primary } = imageData
-
-  // Delete from storage
-  const { error: storageError } = await supabaseClient.storage
-    .from('product-media')
-    .remove([storage_path])
-
-  if (storageError) {
-    console.error('Storage deletion error:', storageError)
-  }
-
-  // Delete from database
-  const { error: dbError } = await supabaseClient
-    .from('box_images')
-    .delete()
-    .eq('id', image_id)
-
-  if (dbError) {
-    throw new Error(`Failed to delete from database: ${dbError.message}`)
-  }
-
-  // If deleted image was primary, set the oldest remaining image as primary
-  if (is_primary) {
-    const { data: remainingImages } = await supabaseClient
-      .from('box_images')
-      .select('id')
-      .eq('product_id', product_id)
-      .order('created_at', { ascending: true })
-      .limit(1)
-
-    if (remainingImages && remainingImages.length > 0) {
-      await supabaseClient
-        .from('box_images')
-        .update({ is_primary: true })
-        .eq('id', remainingImages[0].id)
-    }
-  }
-
-  return new Response(
-    JSON.stringify({ success: true }),
-    { 
-      status: 200, 
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-    }
-  )
-}
-
-async function setPrimaryImage(supabaseClient: any, request: SetPrimaryRequest) {
-  const { image_id } = request
-
-  console.log(`Setting primary image ${image_id}`)
-
-  // Get product_id for this image
-  const { data: imageData, error: fetchError } = await supabaseClient
-    .from('box_images')
-    .select('product_id')
-    .eq('id', image_id)
-    .single()
-
-  if (fetchError || !imageData) {
-    throw new Error('Image not found')
-  }
-
-  const { product_id } = imageData
-
-  // Unset all primary flags for this product
-  await supabaseClient
-    .from('box_images')
-    .update({ is_primary: false })
-    .eq('product_id', product_id)
-
-  // Set new primary
+  // Update product with new videos
   const { error: updateError } = await supabaseClient
-    .from('box_images')
-    .update({ is_primary: true })
-    .eq('id', image_id)
+    .from('products')
+    .update({ videos })
+    .eq('id', product_id)
 
   if (updateError) {
-    throw new Error(`Failed to set primary: ${updateError.message}`)
+    throw new Error(`Failed to update videos: ${updateError.message}`)
   }
 
   return new Response(
-    JSON.stringify({ success: true }),
+    JSON.stringify({ 
+      success: true, 
+      videos
+    }),
     { 
       status: 200, 
       headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -274,23 +191,27 @@ async function setPrimaryImage(supabaseClient: any, request: SetPrimaryRequest) 
   )
 }
 
-async function getImages(supabaseClient: any, request: GetImagesRequest) {
+async function getMedia(supabaseClient: any, request: GetMediaRequest) {
   const { product_id } = request
 
-  console.log(`Getting images for product ${product_id}`)
+  console.log(`Getting media for product ${product_id}`)
 
-  const { data: images, error } = await supabaseClient
-    .from('box_images')
-    .select('*')
-    .eq('product_id', product_id)
-    .order('created_at', { ascending: true })
+  const { data: product, error } = await supabaseClient
+    .from('products')
+    .select('photos, videos')
+    .eq('id', product_id)
+    .single()
 
   if (error) {
-    throw new Error(`Failed to fetch images: ${error.message}`)
+    throw new Error(`Failed to fetch product media: ${error.message}`)
   }
 
   return new Response(
-    JSON.stringify({ success: true, images: images || [] }),
+    JSON.stringify({ 
+      success: true, 
+      photos: product.photos || [], 
+      videos: product.videos || [] 
+    }),
     { 
       status: 200, 
       headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
