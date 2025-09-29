@@ -496,7 +496,7 @@ export const AdminProductsComponent = {
   // Загрузка изображений товара из box_images
   async loadProductImages(productId) {
     try {
-      const { data, error } = await supabase.functions.invoke('media-manager', {
+      const { data, error } = await window.supabase.functions.invoke('media-manager', {
         body: {
           action: 'get_images',
           product_id: productId
@@ -545,34 +545,14 @@ export const AdminProductsComponent = {
     }
   },
 
-  // Загрузка изображений через media-manager
-  async handleImageUploadToBoxImages(event) {
+  // Загрузка изображений через media-manager в products
+  async handleImageUpload(event) {
     const files = Array.from(event.target.files);
     if (!files.length) return;
 
     const product = this.data.editingProduct;
-    if (!product) return;
-
-    // Получаем категорию и цвет
-    const sizeSelect = document.querySelector('[name="size"]');
-    const colorHexInput = document.querySelector('[name="color_hex_text"]') || document.querySelector('[name="color_hex"]');
-    
-    const size = sizeSelect?.value;
-    const colorHex = colorHexInput?.value;
-
-    if (!size || !colorHex) {
-      this.showNotification('Пожалуйста, сначала выберите размер и цвет товара', 'warning');
-      return;
-    }
-
-    // Найдем соответствующую категорию и цвет
-    const category = this.data.categories.find(cat => 
-      cat.slug === this.getSizeCategoryName(size)
-    );
-    const color = this.data.colors.find(col => col.hex_code === colorHex);
-
-    if (!category || !color) {
-      this.showNotification('Не удалось определить категорию или цвет', 'error');
+    if (!product?.id && !product?.artikul) {
+      this.showNotification('Сначала создайте товар', 'error');
       return;
     }
 
@@ -580,23 +560,21 @@ export const AdminProductsComponent = {
     this.rerender();
 
     try {
-      // Преобразуем файлы в base64
-      const base64Files = await Promise.all(
-        files.map(async (file) => ({
+      // Конвертируем файлы в base64
+      const base64Files = await Promise.all(files.map(async (file) => {
+        const base64 = await this.fileToBase64(file);
+        return {
           name: file.name,
-          type: file.type,
-          content: (await this.fileToBase64(file)).split(',')[1] // Убираем data:xxx;base64,
-        }))
-      );
+          content: base64,
+          content_type: file.type
+        };
+      }));
 
-      const { data, error } = await supabase.functions.invoke('media-manager', {
+      const { data, error } = await window.supabase.functions.invoke('media-manager', {
         body: {
           action: 'upload_images',
           product_id: product.id || product.artikul,
-          category: category.name,
-          color: color.name,
-          files: base64Files,
-          set_primary_index: this.data.productImages.length === 0 ? 0 : undefined
+          files: base64Files
         }
       });
 
@@ -621,7 +599,7 @@ export const AdminProductsComponent = {
     if (!product) return;
 
     try {
-      const { data, error } = await supabase.functions.invoke('media-manager', {
+      const { data, error } = await window.supabase.functions.invoke('media-manager', {
         body: {
           action: 'set_primary',
           product_id: product.id || product.artikul,
@@ -649,7 +627,7 @@ export const AdminProductsComponent = {
     if (!confirm('Удалить это изображение?')) return;
 
     try {
-      const { data, error } = await supabase.functions.invoke('media-manager', {
+      const { data, error } = await window.supabase.functions.invoke('media-manager', {
         body: {
           action: 'delete_image',
           product_id: product.id || product.artikul,
@@ -669,31 +647,72 @@ export const AdminProductsComponent = {
     }
   },
 
-  // Загрузка видео
+  // Загрузка видео через media-manager в products
   async handleVideoUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
+
+    const product = this.data.editingProduct;
+    if (!product?.id && !product?.artikul) {
+      this.showNotification('Сначала создайте товар', 'error');
+      return;
+    }
 
     this.data.uploadingVideo = true;
     this.rerender();
 
     try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-      const filePath = `videos/${fileName}`;
+      console.log('Uploading video file:', file.name, file.type, file.size);
+      
+      // Проверяем, является ли файл видео
+      if (!file.type.startsWith('video/')) {
+        throw new Error('Выбранный файл не является видео');
+      }
 
-      const { data, error } = await supabase.storage
+      // Ограничиваем размер видео (например, 50MB)
+      const maxSize = 50 * 1024 * 1024; // 50MB
+      if (file.size > maxSize) {
+        throw new Error('Размер видео не должен превышать 50MB');
+      }
+
+      // Загружаем через Supabase Storage
+      const fileName = `video_${Date.now()}_${file.name}`;
+      
+      const { data: uploadData, error: uploadError } = await window.supabase.storage
         .from('product-media')
-        .upload(filePath, file);
+        .upload(`videos/${fileName}`, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        throw new Error(`Ошибка загрузки: ${uploadError.message}`);
+      }
+
+      // Получаем публичный URL
+      const { data: urlData } = window.supabase.storage
+        .from('product-media')
+        .getPublicUrl(`videos/${fileName}`);
+
+      const videoUrl = urlData.publicUrl;
+      
+      // Добавляем видео к текущему товару через media-manager
+      const currentVideos = product.videos || [];
+      currentVideos.push(videoUrl);
+      
+      const { data, error } = await window.supabase.functions.invoke('media-manager', {
+        body: {
+          action: 'upload_videos',
+          product_id: product.id || product.artikul,
+          videos: currentVideos
+        }
+      });
 
       if (error) throw error;
 
-      // Добавляем путь к видео
-      if (this.data.editingProduct) {
-        this.data.editingProduct.videos = [...(this.data.editingProduct.videos || []), filePath];
-      }
-
-      this.showNotification('Видео загружено', 'success');
+      this.showNotification('Видео загружено успешно', 'success');
+      await this.loadProductMedia(product.id || product.artikul);
       
     } catch (error) {
       console.error('Error uploading video:', error);
@@ -706,27 +725,77 @@ export const AdminProductsComponent = {
   },
 
   // Добавление видео по URL
-  addVideoUrl() {
+  async addVideoUrl() {
     const input = document.querySelector('[name="video_url"]');
     const url = input.value.trim();
     
     if (!url) {
-      this.showNotification('Введите URL видео', 'warning');
+      this.showNotification('Введите URL видео', 'error');
       return;
     }
 
-    if (this.data.editingProduct) {
-      this.data.editingProduct.videos = [...(this.data.editingProduct.videos || []), url];
+    const product = this.data.editingProduct;
+    if (!product?.id && !product?.artikul) {
+      this.showNotification('Сначала создайте товар', 'error');
+      return;
+    }
+
+    const currentVideos = product.videos || [];
+    
+    // Проверяем, не добавлено ли уже это видео
+    if (currentVideos.includes(url)) {
+      this.showNotification('Это видео уже добавлено', 'error');
+      return;
+    }
+    
+    try {
+      currentVideos.push(url);
+      
+      const { data, error } = await window.supabase.functions.invoke('media-manager', {
+        body: {
+          action: 'upload_videos',
+          product_id: product.id || product.artikul,
+          videos: currentVideos
+        }
+      });
+
+      if (error) throw error;
+
       input.value = '';
-      this.rerender();
+      this.showNotification('Видео добавлено', 'success');
+      await this.loadProductMedia(product.id || product.artikul);
+      
+    } catch (error) {
+      console.error('Error adding video URL:', error);
+      this.showNotification('Ошибка добавления видео: ' + error.message, 'error');
     }
   },
 
   // Удаление видео
-  removeVideo(index) {
-    if (this.data.editingProduct) {
-      this.data.editingProduct.videos.splice(index, 1);
-      this.rerender();
+  async removeVideo(index) {
+    const product = this.data.editingProduct;
+    if (!product?.videos || !product.videos[index]) return;
+
+    try {
+      const currentVideos = [...product.videos];
+      currentVideos.splice(index, 1);
+      
+      const { data, error } = await window.supabase.functions.invoke('media-manager', {
+        body: {
+          action: 'upload_videos',
+          product_id: product.id || product.artikul,
+          videos: currentVideos
+        }
+      });
+
+      if (error) throw error;
+
+      this.showNotification('Видео удалено', 'success');
+      await this.loadProductMedia(product.id || product.artikul);
+      
+    } catch (error) {
+      console.error('Error removing video:', error);
+      this.showNotification('Ошибка удаления видео: ' + error.message, 'error');
     }
   },
 
@@ -830,31 +899,28 @@ export const AdminProductsComponent = {
   },
 
   async removeImage(index) {
-    if (this.data.editingProduct) {
-      const removedPhoto = this.data.editingProduct.photos[index];
-      this.data.editingProduct.photos.splice(index, 1);
+    const product = this.data.editingProduct;
+    if (!product?.photos || !product.photos[index]) return;
+
+    try {
+      const currentPhotos = [...product.photos];
+      currentPhotos.splice(index, 1);
       
-      // Попытаемся удалить файл из storage
-      try {
-        await supabase.storage
-          .from('product-media')
-          .remove([removedPhoto]);
-        
-        // Если это был последний файл в папке, очистим пустые папки
-        const sizeSelect = document.querySelector('[name="size"]');
-        const colorHexInput = document.querySelector('[name="color_hex_text"]') || document.querySelector('[name="color_hex"]');
-        
-        if (sizeSelect?.value && colorHexInput?.value) {
-          await StorageHelper.deleteEmptyFolders(sizeSelect.value, colorHexInput.value);
-        }
-      } catch (error) {
-        console.error('Error removing file from storage:', error);
-        // Продолжаем работу даже если не удалось удалить файл
-      }
-    } else {
-      this.data.selectedImages.splice(index, 1);
+      // Обновляем через media-manager
+      const { data, error } = await window.supabase
+        .from('products')
+        .update({ photos: currentPhotos })
+        .eq('id', product.id || product.artikul);
+
+      if (error) throw error;
+
+      this.showNotification('Фото удалено', 'success');
+      await this.loadProductMedia(product.id || product.artikul);
+      
+    } catch (error) {
+      console.error('Error removing image:', error);
+      this.showNotification('Ошибка удаления фото: ' + error.message, 'error');
     }
-    this.rerender();
   },
 
   addVideo() {
@@ -874,12 +940,7 @@ export const AdminProductsComponent = {
     this.rerender();
   },
 
-  removeVideo(index) {
-    if (this.data.editingProduct) {
-      this.data.editingProduct.videos.splice(index, 1);
-      this.rerender();
-    }
-  },
+  // Дублированный метод удален - остается только один выше
 
   showImport() {
     this.data.showImportModal = true;
@@ -900,7 +961,7 @@ export const AdminProductsComponent = {
       // Получаем статические данные для импорта
       const { products } = await import('../data/products.js');
       
-      const response = await supabase.functions.invoke('import-products', {
+      const response = await window.supabase.functions.invoke('import-products', {
         body: {
           products: products,
           admin_login: formData.get('admin_login'),
@@ -948,6 +1009,31 @@ export const AdminProductsComponent = {
       await this.loadCategories();
       await this.loadColors();
       this.rerender();
+    }
+  },
+
+  // Загрузка медиа продукта из таблицы products
+  async loadProductMedia(productId) {
+    try {
+      const { data, error } = await window.supabase.functions.invoke('media-manager', {
+        body: {
+          action: 'get_media',
+          product_id: productId
+        }
+      });
+
+      if (error) throw error;
+
+      // Обновляем данные продукта с полученными медиа
+      if (this.data.editingProduct) {
+        this.data.editingProduct.photos = data.photos || [];
+        this.data.editingProduct.videos = data.videos || [];
+      }
+
+      console.log('Loaded product media:', data);
+    } catch (error) {
+      console.error('Error loading product media:', error);
+      this.showNotification('Ошибка загрузки медиа: ' + error.message, 'error');
     }
   },
 
