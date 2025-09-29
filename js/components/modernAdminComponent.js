@@ -13,6 +13,7 @@ export class ModernAdminComponent {
         this.sortDirection = 'asc';
         this.ordersPage = 0;
         this.ORDERS_PAGE_SIZE = 20;
+        this.adminProductsComponent = null;
   }
 
   async mount(container) {
@@ -30,6 +31,9 @@ export class ModernAdminComponent {
     
     // Проверка авторизации
     this.checkAuth();
+    
+    // Загрузка AdminProductsComponent
+    await this.loadAdminProductsComponent();
     
     // Сохраняем глобальную ссылку для onclick handlers
     window.adminComponent = this;
@@ -71,6 +75,20 @@ export class ModernAdminComponent {
     }
   }
 
+  async loadAdminProductsComponent() {
+    try {
+      const { AdminProductsComponent } = await import('./adminProductsComponent.js');
+      this.adminProductsComponent = new AdminProductsComponent();
+      
+      const container = document.getElementById('adminProductsContainer');
+      if (container) {
+        await this.adminProductsComponent.mount(container);
+      }
+    } catch (error) {
+      console.error('Error loading AdminProductsComponent:', error);
+    }
+  }
+
   getHTML() {
     return `
       <div class="h-full bg-slate-50 text-slate-900">
@@ -105,71 +123,7 @@ export class ModernAdminComponent {
 
           <!-- PRODUCTS TAB -->
           <div id="productsTab" class="tab-content">
-
-            <!-- ACTION BAR -->
-            <section class="flex flex-col gap-3 sm:flex-row sm:items-center">
-              <div class="flex-1 flex gap-2">
-                <input id="search" type="search" placeholder="Поиск: название / артикул"
-                       class="w-full px-3 py-2 rounded-xl border outline-none focus:ring focus:ring-slate-200">
-                <select id="filterCategory" class="px-3 py-2 rounded-xl border bg-white">
-                  <option value="">Все категории</option>
-                  <option value="small">Малая коробка</option>
-                  <option value="medium">Средняя коробка</option>
-                  <option value="big">Большая коробка</option>
-                  <option value="with_handle">Коробка с ручками</option>
-                </select>
-                <select id="filterStatus" class="px-3 py-2 rounded-xl border bg-white">
-                  <option value="">Все</option>
-                  <option value="active">Активные</option>
-                  <option value="hidden">Скрытые</option>
-                </select>
-              </div>
-              <div class="flex gap-2">
-                <button id="btnAddProduct" class="px-3 py-2 rounded-xl bg-emerald-600 text-white">Добавить товар</button>
-              </div>
-            </section>
-
-            <!-- LIST: CARDS (mobile) -->
-            <section id="cards" class="grid grid-cols-1 sm:hidden gap-3"></section>
-
-            <!-- LIST: TABLE (desktop) -->
-            <section class="hidden sm:block overflow-auto rounded-2xl border bg-white">
-              <table class="min-w-full text-sm">
-                <thead class="bg-slate-50 text-slate-600">
-                  <tr>
-                    <th class="px-3 py-2 text-left">Товар</th>
-                    <th class="px-3 py-2 text-left cursor-pointer hover:bg-slate-100" onclick="adminComponent.toggleSort('artikul')">
-                      <div class="flex items-center gap-1">
-                        Артикул
-                        <div class="flex flex-col text-xs">
-                          <span class="text-slate-400" id="sort-artikul-up">▲</span>
-                          <span class="text-slate-400" id="sort-artikul-down">▼</span>
-                        </div>
-                      </div>
-                    </th>
-                    <th class="px-3 py-2 text-left">Размер</th>
-                    <th class="px-3 py-2 text-left">Цвет</th>
-                    <th class="px-3 py-2 text-left cursor-pointer hover:bg-slate-100" onclick="adminComponent.toggleSort('price_rub')">
-                      <div class="flex items-center gap-1">
-                        Цена, ₽
-                        <div class="flex flex-col text-xs">
-                          <span class="text-slate-400" id="sort-price_rub-up">▲</span>
-                          <span class="text-slate-400" id="sort-price_rub-down">▼</span>
-                        </div>
-                      </div>
-                    </th>
-                    <th class="px-3 py-2 text-left">Статус</th>
-                    <th class="px-3 py-2 text-right">Действия</th>
-                  </tr>
-                </thead>
-                <tbody id="tableBody" class="divide-y"></tbody>
-              </table>
-            </section>
-
-            <!-- PAGINATION -->
-            <div class="flex justify-center">
-              <button id="btnLoadMore" class="px-4 py-2 rounded-xl border bg-white hidden">Загрузить ещё</button>
-            </div>
+            <div id="adminProductsContainer"></div>
           </div>
 
           <!-- COLORS TAB -->
@@ -271,112 +225,6 @@ export class ModernAdminComponent {
           </div>
         </main>
 
-        <!-- PRODUCT DIALOG -->
-        <dialog id="dlgProduct" class="p-0 rounded-2xl backdrop:bg-black/40 max-w-4xl">
-          <form id="frmProduct" method="dialog" class="bg-white rounded-2xl overflow-hidden">
-            <div class="px-4 py-3 border-b flex items-center justify-between">
-              <h2 id="dlgTitle" class="font-semibold">Товар</h2>
-              <button type="button" class="px-2 py-1 rounded-lg hover:bg-slate-100" data-close>✕</button>
-            </div>
-
-            <div class="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[70vh] overflow-auto">
-              <input type="hidden" name="id" />
-              
-              <label class="block">
-                <span class="text-sm font-medium">Название *</span>
-                <input name="name" required class="mt-1 w-full px-3 py-2 rounded-xl border">
-              </label>
-
-              <label class="block">
-                <span class="text-sm font-medium">Артикул *</span>
-                <input name="artikul" required class="mt-1 w-full px-3 py-2 rounded-xl border">
-              </label>
-
-              <label class="block">
-                <span class="text-sm font-medium">ID WB</span>
-                <input name="id_wb" class="mt-1 w-full px-3 py-2 rounded-xl border">
-              </label>
-
-              <label class="block">
-                <span class="text-sm font-medium">Размер</span>
-                <select name="size" class="mt-1 w-full px-3 py-2 rounded-xl border">
-                  <option value="small">Малая</option>
-                  <option value="medium">Средняя</option>
-                  <option value="big">Большая</option>
-                </select>
-              </label>
-
-              <div class="grid grid-cols-3 gap-2 sm:col-span-2">
-                <label class="block">
-                  <span class="text-sm font-medium">Длина (см)</span>
-                  <input name="dim_l" type="number" step="0.1" class="mt-1 w-full px-3 py-2 rounded-xl border">
-                </label>
-                <label class="block">
-                  <span class="text-sm font-medium">Ширина (см)</span>
-                  <input name="dim_w" type="number" step="0.1" class="mt-1 w-full px-3 py-2 rounded-xl border">
-                </label>
-                <label class="block">
-                  <span class="text-sm font-medium">Высота (см)</span>
-                  <input name="dim_h" type="number" step="0.1" class="mt-1 w-full px-3 py-2 rounded-xl border">
-                </label>
-              </div>
-
-              <label class="block">
-                <span class="text-sm font-medium">Вес (г)</span>
-                <input name="weight" type="number" step="0.1" class="mt-1 w-full px-3 py-2 rounded-xl border">
-              </label>
-              
-              <label class="block">
-                <span class="text-sm font-medium">Цена (₽) *</span>
-                <input name="price_rub" type="number" step="0.01" required class="mt-1 w-full px-3 py-2 rounded-xl border">
-              </label>
-
-              <label class="block">
-                <span class="text-sm font-medium">Цвет (HEX) *</span>
-                <div class="flex gap-2 mt-1">
-                  <input name="color_hex" type="color" class="w-12 h-10 rounded-xl border cursor-pointer">
-                  <input name="color_hex_text" type="text" placeholder="#000000" 
-                         class="flex-1 px-3 py-2 rounded-xl border font-mono text-sm" 
-                         pattern="^#[0-9A-Fa-f]{6}$">
-                </div>
-              </label>
-
-              <label class="block">
-                <span class="text-sm font-medium">Статус</span>
-                <select name="is_active" class="mt-1 w-full px-3 py-2 rounded-xl border">
-                  <option value="true">Активный</option>
-                  <option value="false">Скрытый</option>
-                </select>
-              </label>
-
-              <!-- IMAGES -->
-              <div class="sm:col-span-2">
-                <div class="flex items-center justify-between mb-2">
-                  <span class="text-sm font-medium">Фото (URL)</span>
-                  <button type="button" id="btnAddImage" class="text-sm px-2 py-1 rounded-lg border hover:bg-slate-50">+ фото</button>
-                </div>
-                <div id="imagesBox" class="space-y-2"></div>
-              </div>
-
-              <!-- VIDEOS -->
-              <div class="sm:col-span-2">
-                <div class="flex items-center justify-between mb-2">
-                  <span class="text-sm font-medium">Видео (URL)</span>
-                  <button type="button" id="btnAddVideo" class="text-sm px-2 py-1 rounded-lg border hover:bg-slate-50">+ видео</button>
-                </div>
-                <div id="videosBox" class="space-y-2"></div>
-              </div>
-            </div>
-
-            <div class="px-4 py-3 border-t flex justify-between">
-              <button type="button" id="btnDelete" class="px-3 py-2 rounded-lg border border-rose-300 text-rose-700 hover:bg-rose-50">Удалить</button>
-              <div class="flex gap-2">
-                <button type="button" data-close class="px-3 py-2 rounded-lg border hover:bg-slate-50">Отмена</button>
-                <button type="submit" class="px-3 py-2 rounded-lg bg-slate-900 text-white hover:bg-slate-800">Сохранить</button>
-              </div>
-            </div>
-          </form>
-        </dialog>
 
         <!-- COLOR DIALOG -->
         <dialog id="dlgColor" class="p-0 rounded-2xl backdrop:bg-black/40 max-w-md">
@@ -460,28 +308,12 @@ export class ModernAdminComponent {
       tab.addEventListener('click', (e) => this.onTabChange(e));
     });
 
-    // Search and filters
-    document.getElementById('search').addEventListener('input', this.debounce(() => this.loadPage(true), 300));
-    document.getElementById('filterCategory').addEventListener('change', () => this.loadPage(true));
-    document.getElementById('filterStatus').addEventListener('change', () => this.loadPage(true));
 
-    // Buttons
-    document.getElementById('btnAddProduct').addEventListener('click', () => this.openProduct());
-    document.getElementById('btnLoadMore').addEventListener('click', () => this.loadPage(false));
+    // Buttons  
     document.getElementById('btnSignOut').addEventListener('click', () => this.signOut());
 
-    // Modal events
-    document.querySelectorAll('[data-close]').forEach(btn => {
-      btn.addEventListener('click', () => document.getElementById('dlgProduct').close());
-    });
-    
-    document.getElementById('frmProduct').addEventListener('submit', (e) => this.onSaveProduct(e));
-    document.getElementById('btnDelete').addEventListener('click', () => this.onDeleteProduct());
     document.getElementById('frmLogin').addEventListener('submit', (e) => this.onLogin(e));
 
-    // Dynamic form elements
-    document.getElementById('btnAddImage').addEventListener('click', () => this.addImageInput());
-    document.getElementById('btnAddVideo').addEventListener('click', () => this.addVideoInput());
 
     // Color picker synchronization
     const colorInput = document.querySelector('input[name="color_hex"]');
@@ -566,7 +398,6 @@ export class ModernAdminComponent {
         content.classList.add('hidden');
       });
       document.getElementById('productsTab').classList.remove('hidden');
-      await this.loadPage(true);
     }
   }
 
@@ -604,7 +435,6 @@ export class ModernAdminComponent {
       errorEl.classList.add('hidden');
       this.hideLoginModal();
       await this.loadMeta();
-      await this.loadPage(true);
     } else {
       errorEl.textContent = 'Неверный логин или пароль';
       errorEl.classList.remove('hidden');
@@ -632,352 +462,6 @@ export class ModernAdminComponent {
     // No need to populate filter dropdown as it's now hardcoded
   }
 
-  async loadPage(reset) {
-    if (reset) {
-      this.page = 0;
-      document.getElementById('cards').innerHTML = '';
-      document.getElementById('tableBody').innerHTML = '';
-    }
-
-    this.isLoading = true;
-
-    let query = this.supabase
-      .from('products')
-      .select('id, name, artikul, size, price_rub, weight, dimensions, color_hex, is_active, photos, videos, id_wb');
-
-    // Apply sorting
-    if (this.sortField) {
-      query = query.order(this.sortField, { ascending: this.sortDirection === 'asc' });
-    } else {
-      query = query.order('name');
-    }
-    
-    query = query.range(this.page * this.PAGE_SIZE, this.page * this.PAGE_SIZE + this.PAGE_SIZE - 1);
-
-    // Apply search filter
-    const searchTerm = document.getElementById('search').value.trim();
-    if (searchTerm) {
-      query = query.or(`name.ilike.%${searchTerm}%,artikul.ilike.%${searchTerm}%`);
-    }
-
-    // Apply category filter by size
-    const categoryFilter = document.getElementById('filterCategory').value;
-    if (categoryFilter) {
-      if (categoryFilter === 'with_handle') {
-        query = query.ilike('name', '%ручк%');
-      } else {
-        query = query.eq('size', categoryFilter);
-      }
-    }
-    const statusFilter = document.getElementById('filterStatus').value;
-    if (statusFilter === 'active') {
-      query = query.eq('is_active', true);
-    } else if (statusFilter === 'hidden') {
-      query = query.eq('is_active', false);
-    }
-
-    const { data, error } = await query;
-
-    if (error) {
-      console.error('Ошибка загрузки продуктов:', error);
-      return;
-    }
-
-    this.renderCards(data || []);
-    this.renderTable(data || []);
-    this.updateSortIndicators();
-    this.page++;
-
-    const btnLoadMore = document.getElementById('btnLoadMore');
-    btnLoadMore.classList.toggle('hidden', (data || []).length < this.PAGE_SIZE);
-
-    this.isLoading = false;
-  }
-
-  renderCards(items) {
-    const cardsContainer = document.getElementById('cards');
-    
-    const html = items.map(product => {
-      const image = product.photos && product.photos.length > 0 ? product.photos[0] : '/placeholder.svg';
-      const sizeMap = { small: 'Малая', medium: 'Средняя', big: 'Большая' };
-      const sizeName = sizeMap[product.size] || product.size;
-      
-      return `
-        <article class="bg-white rounded-2xl border p-3 flex gap-3">
-          <img src="${image}" class="w-20 h-20 rounded-xl object-cover border" alt="${product.name}">
-          <div class="flex-1 min-w-0">
-            <div class="flex justify-between gap-2">
-              <h3 class="font-medium truncate">${product.name}</h3>
-              <button class="px-2 py-1 rounded-lg border text-sm hover:bg-slate-50" data-edit="${product.id}">Изм.</button>
-            </div>
-            <div class="text-sm text-slate-500 truncate">${product.artikul || '—'}</div>
-            <div class="text-sm mt-1">${product.price_rub ? `${product.price_rub} ₽` : '—'}</div>
-            <div class="flex items-center gap-2 mt-1">
-              <span class="text-xs text-slate-600">${sizeName}</span>
-              <span class="w-3 h-3 rounded-full border" style="background-color: ${product.color_hex || '#ddd'}"></span>
-              <span class="text-xs ${product.is_active ? 'text-green-600' : 'text-red-600'}">${product.is_active ? 'Активен' : 'Скрыт'}</span>
-            </div>
-          </div>
-        </article>
-      `;
-    }).join('');
-    
-    cardsContainer.insertAdjacentHTML('beforeend', html);
-    
-    // Attach edit events
-    cardsContainer.querySelectorAll('[data-edit]').forEach(btn => {
-      btn.addEventListener('click', () => this.openProduct(btn.dataset.edit));
-    });
-  }
-
-  renderTable(items) {
-    const tableBody = document.getElementById('tableBody');
-    
-    const sizeMap = { small: 'Малая', medium: 'Средняя', big: 'Большая' };
-    
-    const rows = items.map(product => {
-      const sizeName = sizeMap[product.size] || product.size;
-      
-      return `
-        <tr class="bg-white hover:bg-slate-50">
-          <td class="px-3 py-2">
-            <div class="flex items-center gap-2">
-              <img src="${product.photos && product.photos.length > 0 ? product.photos[0] : '/placeholder.svg'}" 
-                   class="w-8 h-8 rounded object-cover" alt="${product.name}">
-              <div>
-                <div class="font-medium">${product.name}</div>
-                <div class="text-xs text-slate-500">${product.id}</div>
-              </div>
-            </div>
-          </td>
-          <td class="px-3 py-2">${product.artikul || '—'}</td>
-          <td class="px-3 py-2">
-            <div class="flex items-center gap-1">
-              <span>${sizeName}</span>
-              <span class="w-3 h-3 rounded-full border" style="background-color: ${product.color_hex || '#ddd'}"></span>
-            </div>
-          </td>
-          <td class="px-3 py-2">
-            <div class="flex items-center gap-2">
-              <div class="w-4 h-4 rounded" style="background-color: ${product.color_hex}"></div>
-              <span class="text-sm">${product.color_hex}</span>
-            </div>
-          </td>
-          <td class="px-3 py-2">${product.price_rub ? `${product.price_rub} ₽` : '—'}</td>
-          <td class="px-3 py-2">
-            <span class="inline-flex px-2 py-1 text-xs rounded-full ${
-              product.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-            }">${product.is_active ? 'Активен' : 'Скрыт'}</span>
-          </td>
-          <td class="px-3 py-2 text-right">
-            <div class="flex gap-1">
-              ${product.id_wb ? `<a href="https://www.wildberries.ru/catalog/${product.id_wb}/detail.aspx" target="_blank" class="px-2 py-1 rounded-lg bg-purple-600 text-white text-sm hover:bg-purple-700" title="Посмотреть на WB">WB</a>` : ''}
-              <button class="px-3 py-1.5 rounded-lg border text-sm hover:bg-slate-50" data-edit="${product.id}">Изменить</button>
-            </div>
-          </td>
-        </tr>
-      `;
-    }).join('');
-    
-    tableBody.insertAdjacentHTML('beforeend', rows);
-    
-    // Attach edit events
-    tableBody.querySelectorAll('[data-edit]').forEach(btn => {
-      btn.addEventListener('click', () => this.openProduct(btn.dataset.edit));
-    });
-  }
-
-  async openProduct(productId = null) {
-    this.currentProductId = productId;
-    const form = document.getElementById('frmProduct');
-    const title = document.getElementById('dlgTitle');
-    
-    form.reset();
-    document.getElementById('imagesBox').innerHTML = '';
-    document.getElementById('videosBox').innerHTML = '';
-    
-    if (productId) {
-      title.textContent = 'Изменить товар';
-      
-      const { data: product, error } = await this.supabase
-        .from('products')
-        .select('*')
-        .eq('id', productId)
-        .single();
-      
-      if (error) {
-        console.error('Ошибка загрузки продукта:', error);
-        return;
-      }
-      
-      // Fill form fields
-      form.id.value = product.id;
-      form.name.value = product.name || '';
-      form.artikul.value = product.artikul || '';
-      form.id_wb.value = product.id_wb || '';
-      form.size.value = product.size || 'small';
-      form.price_rub.value = product.price_rub || '';
-      form.color_hex.value = product.color_hex || '#000000';
-      if (form.color_hex_text) {
-        form.color_hex_text.value = product.color_hex || '#000000';
-      }
-      form.is_active.value = product.is_active ? 'true' : 'false';
-      
-      if (product.dimensions) {
-        form.dim_l.value = product.dimensions.length || '';
-        form.dim_w.value = product.dimensions.width || '';
-        form.dim_h.value = product.dimensions.height || '';
-      }
-      
-      form.weight.value = product.weight || '';
-      
-      // Load photos
-      if (product.photos && product.photos.length > 0) {
-        product.photos.forEach(photo => this.addImageInput(photo));
-      } else {
-        this.addImageInput();
-      }
-      
-      // Load videos
-      if (product.videos && product.videos.length > 0) {
-        product.videos.forEach(video => this.addVideoInput(video));
-      } else {
-        this.addVideoInput();
-      }
-    } else {
-      title.textContent = 'Добавить товар';
-      form.color_hex.value = '#000000';
-      form.is_active.value = 'true';
-      form.size.value = 'small';
-      this.addImageInput();
-      this.addVideoInput();
-    }
-    
-    document.getElementById('dlgProduct').showModal();
-  }
-
-  addImageInput(value = '') {
-    const container = document.getElementById('imagesBox');
-    const inputGroup = document.createElement('div');
-    inputGroup.className = 'flex gap-2';
-    inputGroup.innerHTML = `
-      <input type="url" name="images" value="${value}" placeholder="https://example.com/image.jpg" 
-             class="flex-1 px-3 py-2 rounded-xl border text-sm">
-      <button type="button" class="px-2 py-1 rounded-lg border text-rose-600 hover:bg-rose-50 text-sm" 
-              onclick="this.parentElement.remove()">✕</button>
-    `;
-    container.appendChild(inputGroup);
-  }
-
-  addVideoInput(value = '') {
-    const container = document.getElementById('videosBox');
-    const inputGroup = document.createElement('div');
-    inputGroup.className = 'flex gap-2';
-    inputGroup.innerHTML = `
-      <input type="url" name="videos" value="${value}" placeholder="https://example.com/video.mp4" 
-             class="flex-1 px-3 py-2 rounded-xl border text-sm">
-      <button type="button" class="px-2 py-1 rounded-lg border text-rose-600 hover:bg-rose-50 text-sm" 
-              onclick="this.parentElement.remove()">✕</button>
-    `;
-    container.appendChild(inputGroup);
-  }
-
-  async onSaveProduct(e) {
-    e.preventDefault();
-    
-    const formData = new FormData(e.target);
-    const productId = formData.get('id');
-    
-    // Collect images and videos
-    const images = Array.from(document.querySelectorAll('input[name="images"]'))
-      .map(input => input.value.trim())
-      .filter(url => url);
-      
-    const videos = Array.from(document.querySelectorAll('input[name="videos"]'))
-      .map(input => input.value.trim())
-      .filter(url => url);
-    
-    const productData = {
-      name: formData.get('name').trim(),
-      artikul: formData.get('artikul').trim(),
-      id_wb: formData.get('id_wb')?.trim() || null,
-      size: formData.get('size'),
-      price_rub: parseFloat(formData.get('price_rub')) || 0,
-      weight: parseFloat(formData.get('weight')) || null,
-      color_hex: formData.get('color_hex_text') || formData.get('color_hex'),
-      is_active: formData.get('is_active') === 'true',
-      photos: images,
-      videos: videos,
-      dimensions: {
-        length: parseFloat(formData.get('dim_l')) || null,
-        width: parseFloat(formData.get('dim_w')) || null,
-        height: parseFloat(formData.get('dim_h')) || null
-      }
-    };
-
-    let result;
-    if (productId) {
-      result = await this.supabase.from('products').update(productData).eq('id', productId);
-    } else {
-      result = await this.supabase.from('products').insert([productData]);
-    }
-
-    if (result.error) {
-      alert('Ошибка сохранения: ' + result.error.message);
-      return;
-    }
-
-    document.getElementById('dlgProduct').close();
-    await this.loadPage(true);
-  }
-
-  async onDeleteProduct() {
-    if (!this.currentProductId) return;
-    
-    if (!confirm('Вы уверены, что хотите удалить этот товар?')) return;
-    
-    const { error } = await this.supabase.from('products').delete().eq('id', this.currentProductId);
-    
-    if (error) {
-      alert('Ошибка удаления: ' + error.message);
-      return;
-    }
-    
-    document.getElementById('dlgProduct').close();
-    await this.loadPage(true);
-  }
-
-  toggleSort(field) {
-    if (this.sortField === field) {
-      // Toggle direction if same field
-      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
-    } else {
-      // New field, start with ascending
-      this.sortField = field;
-      this.sortDirection = 'asc';
-    }
-    
-    this.updateSortIndicators();
-    this.loadPage(true);
-  }
-
-  updateSortIndicators() {
-    // Reset all arrows
-    document.querySelectorAll('[id^="sort-"]').forEach(arrow => {
-      arrow.classList.remove('text-slate-700');
-      arrow.classList.add('text-slate-400');
-    });
-
-    // Highlight active arrow
-    if (this.sortField) {
-      const arrowId = `sort-${this.sortField}-${this.sortDirection === 'asc' ? 'up' : 'down'}`;
-      const arrow = document.getElementById(arrowId);
-      if (arrow) {
-        arrow.classList.remove('text-slate-400');
-        arrow.classList.add('text-slate-700');
-      }
-    }
-  }
 
   onTabChange(e) {
     const tabs = document.querySelectorAll('.tab');
@@ -1001,7 +485,10 @@ export class ModernAdminComponent {
       
       // Load content based on tab
       if (this.currentTab === 'products') {
-        this.loadPage(true);
+        // AdminProductsComponent уже загружен и управляет собой
+        if (this.adminProductsComponent) {
+          this.adminProductsComponent.rerender();
+        }
       } else if (this.currentTab === 'colors') {
         this.loadColors();
       } else if (this.currentTab === 'categories') {
