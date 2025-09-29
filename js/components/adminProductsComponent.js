@@ -190,13 +190,29 @@ export const AdminProductsComponent = {
                     Сначала выберите размер и цвет товара.
                   </p>
                 </div>
+                
+                <!-- Drag & Drop Zone -->
+                <div id="dropZone" class="drop-zone" 
+                     ondrop="AdminProductsComponent.handleDrop(event)" 
+                     ondragover="AdminProductsComponent.handleDragOver(event)"
+                     ondragleave="AdminProductsComponent.handleDragLeave(event)">
+                  <div class="drop-zone-content">
+                    <svg class="w-12 h-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                    </svg>
+                    <p class="text-lg text-gray-600 mb-2">Перетащите изображения сюда</p>
+                    <p class="text-sm text-gray-400 mb-4">или</p>
+                    <button type="button" onclick="document.getElementById('imageUpload').click()" 
+                            class="btn btn-secondary" ${this.data.uploadingImage ? 'disabled' : ''}>
+                      ${this.data.uploadingImage ? 'Загрузка...' : 'Выберите файлы'}
+                    </button>
+                  </div>
+                </div>
+                
                 <input type="file" id="imageUpload" multiple accept="image/webp,image/jpeg,image/png" 
                        onchange="AdminProductsComponent.handleImageUpload(event)" class="hidden">
+                
                 <div class="upload-actions">
-                  <button type="button" onclick="document.getElementById('imageUpload').click()" 
-                          class="btn btn-secondary" ${this.data.uploadingImage ? 'disabled' : ''}>
-                    ${this.data.uploadingImage ? 'Загрузка...' : 'Добавить изображения'}
-                  </button>
                   ${this.data.editingProduct?.id ? `
                     <button type="button" onclick="AdminProductsComponent.reorganizePhotos()" 
                             class="btn btn-outline" title="Переместить существующие фото в правильные папки">
@@ -210,7 +226,9 @@ export const AdminProductsComponent = {
                   ${(product.photos || []).map((photo, index) => `
                     <div class="image-item">
                       <img src="${this.getImageUrl(photo)}" 
-                           alt="Товар ${index + 1}" class="image-preview">
+                           alt="Товар ${index + 1}" 
+                           class="image-preview"
+                           onclick="AdminProductsComponent.openImagePreview('${this.getImageUrl(photo)}', ${index}, ${JSON.stringify((product.photos || []).map(p => this.getImageUrl(p))).replace(/"/g, '&quot;')})">
                       <button type="button" onclick="AdminProductsComponent.removeImage(${index})" 
                               class="remove-image">×</button>
                       <span class="image-order">${index + 1}</span>
@@ -739,6 +757,137 @@ export const AdminProductsComponent = {
   async rerender() {
     const container = document.querySelector('.admin-products').parentElement;
     container.innerHTML = await this.render();
+  },
+
+  // Drag & Drop функции
+  handleDragOver(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    const dropZone = document.getElementById('dropZone');
+    dropZone.classList.add('drag-over');
+  },
+
+  handleDragLeave(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    const dropZone = document.getElementById('dropZone');
+    dropZone.classList.remove('drag-over');
+  },
+
+  handleDrop(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    const dropZone = document.getElementById('dropZone');
+    dropZone.classList.remove('drag-over');
+    
+    const files = Array.from(event.dataTransfer.files);
+    const imageFiles = files.filter(file => file.type.startsWith('image/'));
+    
+    if (imageFiles.length > 0) {
+      // Создаем fake event для handleImageUpload
+      const fakeEvent = {
+        target: {
+          files: imageFiles
+        }
+      };
+      this.handleImageUpload(fakeEvent);
+    }
+  },
+
+  // Модальный просмотр изображений
+  openImagePreview(imageSrc, index, images) {
+    // Создаем модальное окно если его нет
+    let modal = document.getElementById('adminImageModal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'adminImageModal';
+      modal.className = 'fixed inset-0 bg-black bg-opacity-75 z-[100] hidden flex items-center justify-center';
+      modal.innerHTML = `
+        <div class="relative max-w-4xl max-h-[90vh] mx-4">
+          <button onclick="AdminProductsComponent.closeImagePreview()" class="absolute -top-10 right-0 text-white text-2xl hover:text-gray-300">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+          <img id="adminModalImage" src="" alt="" class="max-w-full max-h-[80vh] object-contain">
+          <div class="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-4">
+            <button onclick="AdminProductsComponent.prevAdminImage()" class="bg-white bg-opacity-20 text-white px-4 py-2 rounded-lg hover:bg-opacity-30 transition">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+              </svg>
+            </button>
+            <span id="adminImageCounter" class="bg-white bg-opacity-20 text-white px-4 py-2 rounded-lg"></span>
+            <button onclick="AdminProductsComponent.nextAdminImage()" class="bg-white bg-opacity-20 text-white px-4 py-2 rounded-lg hover:bg-opacity-30 transition">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    }
+
+    this.currentAdminImageIndex = index;
+    this.currentAdminImages = images;
+    
+    const modalImage = document.getElementById('adminModalImage');
+    const counter = document.getElementById('adminImageCounter');
+    
+    modalImage.src = imageSrc;
+    counter.textContent = `${index + 1} / ${images.length}`;
+    modal.classList.remove('hidden');
+    
+    // Блокируем скролл body
+    document.body.style.overflow = 'hidden';
+    
+    // Закрытие по ESC
+    const handleKeyPress = (e) => {
+      if (e.key === 'Escape') {
+        this.closeImagePreview();
+      } else if (e.key === 'ArrowLeft') {
+        this.prevAdminImage();
+      } else if (e.key === 'ArrowRight') {
+        this.nextAdminImage();
+      }
+    };
+    document.addEventListener('keydown', handleKeyPress);
+    modal.handleKeyPress = handleKeyPress;
+  },
+
+  closeImagePreview() {
+    const modal = document.getElementById('adminImageModal');
+    if (modal) {
+      modal.classList.add('hidden');
+      document.body.style.overflow = '';
+      
+      // Убираем обработчик событий
+      if (modal.handleKeyPress) {
+        document.removeEventListener('keydown', modal.handleKeyPress);
+      }
+    }
+  },
+
+  prevAdminImage() {
+    this.currentAdminImageIndex = this.currentAdminImageIndex > 0 ? 
+      this.currentAdminImageIndex - 1 : this.currentAdminImages.length - 1;
+    
+    const modalImage = document.getElementById('adminModalImage');
+    const counter = document.getElementById('adminImageCounter');
+    
+    modalImage.src = this.currentAdminImages[this.currentAdminImageIndex];
+    counter.textContent = `${this.currentAdminImageIndex + 1} / ${this.currentAdminImages.length}`;
+  },
+
+  nextAdminImage() {
+    this.currentAdminImageIndex = this.currentAdminImageIndex < this.currentAdminImages.length - 1 ? 
+      this.currentAdminImageIndex + 1 : 0;
+    
+    const modalImage = document.getElementById('adminModalImage');
+    const counter = document.getElementById('adminImageCounter');
+    
+    modalImage.src = this.currentAdminImages[this.currentAdminImageIndex];
+    counter.textContent = `${this.currentAdminImageIndex + 1} / ${this.currentAdminImages.length}`;
   }
 };
 

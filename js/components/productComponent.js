@@ -71,6 +71,8 @@ const ProductComponent = {
     // Очищаем глобальные функции
     if (window.openImageModal) delete window.openImageModal;
     if (window.closeImageModal) delete window.closeImageModal;
+    if (window.prevImage) delete window.prevImage;
+    if (window.nextImage) delete window.nextImage;
     if (window.quantityInput) delete window.quantityInput;
   },
   
@@ -234,13 +236,39 @@ const ProductComponent = {
               <img id="main-product-image" src="${product.photos[0]}" alt="${product.name}" class="w-full h-96 object-contain cursor-pointer">
             </div>
             <div class="grid grid-cols-4 gap-4">
-              ${product.photos.map(photo => `
+              ${product.photos.map((photo, index) => `
                 <img 
                   src="${photo}" 
                   alt="${product.name}" 
                   class="product-thumbnail w-full h-32 object-cover rounded-lg cursor-pointer hover:opacity-75 transition"
+                  onclick="openImageModal('${photo}', ${index}, ${JSON.stringify(product.photos).replace(/"/g, '&quot;')})"
                 >
               `).join('')}
+            </div>
+            
+            <!-- Image Modal -->
+            <div id="imageModal" class="fixed inset-0 bg-black bg-opacity-75 z-50 hidden flex items-center justify-center">
+              <div class="relative max-w-4xl max-h-[90vh] mx-4">
+                <button onclick="closeImageModal()" class="absolute -top-10 right-0 text-white text-2xl hover:text-gray-300">
+                  <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                  </svg>
+                </button>
+                <img id="modalImage" src="" alt="" class="max-w-full max-h-[80vh] object-contain">
+                <div class="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-4">
+                  <button onclick="prevImage()" class="bg-white bg-opacity-20 text-white px-4 py-2 rounded-lg hover:bg-opacity-30 transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                  </button>
+                  <span id="imageCounter" class="bg-white bg-opacity-20 text-white px-4 py-2 rounded-lg"></span>
+                  <button onclick="nextImage()" class="bg-white bg-opacity-20 text-white px-4 py-2 rounded-lg hover:bg-opacity-30 transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
             </div>
             ${product.videos && product.videos.length > 0 ? `
               <div class="mt-6">
@@ -633,6 +661,67 @@ const ProductComponent = {
       </div>
     `;
   }
+};
+
+// Глобальные функции для модального окна изображений
+let currentImageIndex = 0;
+let currentImages = [];
+
+window.openImageModal = (imageSrc, index, images) => {
+  currentImages = images;
+  currentImageIndex = index;
+  const modal = document.getElementById('imageModal');
+  const modalImage = document.getElementById('modalImage');
+  const counter = document.getElementById('imageCounter');
+  
+  modalImage.src = imageSrc;
+  counter.textContent = `${index + 1} / ${images.length}`;
+  modal.classList.remove('hidden');
+  
+  // Блокируем скролл body
+  document.body.style.overflow = 'hidden';
+  
+  // Закрытие по ESC
+  const handleKeyPress = (e) => {
+    if (e.key === 'Escape') {
+      window.closeImageModal();
+    } else if (e.key === 'ArrowLeft') {
+      window.prevImage();
+    } else if (e.key === 'ArrowRight') {
+      window.nextImage();
+    }
+  };
+  document.addEventListener('keydown', handleKeyPress);
+  modal.handleKeyPress = handleKeyPress;
+};
+
+window.closeImageModal = () => {
+  const modal = document.getElementById('imageModal');
+  modal.classList.add('hidden');
+  document.body.style.overflow = '';
+  
+  // Убираем обработчик событий
+  if (modal.handleKeyPress) {
+    document.removeEventListener('keydown', modal.handleKeyPress);
+  }
+};
+
+window.prevImage = () => {
+  currentImageIndex = currentImageIndex > 0 ? currentImageIndex - 1 : currentImages.length - 1;
+  const modalImage = document.getElementById('modalImage');
+  const counter = document.getElementById('imageCounter');
+  
+  modalImage.src = currentImages[currentImageIndex];
+  counter.textContent = `${currentImageIndex + 1} / ${currentImages.length}`;
+};
+
+window.nextImage = () => {
+  currentImageIndex = currentImageIndex < currentImages.length - 1 ? currentImageIndex + 1 : 0;
+  const modalImage = document.getElementById('modalImage');
+  const counter = document.getElementById('imageCounter');
+  
+  modalImage.src = currentImages[currentImageIndex];
+  counter.textContent = `${currentImageIndex + 1} / ${currentImages.length}`;
 };
 
 export default ProductComponent;
