@@ -12,7 +12,9 @@ export const AdminProductsComponent = {
     showImportModal: false,
     editingProduct: null,
     uploadingImage: false,
-    selectedImages: []
+    selectedImages: [],
+    productImages: [], // Изображения из box_images для текущего товара
+    uploadingVideo: false
   },
 
   async render() {
@@ -210,7 +212,7 @@ export const AdminProductsComponent = {
                 </div>
                 
                 <input type="file" id="imageUpload" multiple accept="image/webp,image/jpeg,image/png" 
-                       onchange="AdminProductsComponent.handleImageUpload(event)" class="hidden">
+                       onchange="AdminProductsComponent.handleImageUploadToBoxImages(event)" class="hidden">
                 
                 <div class="upload-actions">
                   ${this.data.editingProduct?.id ? `
@@ -223,17 +225,44 @@ export const AdminProductsComponent = {
                 <small class="help-text">Поддерживаются форматы: WebP, JPEG, PNG. Рекомендуемый размер: 800x800px</small>
                 
                 <div class="current-images">
-                  ${(product.photos || []).map((photo, index) => `
-                    <div class="image-item">
-                      <img src="${this.getImageUrl(photo)}" 
+                  ${this.data.productImages.map((image, index) => `
+                    <div class="image-item ${image.is_primary ? 'primary' : ''}">
+                      <img src="${image.image_url}" 
                            alt="Товар ${index + 1}" 
+                           class="image-preview"
+                           onclick="AdminProductsComponent.openImagePreview('${image.image_url}', ${index}, ${JSON.stringify(this.data.productImages.map(img => img.image_url)).replace(/"/g, '&quot;')})">
+                      
+                      <div class="image-controls">
+                        ${!image.is_primary ? `
+                          <button type="button" onclick="AdminProductsComponent.setPrimaryImage('${image.id}')" 
+                                  class="btn btn-sm btn-primary" title="Сделать основным">
+                            ⭐
+                          </button>
+                        ` : `
+                          <span class="primary-badge">Основное</span>
+                        `}
+                        <button type="button" onclick="AdminProductsComponent.deleteProductImage('${image.id}')" 
+                                class="btn btn-sm btn-danger" title="Удалить">×</button>
+                      </div>
+                      
+                      <span class="image-order">${index + 1}</span>
+                      <div class="image-path-info" title="${image.storage_path}">
+                        📁 ${this.getStoragePathInfo(image.storage_path)}
+                      </div>
+                    </div>
+                  `).join('')}
+                  
+                  ${(product.photos || []).map((photo, index) => `
+                    <div class="image-item legacy">
+                      <img src="${this.getImageUrl(photo)}" 
+                           alt="Товар (старый) ${index + 1}" 
                            class="image-preview"
                            onclick="AdminProductsComponent.openImagePreview('${this.getImageUrl(photo)}', ${index}, ${JSON.stringify((product.photos || []).map(p => this.getImageUrl(p))).replace(/"/g, '&quot;')})">
                       <button type="button" onclick="AdminProductsComponent.removeImage(${index})" 
                               class="remove-image">×</button>
-                      <span class="image-order">${index + 1}</span>
+                      <span class="image-order">L${index + 1}</span>
                       <div class="image-path-info" title="${photo}">
-                        ${this.getImagePathInfo(photo)}
+                        ${this.getImagePathInfo(photo)} (legacy)
                       </div>
                     </div>
                   `).join('')}
@@ -244,18 +273,40 @@ export const AdminProductsComponent = {
             <div class="form-section">
               <h4>Видео товара</h4>
               <div class="video-section">
-                <input type="text" name="video_url" placeholder="Ссылка на видео или путь к файлу" 
-                       class="video-input">
-                <button type="button" onclick="AdminProductsComponent.addVideo()" class="btn btn-secondary">
-                  Добавить видео
-                </button>
+                <div class="video-upload-group">
+                  <input type="file" id="videoUpload" accept="video/*" 
+                         onchange="AdminProductsComponent.handleVideoUpload(event)" class="hidden">
+                  <button type="button" onclick="document.getElementById('videoUpload').click()" 
+                          class="btn btn-secondary" ${this.data.uploadingVideo ? 'disabled' : ''}>
+                    ${this.data.uploadingVideo ? 'Загрузка...' : '+ видео'}
+                  </button>
+                  <input type="text" name="video_url" placeholder="Или ссылка на видео" 
+                         class="video-input" style="flex: 1; margin-left: 8px;">
+                  <button type="button" onclick="AdminProductsComponent.addVideoUrl()" class="btn btn-outline">
+                    Добавить URL
+                  </button>
+                </div>
                 
                 <div class="current-videos">
                   ${(product.videos || []).map((video, index) => `
                     <div class="video-item">
-                      <span class="video-path">${video}</span>
+                      ${this.isVideoFile(video) ? `
+                        <div class="video-preview">
+                          <video width="200" height="112" controls>
+                            <source src="${this.getVideoUrl(video)}" type="video/mp4">
+                            Ваш браузер не поддерживает видео.
+                          </video>
+                        </div>
+                      ` : `
+                        <div class="video-link">
+                          <a href="${video}" target="_blank" rel="noopener noreferrer">
+                            📹 ${this.getVideoDisplayName(video)}
+                          </a>
+                        </div>
+                      `}
                       <button type="button" onclick="AdminProductsComponent.removeVideo(${index})" 
                               class="remove-video">×</button>
+                      <span class="video-order">${index + 1}</span>
                     </div>
                   `).join('')}
                 </div>
@@ -398,6 +449,14 @@ export const AdminProductsComponent = {
     return '📁 products/ (старая структура)';
   },
 
+  getStoragePathInfo(storagePath) {
+    const pathParts = storagePath.split('/');
+    if (pathParts.length >= 3) {
+      return `${pathParts[pathParts.length - 3]}/${pathParts[pathParts.length - 2]}`;
+    }
+    return storagePath;
+  },
+
   async reorganizePhotos() {
     if (!this.data.editingProduct?.photos?.length) {
       this.showNotification('Нет фотографий для реорганизации', 'warning');
@@ -432,6 +491,282 @@ export const AdminProductsComponent = {
       console.error('Error reorganizing photos:', error);
       this.showNotification('Ошибка реорганизации фотографий: ' + error.message, 'error');
     }
+  },
+
+  // Загрузка изображений товара из box_images
+  async loadProductImages(productId) {
+    try {
+      const { data, error } = await supabase.functions.invoke('media-manager', {
+        body: {
+          action: 'get_images',
+          product_id: productId
+        }
+      });
+
+      if (error) throw error;
+      this.data.productImages = data.images || [];
+    } catch (error) {
+      console.error('Error loading product images:', error);
+      this.data.productImages = [];
+    }
+  },
+
+  // Загрузка категорий
+  async loadCategories() {
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order');
+
+      if (error) throw error;
+      this.data.categories = data || [];
+    } catch (error) {
+      console.error('Error loading categories:', error);
+      this.data.categories = [];
+    }
+  },
+
+  // Загрузка цветов
+  async loadColors() {
+    try {
+      const { data, error } = await supabase
+        .from('colors')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order');
+
+      if (error) throw error;
+      this.data.colors = data || [];
+    } catch (error) {
+      console.error('Error loading colors:', error);
+      this.data.colors = [];
+    }
+  },
+
+  // Загрузка изображений через media-manager
+  async handleImageUploadToBoxImages(event) {
+    const files = Array.from(event.target.files);
+    if (!files.length) return;
+
+    const product = this.data.editingProduct;
+    if (!product) return;
+
+    // Получаем категорию и цвет
+    const sizeSelect = document.querySelector('[name="size"]');
+    const colorHexInput = document.querySelector('[name="color_hex_text"]') || document.querySelector('[name="color_hex"]');
+    
+    const size = sizeSelect?.value;
+    const colorHex = colorHexInput?.value;
+
+    if (!size || !colorHex) {
+      this.showNotification('Пожалуйста, сначала выберите размер и цвет товара', 'warning');
+      return;
+    }
+
+    // Найдем соответствующую категорию и цвет
+    const category = this.data.categories.find(cat => 
+      cat.slug === this.getSizeCategoryName(size)
+    );
+    const color = this.data.colors.find(col => col.hex_code === colorHex);
+
+    if (!category || !color) {
+      this.showNotification('Не удалось определить категорию или цвет', 'error');
+      return;
+    }
+
+    this.data.uploadingImage = true;
+    this.rerender();
+
+    try {
+      // Преобразуем файлы в base64
+      const base64Files = await Promise.all(
+        files.map(async (file) => ({
+          name: file.name,
+          type: file.type,
+          content: (await this.fileToBase64(file)).split(',')[1] // Убираем data:xxx;base64,
+        }))
+      );
+
+      const { data, error } = await supabase.functions.invoke('media-manager', {
+        body: {
+          action: 'upload_images',
+          product_id: product.id || product.artikul,
+          category: category.name,
+          color: color.name,
+          files: base64Files,
+          set_primary_index: this.data.productImages.length === 0 ? 0 : undefined
+        }
+      });
+
+      if (error) throw error;
+
+      this.showNotification(`Загружено ${files.length} изображений`, 'success');
+      await this.loadProductImages(product.id || product.artikul);
+      
+    } catch (error) {
+      console.error('Error uploading images:', error);
+      this.showNotification('Ошибка загрузки изображений: ' + error.message, 'error');
+    } finally {
+      this.data.uploadingImage = false;
+      event.target.value = '';
+      this.rerender();
+    }
+  },
+
+  // Установка основного изображения
+  async setPrimaryImage(imageId) {
+    const product = this.data.editingProduct;
+    if (!product) return;
+
+    try {
+      const { data, error } = await supabase.functions.invoke('media-manager', {
+        body: {
+          action: 'set_primary',
+          product_id: product.id || product.artikul,
+          image_id: imageId
+        }
+      });
+
+      if (error) throw error;
+
+      this.showNotification('Основное изображение установлено', 'success');
+      await this.loadProductImages(product.id || product.artikul);
+      this.rerender();
+      
+    } catch (error) {
+      console.error('Error setting primary image:', error);
+      this.showNotification('Ошибка установки основного изображения: ' + error.message, 'error');
+    }
+  },
+
+  // Удаление изображения через media-manager
+  async deleteProductImage(imageId) {
+    const product = this.data.editingProduct;
+    if (!product) return;
+
+    if (!confirm('Удалить это изображение?')) return;
+
+    try {
+      const { data, error } = await supabase.functions.invoke('media-manager', {
+        body: {
+          action: 'delete_image',
+          product_id: product.id || product.artikul,
+          image_id: imageId
+        }
+      });
+
+      if (error) throw error;
+
+      this.showNotification('Изображение удалено', 'success');
+      await this.loadProductImages(product.id || product.artikul);
+      this.rerender();
+      
+    } catch (error) {
+      console.error('Error deleting image:', error);
+      this.showNotification('Ошибка удаления изображения: ' + error.message, 'error');
+    }
+  },
+
+  // Загрузка видео
+  async handleVideoUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    this.data.uploadingVideo = true;
+    this.rerender();
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const filePath = `videos/${fileName}`;
+
+      const { data, error } = await supabase.storage
+        .from('product-media')
+        .upload(filePath, file);
+
+      if (error) throw error;
+
+      // Добавляем путь к видео
+      if (this.data.editingProduct) {
+        this.data.editingProduct.videos = [...(this.data.editingProduct.videos || []), filePath];
+      }
+
+      this.showNotification('Видео загружено', 'success');
+      
+    } catch (error) {
+      console.error('Error uploading video:', error);
+      this.showNotification('Ошибка загрузки видео: ' + error.message, 'error');
+    } finally {
+      this.data.uploadingVideo = false;
+      event.target.value = '';
+      this.rerender();
+    }
+  },
+
+  // Добавление видео по URL
+  addVideoUrl() {
+    const input = document.querySelector('[name="video_url"]');
+    const url = input.value.trim();
+    
+    if (!url) {
+      this.showNotification('Введите URL видео', 'warning');
+      return;
+    }
+
+    if (this.data.editingProduct) {
+      this.data.editingProduct.videos = [...(this.data.editingProduct.videos || []), url];
+      input.value = '';
+      this.rerender();
+    }
+  },
+
+  // Удаление видео
+  removeVideo(index) {
+    if (this.data.editingProduct) {
+      this.data.editingProduct.videos.splice(index, 1);
+      this.rerender();
+    }
+  },
+
+  // Вспомогательные функции для видео
+  isVideoFile(video) {
+    return video.includes('.mp4') || video.includes('.webm') || video.includes('.avi') || 
+           video.includes('.mov') || video.startsWith('videos/');
+  },
+
+  getVideoUrl(video) {
+    if (video.startsWith('http')) {
+      return video;
+    }
+    return `https://bsndismiessofvhglzrv.supabase.co/storage/v1/object/public/product-media/${video}`;
+  },
+
+  getVideoDisplayName(video) {
+    if (video.startsWith('http')) {
+      return video.length > 50 ? video.substring(0, 50) + '...' : video;
+    }
+    return video.split('/').pop();
+  },
+
+  getSizeCategoryName(size) {
+    const sizeMapping = {
+      'small': 'small with bow',
+      'medium': 'medium with bow',
+      'big': 'big with bow'
+    };
+    return sizeMapping[size] || size;
+  },
+
+  // Преобразование файла в base64
+  fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = error => reject(error);
+    });
   },
 
   async handleImageUpload(event) {
@@ -604,10 +939,14 @@ export const AdminProductsComponent = {
     this.rerender();
   },
 
-  editProduct(productId) {
+  async editProduct(productId) {
     const product = this.data.products.find(p => p.id === productId);
     if (product) {
       this.data.editingProduct = { ...product };
+      // Загружаем изображения из box_images
+      await this.loadProductImages(productId);
+      await this.loadCategories();
+      await this.loadColors();
       this.rerender();
     }
   },
