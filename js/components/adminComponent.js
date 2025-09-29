@@ -96,6 +96,7 @@ export class AdminComponent {
             <!-- Вкладки админки -->
             <div class="admin-tabs">
               <button class="tab-btn active" data-tab="products">Товары</button>
+              <button class="tab-btn" data-tab="media">Медиа</button>
               <button class="tab-btn" data-tab="legacy-prices">Цены (устар.)</button>
               <button class="tab-btn" data-tab="orders">Заказы</button>
               <button class="tab-btn" data-tab="settings">Настройки</button>
@@ -105,6 +106,12 @@ export class AdminComponent {
               <div class="tab-pane active" id="products-tab">
                 <div id="admin-products-container">
                   <!-- Здесь будет компонент управления товарами -->
+                </div>
+              </div>
+
+              <div class="tab-pane" id="media-tab">
+                <div id="media-manager-container">
+                  <!-- Здесь будет компонент управления медиа -->
                 </div>
               </div>
               
@@ -194,9 +201,10 @@ export class AdminComponent {
     container.innerHTML = await this.render();
     this.attachEventListeners(container);
     
-    // Загружаем компонент товаров
+    // Загружаем компоненты
     if (this.isAuthenticated) {
       await this.loadProductsComponent();
+      await this.loadMediaManagerComponent();
     }
   }
 
@@ -209,6 +217,21 @@ export class AdminComponent {
       }
     } catch (error) {
       console.error('Error loading products component:', error);
+    }
+  }
+
+  async loadMediaManagerComponent() {
+    try {
+      const { mediaManagerComponent } = await import('./mediaManagerComponent.js');
+      const container = document.getElementById('media-manager-container');
+      if (container) {
+        container.innerHTML = mediaManagerComponent.render();
+        mediaManagerComponent.attachEventListeners();
+        // Делаем компонент доступным глобально для вызовов из HTML
+        window.mediaManager = mediaManagerComponent;
+      }
+    } catch (error) {
+      console.error('Error loading media manager component:', error);
     }
   }
 
@@ -253,9 +276,11 @@ export class AdminComponent {
           if (targetPane) {
             targetPane.classList.add('active');
             
-            // Если переключились на товары, перезагружаем компонент
+            // Перезагружаем компоненты при переключении
             if (targetTab === 'products') {
               await this.loadProductsComponent();
+            } else if (targetTab === 'media') {
+              await this.loadMediaManagerComponent();
             }
           }
         });

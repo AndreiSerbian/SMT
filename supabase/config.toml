@@ -15,3 +15,6 @@ verify_jwt = false
 
 [functions.storage-manager]
 verify_jwt = false
+
+[functions.media-manager]
+verify_jwt = false
