@@ -212,7 +212,7 @@ export const AdminProductsComponent = {
                 </div>
                 
                 <input type="file" id="imageUpload" multiple accept="image/webp,image/jpeg,image/png" 
-                       onchange="AdminProductsComponent.handleImageUploadToBoxImages(event)" class="hidden">
+                       onchange="AdminProductsComponent.handleImageUpload(event)" class="hidden">
                 
                 <div class="upload-actions">
                   ${this.data.editingProduct?.id ? `
