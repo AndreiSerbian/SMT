@@ -479,9 +479,13 @@ export class ModernAdminComponent {
     document.getElementById('btnDelete').addEventListener('click', () => this.onDeleteProduct());
     document.getElementById('frmLogin').addEventListener('submit', (e) => this.onLogin(e));
 
-    // Dynamic form elements
-    document.getElementById('btnAddImage').addEventListener('click', () => this.addImageInput());
-    document.getElementById('btnAddVideo').addEventListener('click', () => this.addVideoInput());
+    // Dynamic form elements - now handled by media methods
+    document.getElementById('btnAddImage')?.addEventListener('click', () => {
+      if (this.addVideoUrl) this.addVideoUrl();
+    });
+    document.getElementById('btnAddVideo')?.addEventListener('click', () => {
+      if (this.addVideoUrl) this.addVideoUrl();
+    });
 
     // Color picker synchronization
     const colorInput = document.querySelector('input[name="color_hex"]');
@@ -854,32 +858,25 @@ export class ModernAdminComponent {
     }
     
     document.getElementById('dlgProduct').showModal();
+    
+    // Setup drag and drop after modal is shown
+    setTimeout(() => {
+      if (this.setupDragAndDrop) this.setupDragAndDrop();
+    }, 100);
+  }
+
+  // Initialize image/video arrays if not already done
+  initializeMediaArrays() {
+    if (!this.currentProductImages) this.currentProductImages = [];
+    if (!this.currentProductVideos) this.currentProductVideos = [];
   }
 
   addImageInput(value = '') {
-    const container = document.getElementById('imagesBox');
-    const inputGroup = document.createElement('div');
-    inputGroup.className = 'flex gap-2';
-    inputGroup.innerHTML = `
-      <input type="url" name="images" value="${value}" placeholder="https://example.com/image.jpg" 
-             class="flex-1 px-3 py-2 rounded-xl border text-sm">
-      <button type="button" class="px-2 py-1 rounded-lg border text-rose-600 hover:bg-rose-50 text-sm" 
-              onclick="this.parentElement.remove()">✕</button>
-    `;
-    container.appendChild(inputGroup);
+    // Replaced with drag & drop functionality - see renderImageUploadSection
   }
 
   addVideoInput(value = '') {
-    const container = document.getElementById('videosBox');
-    const inputGroup = document.createElement('div');
-    inputGroup.className = 'flex gap-2';
-    inputGroup.innerHTML = `
-      <input type="url" name="videos" value="${value}" placeholder="https://example.com/video.mp4" 
-             class="flex-1 px-3 py-2 rounded-xl border text-sm">
-      <button type="button" class="px-2 py-1 rounded-lg border text-rose-600 hover:bg-rose-50 text-sm" 
-              onclick="this.parentElement.remove()">✕</button>
-    `;
-    container.appendChild(inputGroup);
+    // Replaced with drag & drop functionality - see renderVideoUploadSection
   }
 
   async onSaveProduct(e) {
@@ -887,15 +884,6 @@ export class ModernAdminComponent {
     
     const formData = new FormData(e.target);
     const productId = formData.get('id');
-    
-    // Collect images and videos
-    const images = Array.from(document.querySelectorAll('input[name="images"]'))
-      .map(input => input.value.trim())
-      .filter(url => url);
-      
-    const videos = Array.from(document.querySelectorAll('input[name="videos"]'))
-      .map(input => input.value.trim())
-      .filter(url => url);
     
     const productData = {
       name: formData.get('name').trim(),
@@ -906,8 +894,8 @@ export class ModernAdminComponent {
       weight: parseFloat(formData.get('weight')) || null,
       color_hex: formData.get('color_hex_text') || formData.get('color_hex'),
       is_active: formData.get('is_active') === 'true',
-      photos: images,
-      videos: videos,
+      photos: this.currentProductImages || [],
+      videos: this.currentProductVideos || [],
       dimensions: {
         length: parseFloat(formData.get('dim_l')) || null,
         width: parseFloat(formData.get('dim_w')) || null,
