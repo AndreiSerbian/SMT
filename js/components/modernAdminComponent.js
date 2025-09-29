@@ -1,5 +1,3 @@
-import { ImageManager } from './ImageManager.js';
-
 export class ModernAdminComponent {
   constructor() {
     this.supabase = null;
@@ -10,13 +8,11 @@ export class ModernAdminComponent {
     this.colors = [];
     this.currentTab = 'products';
     this.isLoading = false;
-    this.currentProductId = null;
-    this.currentProduct = null;
-    this.imageManager = null;
-    this.sortField = null;
-    this.sortDirection = 'asc';
-    this.ordersPage = 0;
-    this.ORDERS_PAGE_SIZE = 20;
+        this.currentProductId = null;
+        this.sortField = null;
+        this.sortDirection = 'asc';
+        this.ordersPage = 0;
+        this.ORDERS_PAGE_SIZE = 20;
   }
 
   async mount(container) {
@@ -355,7 +351,11 @@ export class ModernAdminComponent {
 
               <!-- IMAGES -->
               <div class="sm:col-span-2">
-                <div id="imageManagerContainer"></div>
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-sm font-medium">Фото (URL)</span>
+                  <button type="button" id="btnAddImage" class="text-sm px-2 py-1 rounded-lg border hover:bg-slate-50">+ фото</button>
+                </div>
+                <div id="imagesBox" class="space-y-2"></div>
               </div>
 
               <!-- VIDEOS -->
@@ -479,7 +479,8 @@ export class ModernAdminComponent {
     document.getElementById('btnDelete').addEventListener('click', () => this.onDeleteProduct());
     document.getElementById('frmLogin').addEventListener('submit', (e) => this.onLogin(e));
 
-    // Dynamic form elements - только для видео
+    // Dynamic form elements
+    document.getElementById('btnAddImage').addEventListener('click', () => this.addImageInput());
     document.getElementById('btnAddVideo').addEventListener('click', () => this.addVideoInput());
 
     // Color picker synchronization
@@ -788,11 +789,11 @@ export class ModernAdminComponent {
 
   async openProduct(productId = null) {
     this.currentProductId = productId;
-    this.currentProduct = null;
     const form = document.getElementById('frmProduct');
     const title = document.getElementById('dlgTitle');
     
     form.reset();
+    document.getElementById('imagesBox').innerHTML = '';
     document.getElementById('videosBox').innerHTML = '';
     
     if (productId) {
@@ -808,8 +809,6 @@ export class ModernAdminComponent {
         console.error('Ошибка загрузки продукта:', error);
         return;
       }
-      
-      this.currentProduct = product;
       
       // Fill form fields
       form.id.value = product.id;
@@ -832,6 +831,13 @@ export class ModernAdminComponent {
       
       form.weight.value = product.weight || '';
       
+      // Load photos
+      if (product.photos && product.photos.length > 0) {
+        product.photos.forEach(photo => this.addImageInput(photo));
+      } else {
+        this.addImageInput();
+      }
+      
       // Load videos
       if (product.videos && product.videos.length > 0) {
         product.videos.forEach(video => this.addVideoInput(video));
@@ -843,32 +849,24 @@ export class ModernAdminComponent {
       form.color_hex.value = '#000000';
       form.is_active.value = 'true';
       form.size.value = 'small';
+      this.addImageInput();
       this.addVideoInput();
     }
     
-    // Инициализация ImageManager
-    const imageContainer = document.getElementById('imageManagerContainer');
-    if (imageContainer) {
-      this.imageManager = new ImageManager(productId, imageContainer, {
-        maxFiles: 10,
-        acceptedTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif']
-      });
-      
-      // Если есть старые URL изображения, добавляем их как URL изображения
-      if (this.currentProduct?.photos?.length) {
-        const urlImages = this.currentProduct.photos.map((url, index) => ({
-          id: 'url_' + Date.now() + '_' + index,
-          product_id: productId,
-          image_url: url,
-          storage_path: null,
-          is_primary: index === 0,
-          isUrlImage: true
-        }));
-        this.imageManager.setImages(urlImages);
-      }
-    }
-    
     document.getElementById('dlgProduct').showModal();
+  }
+
+  addImageInput(value = '') {
+    const container = document.getElementById('imagesBox');
+    const inputGroup = document.createElement('div');
+    inputGroup.className = 'flex gap-2';
+    inputGroup.innerHTML = `
+      <input type="url" name="images" value="${value}" placeholder="https://example.com/image.jpg" 
+             class="flex-1 px-3 py-2 rounded-xl border text-sm">
+      <button type="button" class="px-2 py-1 rounded-lg border text-rose-600 hover:bg-rose-50 text-sm" 
+              onclick="this.parentElement.remove()">✕</button>
+    `;
+    container.appendChild(inputGroup);
   }
 
   addVideoInput(value = '') {
@@ -891,11 +889,9 @@ export class ModernAdminComponent {
     const productId = formData.get('id');
     
     // Collect images and videos
-    let images = [];
-    if (this.imageManager) {
-      const allImages = this.imageManager.getAllImages();
-      images = allImages.map(img => img.url);
-    }
+    const images = Array.from(document.querySelectorAll('input[name="images"]'))
+      .map(input => input.value.trim())
+      .filter(url => url);
       
     const videos = Array.from(document.querySelectorAll('input[name="videos"]'))
       .map(input => input.value.trim())
@@ -933,27 +929,6 @@ export class ModernAdminComponent {
 
     document.getElementById('dlgProduct').close();
     await this.loadPage(true);
-  }
-  
-  showNotification(message, type = 'info') {
-    // Простое уведомление через alert для начала
-    // Можно заменить на более красивую систему уведомлений позже
-    const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️';
-    console.log(`${icon} ${message}`);
-    
-    // Создаем временное уведомление
-    const notification = document.createElement('div');
-    notification.className = `fixed top-4 right-4 z-50 px-4 py-2 rounded-lg text-white ${
-      type === 'success' ? 'bg-green-600' : 
-      type === 'error' ? 'bg-red-600' : 
-      'bg-blue-600'
-    }`;
-    notification.textContent = message;
-    document.body.appendChild(notification);
-    
-    setTimeout(() => {
-      notification.remove();
-    }, 3000);
   }
 
   async onDeleteProduct() {

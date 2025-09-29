@@ -1,7 +1,6 @@
 import { supabase } from '../utils/supabase.js';
 import { NotificationService } from '../services/notificationService.js';
 import { productsService } from '../services/productsService.js';
-import { ImageManager } from './ImageManager.js';
 
 export class AdminComponent {
   constructor() {
@@ -11,7 +10,6 @@ export class AdminComponent {
     this.currentAdminPassword = sessionStorage.getItem('admin_password');
     this.productsWithPrices = [];
     this.maintenanceMode = false;
-    this.imageManager = null;
   }
 
   // Метод для проверки режима технических работ (заглушка)
@@ -81,54 +79,6 @@ export class AdminComponent {
   renderAdminPanel() {
     return `
       <div class="min-h-screen bg-gray-100 p-6">
-        <style>
-          .admin-tabs {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 24px;
-            border-bottom: 1px solid #e5e7eb;
-            padding-bottom: 12px;
-          }
-          .tab-btn {
-            padding: 8px 16px;
-            border: none;
-            background: #f9fafb;
-            color: #6b7280;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-size: 14px;
-          }
-          .tab-btn:hover {
-            background: #f3f4f6;
-            color: #374151;
-          }
-          .tab-btn.active {
-            background: #3b82f6;
-            color: white;
-          }
-          .tab-content {
-            position: relative;
-          }
-          .tab-pane {
-            display: none;
-          }
-          .tab-pane.active {
-            display: block;
-          }
-          .media-management {
-            background: white;
-            border-radius: 8px;
-            padding: 24px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-          }
-          .media-management h3 {
-            margin: 0 0 16px 0;
-            font-size: 18px;
-            font-weight: 600;
-            color: #1f2937;
-          }
-        </style>
         <div class="max-w-6xl mx-auto">
           <div class="bg-white rounded-lg shadow-lg p-6">
             <div class="flex justify-between items-center mb-6">
@@ -146,7 +96,6 @@ export class AdminComponent {
             <!-- Вкладки админки -->
             <div class="admin-tabs">
               <button class="tab-btn active" data-tab="products">Товары</button>
-              <button class="tab-btn" data-tab="media">Медиа</button>
               <button class="tab-btn" data-tab="legacy-prices">Цены (устар.)</button>
               <button class="tab-btn" data-tab="orders">Заказы</button>
               <button class="tab-btn" data-tab="settings">Настройки</button>
@@ -156,15 +105,6 @@ export class AdminComponent {
               <div class="tab-pane active" id="products-tab">
                 <div id="admin-products-container">
                   <!-- Здесь будет компонент управления товарами -->
-                </div>
-              </div>
-
-              <div class="tab-pane" id="media-tab">
-                <div class="media-management">
-                  <h3>Управление медиа</h3>
-                  <div id="image-manager-container">
-                    <!-- Здесь будет ImageManager -->
-                  </div>
                 </div>
               </div>
               
@@ -272,18 +212,6 @@ export class AdminComponent {
     }
   }
 
-  async loadImageManager() {
-    try {
-      const container = document.getElementById('image-manager-container');
-      if (container && !this.imageManager) {
-        this.imageManager = new ImageManager();
-        await this.imageManager.mount(container);
-      }
-    } catch (error) {
-      console.error('Error loading image manager:', error);
-    }
-  }
-
   attachEventListeners(container) {
     if (!this.isAuthenticated) {
       // Обработчики для формы входа
@@ -328,11 +256,6 @@ export class AdminComponent {
             // Если переключились на товары, перезагружаем компонент
             if (targetTab === 'products') {
               await this.loadProductsComponent();
-            }
-            
-            // Если переключились на медиа, загружаем ImageManager
-            if (targetTab === 'media') {
-              await this.loadImageManager();
             }
           }
         });
