@@ -19,6 +19,9 @@ export class ModernAdminComponent {
     // Инициализация Supabase
     await this.initSupabase();
     
+    // Загрузка и подключение медиа-методов
+    await this.loadMediaMethods();
+    
     // Рендер основного HTML
     container.innerHTML = this.getHTML();
     
@@ -33,6 +36,23 @@ export class ModernAdminComponent {
     
     // Сохраняем глобальную ссылку для onclick handlers
     window.adminComponent = this;
+  }
+
+  async loadMediaMethods() {
+    try {
+      const module = await import('./modernAdminComponent_media.js');
+      const MediaMethods = module.default || module.MediaMethods || module;
+      
+      // Копируем все методы из MediaMethods в текущий экземпляр
+      Object.assign(this, MediaMethods);
+      
+      // Инициализируем массивы для медиа
+      this.currentProductImages = [];
+      this.currentProductVideos = [];
+      this.uploadingImage = false;
+    } catch (error) {
+      console.error('Error loading media methods:', error);
+    }
   }
 
   async initSupabase() {
@@ -349,22 +369,29 @@ export class ModernAdminComponent {
                 </select>
               </label>
 
-              <!-- IMAGES -->
+              <!-- MEDIA SECTION -->
               <div class="sm:col-span-2">
-                <div class="flex items-center justify-between mb-2">
-                  <span class="text-sm font-medium">Фото (URL)</span>
-                  <button type="button" id="btnAddImage" class="text-sm px-2 py-1 rounded-lg border hover:bg-slate-50">+ фото</button>
+                <div class="mb-4">
+                  <h3 class="text-base font-semibold mb-3">Медиа товара (Фото и Видео)</h3>
+                  <div class="flex gap-2 mb-4">
+                    <button type="button" id="btnAddMediaUrl" class="px-4 py-2 text-sm rounded-lg border hover:bg-slate-100">+ URL</button>
+                    <button type="button" id="btnUploadMedia" class="px-4 py-2 text-sm rounded-lg border hover:bg-slate-100">+ Загрузить</button>
+                    <button type="button" id="btnPreviewMedia" class="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700">Предпросмотр</button>
+                    <input type="file" id="mediaFileInput" multiple accept="image/*,video/*" class="hidden">
+                  </div>
+                  
+                  <!-- Photos Grid -->
+                  <div class="mb-4">
+                    <h4 class="text-sm font-medium mb-2">Фотографии</h4>
+                    <div id="photosGrid" class="grid grid-cols-2 sm:grid-cols-4 gap-3"></div>
+                  </div>
+                  
+                  <!-- Videos Grid -->
+                  <div>
+                    <h4 class="text-sm font-medium mb-2">Видео</h4>
+                    <div id="videosGrid" class="grid grid-cols-2 sm:grid-cols-4 gap-3"></div>
+                  </div>
                 </div>
-                <div id="imagesBox" class="space-y-2"></div>
-              </div>
-
-              <!-- VIDEOS -->
-              <div class="sm:col-span-2">
-                <div class="flex items-center justify-between mb-2">
-                  <span class="text-sm font-medium">Видео (URL)</span>
-                  <button type="button" id="btnAddVideo" class="text-sm px-2 py-1 rounded-lg border hover:bg-slate-50">+ видео</button>
-                </div>
-                <div id="videosBox" class="space-y-2"></div>
               </div>
             </div>
 
@@ -479,12 +506,18 @@ export class ModernAdminComponent {
     document.getElementById('btnDelete').addEventListener('click', () => this.onDeleteProduct());
     document.getElementById('frmLogin').addEventListener('submit', (e) => this.onLogin(e));
 
-    // Dynamic form elements - now handled by media methods
-    document.getElementById('btnAddImage')?.addEventListener('click', () => {
-      if (this.addVideoUrl) this.addVideoUrl();
+    // Media management buttons
+    document.getElementById('btnAddMediaUrl')?.addEventListener('click', () => {
+      if (this.addMediaUrl) this.addMediaUrl();
     });
-    document.getElementById('btnAddVideo')?.addEventListener('click', () => {
-      if (this.addVideoUrl) this.addVideoUrl();
+    document.getElementById('btnUploadMedia')?.addEventListener('click', () => {
+      if (this.uploadMediaFiles) this.uploadMediaFiles();
+    });
+    document.getElementById('btnPreviewMedia')?.addEventListener('click', () => {
+      if (this.openMediaPreview) this.openMediaPreview();
+    });
+    document.getElementById('mediaFileInput')?.addEventListener('change', (e) => {
+      if (this.handleImageUpload) this.handleImageUpload(e);
     });
 
     // Color picker synchronization
@@ -797,8 +830,6 @@ export class ModernAdminComponent {
     const title = document.getElementById('dlgTitle');
     
     form.reset();
-    document.getElementById('imagesBox').innerHTML = '';
-    document.getElementById('videosBox').innerHTML = '';
     
     if (productId) {
       title.textContent = 'Изменить товар';
@@ -835,26 +866,27 @@ export class ModernAdminComponent {
       
       form.weight.value = product.weight || '';
       
-      // Load photos
-      if (product.photos && product.photos.length > 0) {
-        product.photos.forEach(photo => this.addImageInput(photo));
-      } else {
-        this.addImageInput();
-      }
+      // Set current editing product for media methods
+      this.currentEditingProduct = product;
       
-      // Load videos
-      if (product.videos && product.videos.length > 0) {
-        product.videos.forEach(video => this.addVideoInput(video));
-      } else {
-        this.addVideoInput();
-      }
+      // Load media using new methods
+      await this.loadProductMedia(product.id);
+      this.updatePhotosGrid();
+      this.updateVideosGrid();
     } else {
       title.textContent = 'Добавить товар';
       form.color_hex.value = '#000000';
       form.is_active.value = 'true';
       form.size.value = 'small';
-      this.addImageInput();
-      this.addVideoInput();
+      
+      // Set empty editing product for new products
+      this.currentEditingProduct = null;
+      
+      // Initialize empty media arrays
+      this.currentProductImages = [];
+      this.currentProductVideos = [];
+      this.updatePhotosGrid();
+      this.updateVideosGrid();
     }
     
     document.getElementById('dlgProduct').showModal();

@@ -74,6 +74,8 @@ async handleImageUpload(event) {
 
     alert(`Загружено ${files.length} изображений`);
     await this.loadProductMedia(product.id || product.artikul);
+    this.updatePhotosGrid();
+    this.updateVideosGrid();
     
   } catch (error) {
     console.error('Error uploading images:', error);
@@ -81,7 +83,6 @@ async handleImageUpload(event) {
   } finally {
     this.uploadingImage = false;
     event.target.value = '';
-    this.updateImageUploadSection();
   }
 }
 
@@ -124,7 +125,7 @@ async removeImage(index) {
   
   this.currentProductImages.splice(index, 1);
   await this.saveProductMedia();
-  this.updateImageUploadSection();
+  this.updatePhotosGrid();
 }
 
 // Replace image
@@ -158,13 +159,13 @@ async replaceImage(index) {
       // Replace the image at the index
       this.currentProductImages[index] = data.photos[data.photos.length - 1];
       await this.saveProductMedia();
-      this.updateImageUploadSection();
+      this.updatePhotosGrid();
     } catch (error) {
       console.error('Error replacing image:', error);
       alert('Ошибка замены изображения: ' + error.message);
     } finally {
       this.uploadingImage = false;
-      this.updateImageUploadSection();
+      this.updatePhotosGrid();
     }
   };
   input.click();
@@ -177,7 +178,7 @@ async makeImagePrimary(index) {
   const image = this.currentProductImages.splice(index, 1)[0];
   this.currentProductImages.unshift(image);
   await this.saveProductMedia();
-  this.updateImageUploadSection();
+  this.updatePhotosGrid();
 }
 
 // Show image preview modal
@@ -227,14 +228,9 @@ async saveProductMedia() {
   }
 }
 
-// Add video URL
+// Legacy - kept for compatibility
 addVideoUrl() {
-  const url = prompt('Введите URL видео:');
-  if (url && url.trim()) {
-    this.currentProductVideos.push(url.trim());
-    this.saveProductMedia();
-    this.updateVideoUploadSection();
-  }
+  this.addMediaUrl();
 }
 
 // Remove video
@@ -243,7 +239,7 @@ async removeVideo(index) {
   
   this.currentProductVideos.splice(index, 1);
   await this.saveProductMedia();
-  this.updateVideoUploadSection();
+  this.updateVideosGrid();
 }
 
 // Show video preview
@@ -278,90 +274,127 @@ getImageUrl(photo) {
   return `https://bsndismiessofvhglzrv.supabase.co/storage/v1/object/public/product-media/${photo}`;
 }
 
-// Render image upload section
-renderImageUploadSection() {
-  return `
-    <div class="space-y-4">
-      <div id="imageDropZone" class="drop-zone" onclick="document.getElementById('imageFileInput').click()">
-        <div class="drop-zone-content">
-          <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
-          </svg>
-          <p class="text-sm text-gray-600 mb-2">
-            ${this.uploadingImage ? 'Загрузка...' : 'Перетащите изображения или нажмите для выбора'}
-          </p>
-          <input type="file" id="imageFileInput" multiple accept="image/*" class="hidden" 
-                 onchange="adminComponent.handleImageUpload(event)" ${this.uploadingImage ? 'disabled' : ''}>
+// Render photos grid
+renderPhotosGrid() {
+  if (!this.currentProductImages || this.currentProductImages.length === 0) {
+    return '<div class="text-sm text-slate-400">Нет фотографий</div>';
+  }
+  
+  return this.currentProductImages.map((photo, index) => {
+    const url = this.getImageUrl(photo);
+    return `
+      <div class="media-card" onclick="adminComponent.showImagePreview('${url}', ${index})">
+        <img src="${url}" alt="Photo ${index + 1}" class="media-preview">
+        ${index === 0 ? '<div class="primary-badge">Главное</div>' : ''}
+        <div class="media-actions">
+          <button type="button" onclick="event.stopPropagation(); adminComponent.removeImage(${index})" class="action-btn" title="Удалить">🗑️</button>
+          ${index !== 0 ? `<button type="button" onclick="event.stopPropagation(); adminComponent.makeImagePrimary(${index})" class="action-btn" title="Сделать главным">⭐</button>` : ''}
         </div>
       </div>
-      
-      ${this.currentProductImages.length ? `
-        <div class="current-images">
-          ${this.currentProductImages.map((photo, index) => `
-            <div class="image-item" onclick="adminComponent.showImagePreview('${this.getImageUrl(photo)}', ${index})">
-              <img src="${this.getImageUrl(photo)}" alt="Product image ${index + 1}" class="image-preview">
-              <div class="image-order">${index + 1}</div>
-              ${index === 0 ? '<div class="primary-badge">Заглавное</div>' : ''}
-              <div class="image-url-preview">${this.getImageUrl(photo).substring(0, 50)}...</div>
-            </div>
-          `).join('')}
-        </div>
-      ` : ''}
-    </div>
-  `;
+    `;
+  }).join('');
 }
 
-// Render video upload section  
-renderVideoUploadSection() {
-  return `
-    <div class="space-y-4">
-      <button type="button" class="px-4 py-2 text-sm border border-indigo-300 rounded-xl hover:bg-indigo-50" 
-              onclick="adminComponent.addVideoUrl()">
-        + Добавить видео URL
-      </button>
-      
-      ${this.currentProductVideos.length ? `
-        <div class="current-videos">
-          ${this.currentProductVideos.map((video, index) => `
-            <div class="video-item" onclick="adminComponent.showVideoPreview('${video}', ${index})">
-              <div class="video-preview-container">
-                <video src="${video}" class="video-thumbnail"></video>
-                <div class="video-play-overlay">▶</div>
-              </div>
-              <div class="video-info">
-                <span class="video-label">📹 Видео ${index + 1}</span>
-                <small class="video-url-preview">${video.substring(0, 40)}...</small>
-              </div>
-            </div>
-          `).join('')}
-        </div>
-      ` : ''}
+// Render videos grid
+renderVideosGrid() {
+  if (!this.currentProductVideos || this.currentProductVideos.length === 0) {
+    return '<div class="text-sm text-slate-400">Нет видео</div>';
+  }
+  
+  return this.currentProductVideos.map((video, index) => `
+    <div class="media-card" onclick="adminComponent.showVideoPreview('${video}', ${index})">
+      <video src="${video}" class="media-preview" preload="metadata"></video>
+      <div class="video-play-icon">▶</div>
+      <div class="media-actions">
+        <button type="button" onclick="event.stopPropagation(); adminComponent.removeVideo(${index})" class="action-btn" title="Удалить">🗑️</button>
+      </div>
     </div>
-  `;
+  `).join('');
 }
 
 // Update sections after changes
-updateImageUploadSection() {
-  const container = document.getElementById('imagesBox');
+updatePhotosGrid() {
+  const container = document.getElementById('photosGrid');
   if (container) {
-    container.innerHTML = this.renderImageUploadSection();
-    // Re-setup drag and drop after DOM update
-    setTimeout(() => this.setupDragAndDrop(), 100);
+    container.innerHTML = this.renderPhotosGrid();
   }
 }
 
-updateVideoUploadSection() {
-  const container = document.getElementById('videosBox');
+updateVideosGrid() {
+  const container = document.getElementById('videosGrid');
   if (container) {
-    container.innerHTML = this.renderVideoUploadSection();
+    container.innerHTML = this.renderVideosGrid();
   }
+}
+
+// Add media via URL
+addMediaUrl() {
+  const type = prompt('Тип медиа (photo/video):');
+  if (!type) return;
+  
+  const url = prompt('Введите URL:');
+  if (!url || !url.trim()) return;
+  
+  if (type.toLowerCase() === 'photo' || type.toLowerCase() === 'image') {
+    this.currentProductImages.push(url.trim());
+    this.saveProductMedia();
+    this.updatePhotosGrid();
+  } else if (type.toLowerCase() === 'video') {
+    this.currentProductVideos.push(url.trim());
+    this.saveProductMedia();
+    this.updateVideosGrid();
+  }
+}
+
+// Upload media files
+uploadMediaFiles() {
+  document.getElementById('mediaFileInput').click();
+}
+
+// Open preview modal
+openMediaPreview() {
+  const modal = document.createElement('div');
+  modal.className = 'image-preview-modal';
+  modal.innerHTML = `
+    <div class="preview-backdrop" onclick="this.parentElement.remove()"></div>
+    <div class="preview-content" style="max-width: 90vw; max-height: 90vh;">
+      <button class="preview-close" onclick="this.closest('.image-preview-modal').remove()">×</button>
+      <div class="p-6">
+        <h3 class="text-lg font-semibold mb-4">Все медиа товара</h3>
+        
+        <div class="mb-6">
+          <h4 class="text-sm font-medium mb-2">Фотографии (${this.currentProductImages.length})</h4>
+          <div class="grid grid-cols-3 gap-3">
+            ${this.currentProductImages.map((photo, index) => `
+              <div class="relative group cursor-pointer" onclick="adminComponent.showImagePreview('${this.getImageUrl(photo)}', ${index})">
+                <img src="${this.getImageUrl(photo)}" class="w-full h-32 object-cover rounded-lg border">
+                ${index === 0 ? '<div class="absolute top-2 left-2 bg-green-500 text-white text-xs px-2 py-1 rounded">Главное</div>' : ''}
+              </div>
+            `).join('') || '<p class="text-sm text-slate-400">Нет фотографий</p>'}
+          </div>
+        </div>
+        
+        <div>
+          <h4 class="text-sm font-medium mb-2">Видео (${this.currentProductVideos.length})</h4>
+          <div class="grid grid-cols-3 gap-3">
+            ${this.currentProductVideos.map((video, index) => `
+              <div class="relative group cursor-pointer" onclick="adminComponent.showVideoPreview('${video}', ${index})">
+                <video src="${video}" class="w-full h-32 object-cover rounded-lg border" preload="metadata"></video>
+                <div class="absolute inset-0 flex items-center justify-center bg-black/20 rounded-lg">
+                  <div class="text-white text-3xl">▶</div>
+                </div>
+              </div>
+            `).join('') || '<p class="text-sm text-slate-400">Нет видео</p>'}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
 }
 
 };
 
 // Export for use in main component
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = MediaMethods;
-} else {
-  window.MediaMethods = MediaMethods;
-}
+export default MediaMethods;
+export { MediaMethods };
