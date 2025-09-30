@@ -212,6 +212,19 @@ const MediaMethods = {
     const product = this.currentEditingProduct;
     if (!product?.id && !product?.artikul) return;
 
+    // Устанавливаем контекст администратора перед операцией
+    if (this.adminLogin && this.adminPassword) {
+      try {
+        await this.supabase.rpc('set_admin_context', {
+          admin_login: this.adminLogin,
+          admin_password: this.adminPassword
+        });
+      } catch (error) {
+        alert('Ошибка установки контекста: ' + error.message);
+        return;
+      }
+    }
+
     try {
       const { error } = await this.supabase
         .from('products')

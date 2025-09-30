@@ -946,6 +946,19 @@ export class ModernAdminComponent {
   async onSaveProduct(e) {
     e.preventDefault();
     
+    // Устанавливаем контекст администратора перед операцией
+    if (this.adminLogin && this.adminPassword) {
+      try {
+        await this.supabase.rpc('set_admin_context', {
+          admin_login: this.adminLogin,
+          admin_password: this.adminPassword
+        });
+      } catch (error) {
+        alert('Ошибка установки контекста: ' + error.message);
+        return;
+      }
+    }
+    
     const formData = new FormData(e.target);
     const productId = formData.get('id');
     
@@ -987,6 +1000,19 @@ export class ModernAdminComponent {
     if (!this.currentProductId) return;
     
     if (!confirm('Вы уверены, что хотите удалить этот товар?')) return;
+    
+    // Устанавливаем контекст администратора перед операцией
+    if (this.adminLogin && this.adminPassword) {
+      try {
+        await this.supabase.rpc('set_admin_context', {
+          admin_login: this.adminLogin,
+          admin_password: this.adminPassword
+        });
+      } catch (error) {
+        alert('Ошибка установки контекста: ' + error.message);
+        return;
+      }
+    }
     
     const { error } = await this.supabase.from('products').delete().eq('id', this.currentProductId);
     
