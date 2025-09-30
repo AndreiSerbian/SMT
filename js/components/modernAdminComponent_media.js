@@ -49,7 +49,6 @@ const MediaMethods = {
     }
 
     this.uploadingImage = true;
-    this.updateImageUploadSection();
 
     try {
       // Convert files to base64
@@ -138,7 +137,6 @@ const MediaMethods = {
       if (!file) return;
 
       this.uploadingImage = true;
-      this.updateImageUploadSection();
 
       try {
         const base64 = await this.fileToBase64(file);
