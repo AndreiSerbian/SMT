@@ -31,8 +31,8 @@ export class ModernAdminComponent {
     // Инициализация событий
     this.attachEvents();
     
-    // Проверка авторизации
-    this.checkAuth();
+    // Проверка авторизации и загрузка данных
+    await this.checkAuth();
     
     // Сохраняем глобальную ссылку для onclick handlers
     window.adminComponent = this;
@@ -66,11 +66,7 @@ export class ModernAdminComponent {
     // Слушатель авторизации
     this.supabase.auth.onAuthStateChange((event, session) => {
       this.session = session;
-      if (!session) {
-        this.showLoginModal();
-      } else {
-        this.hideLoginModal();
-      }
+      // Не вызываем showLoginModal здесь, т.к. DOM может быть не готов
     });
   }
 
@@ -593,42 +589,54 @@ export class ModernAdminComponent {
     this.adminLogin = localStorage.getItem('adminLogin');
     this.adminPassword = localStorage.getItem('adminPassword');
     
-    if (!this.isAuthenticated) {
+    if (!this.isAuthenticated || !this.adminLogin || !this.adminPassword) {
       this.showLoginModal();
-    } else {
-      // Устанавливаем контекст администратора для RLS
-      if (this.adminLogin && this.adminPassword) {
-        try {
-          await this.supabase.rpc('set_admin_context', {
-            admin_login: this.adminLogin,
-            admin_password: this.adminPassword
-          });
-        } catch (error) {
-          console.error('Error setting admin context:', error);
-          // Если не удалось установить контекст, выходим
-          this.signOut();
-          return;
-        }
-      }
-      
-      this.hideLoginModal();
-      await this.loadMeta();
-      // Show products tab by default
-      this.currentTab = 'products';
-      document.querySelectorAll('.tab-content').forEach(content => {
-        content.classList.add('hidden');
-      });
-      document.getElementById('productsTab').classList.remove('hidden');
-      await this.loadPage(true);
+      return;
     }
+    
+    // Устанавливаем контекст администратора для RLS
+    try {
+      await this.supabase.rpc('set_admin_context', {
+        admin_login: this.adminLogin,
+        admin_password: this.adminPassword
+      });
+    } catch (error) {
+      console.error('Ошибка установки контекста администратора:', error);
+      // Если не удалось установить контекст, очищаем авторизацию
+      localStorage.removeItem('isAuthenticated');
+      localStorage.removeItem('adminLogin');
+      localStorage.removeItem('adminPassword');
+      this.isAuthenticated = false;
+      this.showLoginModal();
+      return;
+    }
+    
+    // Загружаем метаданные
+    await this.loadMeta();
+    
+    // Переключаемся на таб продуктов
+    this.currentTab = 'products';
+    document.querySelectorAll('.tab-content').forEach(content => {
+      content.classList.add('hidden');
+    });
+    document.getElementById('productsTab').classList.remove('hidden');
+    
+    // Загружаем продукты
+    await this.loadPage(true);
   }
 
   showLoginModal() {
-    document.getElementById('dlgLogin').showModal();
+    const modal = document.getElementById('dlgLogin');
+    if (modal) {
+      modal.showModal();
+    }
   }
 
   hideLoginModal() {
-    document.getElementById('dlgLogin').close();
+    const modal = document.getElementById('dlgLogin');
+    if (modal) {
+      modal.close();
+    }
   }
 
   async onLogin(e) {
