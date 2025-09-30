@@ -591,10 +591,26 @@ export class ModernAdminComponent {
     // Проверяем авторизацию из localStorage
     this.isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
     this.adminLogin = localStorage.getItem('adminLogin');
+    this.adminPassword = localStorage.getItem('adminPassword');
     
     if (!this.isAuthenticated) {
       this.showLoginModal();
     } else {
+      // Устанавливаем контекст администратора для RLS
+      if (this.adminLogin && this.adminPassword) {
+        try {
+          await this.supabase.rpc('set_admin_context', {
+            admin_login: this.adminLogin,
+            admin_password: this.adminPassword
+          });
+        } catch (error) {
+          console.error('Error setting admin context:', error);
+          // Если не удалось установить контекст, выходим
+          this.signOut();
+          return;
+        }
+      }
+      
       this.hideLoginModal();
       await this.loadMeta();
       // Show products tab by default
@@ -632,11 +648,25 @@ export class ModernAdminComponent {
       errorEl.textContent = error?.message || 'Ошибка входа. Проверьте логин и пароль.';
       errorEl.classList.remove('hidden');
     } else if (data === true) {
+      // Устанавливаем контекст администратора для RLS
+      try {
+        await this.supabase.rpc('set_admin_context', {
+          admin_login: login,
+          admin_password: password
+        });
+      } catch (contextError) {
+        errorEl.textContent = 'Ошибка установки контекста: ' + contextError.message;
+        errorEl.classList.remove('hidden');
+        return;
+      }
+      
       // Сохраняем статус входа в localStorage
       localStorage.setItem('adminLogin', login);
+      localStorage.setItem('adminPassword', password);
       localStorage.setItem('isAuthenticated', 'true');
       this.isAuthenticated = true;
       this.adminLogin = login;
+      this.adminPassword = password;
       
       errorEl.classList.add('hidden');
       this.hideLoginModal();
@@ -651,9 +681,11 @@ export class ModernAdminComponent {
   async signOut() {
     // Очищаем localStorage
     localStorage.removeItem('adminLogin');
+    localStorage.removeItem('adminPassword');
     localStorage.removeItem('isAuthenticated');
     this.isAuthenticated = false;
     this.adminLogin = null;
+    this.adminPassword = null;
     this.showLoginModal();
   }
 
