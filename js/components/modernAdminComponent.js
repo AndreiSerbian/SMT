@@ -992,6 +992,8 @@ export class ModernAdminComponent {
     if (productId) {
       result = await this.supabase.from('products').update(productData).eq('id', productId);
     } else {
+      // Для нового товара генерируем уникальный ID
+      productData.id = crypto.randomUUID();
       result = await this.supabase.from('products').insert([productData]);
     }
 
