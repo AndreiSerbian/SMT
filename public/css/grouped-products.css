@@ -364,17 +364,7 @@
 
 /* Пагинация слайдера */
 .category-slider-container .swiper-pagination {
-  bottom: 10px;
-}
-
-.category-slider-container .swiper-pagination-bullet {
-  background: rgba(59, 130, 246, 0.7);
-  width: 8px;
-  height: 8px;
-}
-
-.category-slider-container .swiper-pagination-bullet-active {
-  background: #3b82f6;
+  display: none;
 }
 
 .category-info {
