@@ -439,7 +439,7 @@ export const products = [
       videos: ["videos/Video 2.mp4"],
     },
     {
-      name: 'Подарочная коробка с лентой',
+      name: 'Подарочная коробка с бантом на магнитах Большая Vanila',
       id: '0617',
       artikul: '0617',
       idWB:'310899160',
@@ -456,7 +456,7 @@ export const products = [
       videos: ["videos/Video 2.mp4"],
     },
     {
-      name: 'Подарочная коробка с лентой',
+      name: 'Подарочная коробка с бантом на магнитах Большая Gold',
       id: '0618',
       artikul: '0618',
       idWB:'310897278',
@@ -543,7 +543,7 @@ export const products = [
     
     // Коробки с ручками
  {
-      name: 'Подарочная коробка с ручкой',
+      name: 'Подарочная коробка с ручками на магнитах Rose',
       id: '062',
       artikul: '062',
       idWB:'244623727',
@@ -573,7 +573,7 @@ export const products = [
       videos: ["videos/Video 3.mp4"],
     },
     {
-      name: 'Подарочная коробка с ручкой',
+      name: 'Подарочная коробка с ручками на магнитах Black',
       id: '0622',
       artikul: '0622',
       idWB:'244624620',
@@ -588,7 +588,7 @@ export const products = [
       videos: ["videos/Video 3.mp4"],
     },
     {
-      name: 'Подарочная коробка с ручкой',
+      name: 'Подарочная коробка с ручками на магнитах White',
       id: '0623',
       artikul: '0623',
       idWB:'244625535',
@@ -603,7 +603,7 @@ export const products = [
       videos: ["videos/Video 3.mp4"],
     },
     {
-      name: 'Подарочная коробка с ручкой',
+      name: 'Подарочная коробка с ручками на магнитах Red',
       id: '0624',
       artikul: '0624',
       idWB:'244625536',
@@ -618,7 +618,7 @@ export const products = [
       videos: ["videos/Video 3.mp4"],
     },
     {
-      name: 'Подарочная коробка с ручкой',
+      name: 'Подарочная коробка с ручками на магнитах Orange',
       id: '0625',
       artikul: '0625',
       idWB:'244625537',
@@ -633,7 +633,7 @@ export const products = [
       videos: ["videos/Video 3.mp4"],
     },
     {
-      name: 'Подарочная коробка с ручкой',
+      name: 'Подарочная коробка с ручками на магнитах Gold',
       id: '0626',
       artikul: '0626',
       idWB:'244625538',
@@ -648,7 +648,7 @@ export const products = [
       videos: ["videos/Video 3.mp4"],
     },
     {
-      name: 'Подарочная коробка с ручкой',
+      name: 'Подарочная коробка с ручками на магнитах Silver',
       id: '0627',
       artikul: '0627',
       idWB:'244625539',
