@@ -509,8 +509,8 @@ const ProductComponent = {
             loop: allMedia.length > 1,
             initialSlide: startIndex,
             navigation: {
-              nextEl: '.swiper-button-next',
-              prevEl: '.swiper-button-prev',
+              nextEl: '.swiper-button-next::after',
+              prevEl: '.swiper-button-prev::after',
             },
             pagination: {
               el: '.swiper-pagination',
