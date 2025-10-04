@@ -334,6 +334,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 0 !important;
+  color: transparent !important;
 }
 
 .category-slider-container .swiper-button-next:hover,
@@ -345,7 +347,8 @@
 
 .category-slider-container .swiper-button-next::after,
 .category-slider-container .swiper-button-prev::after {
-  content: '';
+  content: '' !important;
+  display: none !important;
 }
 
 .category-slider-container .swiper-button-prev {
