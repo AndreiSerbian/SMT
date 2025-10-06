@@ -614,8 +614,15 @@ const ProductComponent = {
    * Определение ключевого слова категории по товару
    */
   getCategoryKeyword(product) {
-    if (product.name.toLowerCase().includes('ручк')) return 'ручк';
-    return 'коробка';
+    const nameLower = product.name.toLowerCase();
+    
+    // Различаем типы коробок
+    if (nameLower.includes('бант')) return 'бант';
+    if (nameLower.includes('ручк')) return 'ручк';
+    
+    // Если ничего не подошло, возвращаем пустую строку
+    // чтобы не смешивать разные категории
+    return '';
   },
 
   /**
