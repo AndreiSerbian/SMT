@@ -220,39 +220,6 @@ export const PublicProductsComponent = {
   },
 
   /**
-   * Рендер товаров конкретной категории
-   */
-  renderCategoryProducts() {
-    if (!this.data.products || this.data.products.length === 0) {
-      const categoryName = this.getCategoryNameBySlug(this.data.selectedCategory);
-        
-      return `
-        <div class="products-empty">
-          <h2>${categoryName}</h2>
-          <p>Товары в этой категории временно недоступны</p>
-          <a href="#" class="back-to-catalog">← Вернуться к каталогу</a>
-        </div>
-      `;
-    }
-
-    const categoryName = this.getCategoryNameBySlug(this.data.selectedCategory);
-
-    return `
-      <div class="products-section">
-        <div class="category-header">
-          <a href="#" class="back-to-catalog">← Вернуться к каталогу</a>
-          <h2 class="products-title">${categoryName}</h2>
-        </div>
-        
-        <!-- Сетка товаров -->
-        <div class="products-grid">
-          ${this.data.products.map(product => this.renderProductCard(product)).join('')}
-        </div>
-      </div>
-    `;
-  },
-
-  /**
    * Рендер карточки категории
    */
   renderCategoryCard(category) {
@@ -316,11 +283,8 @@ export const PublicProductsComponent = {
           </div>
           
           <div class="category-actions">
-            <button class="category-details-btn" onclick="PublicProductsComponent.viewCategory('${category.slug}')">
-              Подробно
-            </button>
-            <button class="category-product-btn ${selectedColor ? '' : 'disabled'}" 
-                    ${selectedColor ? `onclick="PublicProductsComponent.goToProductByColor('${category.slug}', '${selectedColor}')"` : ''}>
+            <button class="category-product-btn w-full ${selectedColor ? '' : 'disabled'}" 
+                    ${selectedColor ? `onclick="PublicProductsComponent.goToProductByColor('${category.slug}', '${selectedColor}')"` : 'disabled'}>
               К товару
             </button>
           </div>
@@ -498,13 +462,6 @@ export const PublicProductsComponent = {
       'with_handle': 'Коробка с ручками'
     };
     return categories[slug] || 'Товары';
-  },
-
-  /**
-   * Переход к просмотру категории
-   */
-  viewCategory(categorySlug) {
-    window.location.hash = `#category/${categorySlug}`;
   },
 
   /**

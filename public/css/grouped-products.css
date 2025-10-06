@@ -154,8 +154,8 @@
 }
 
 .color-option {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   border: 2px solid #e5e5e5;
   cursor: pointer;
@@ -261,8 +261,8 @@
   }
   
   .color-option {
-    width: 28px;
-    height: 28px;
+    width: 36px;
+    height: 36px;
   }
   
   .product-name {
