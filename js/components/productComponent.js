@@ -339,31 +339,6 @@ const ProductComponent = {
               <p class="text-gray-600">Вес: ${product.weight}кг</p>
             </div>
 
-            <!-- Доступные цвета в категории -->
-            ${categoryProducts.length > 1 ? `
-            <div class="mb-6">
-              <h2 class="font-semibold text-gray-800 mb-3">Доступные цвета:</h2>
-              <div class="flex flex-wrap gap-2">
-                ${categoryProducts.map(p => {
-                  const isActive = p.artikul === product.artikul;
-                  const colorName = colorMap[p.color_hex] || p.color || 'Цвет';
-                  const isLight = this.isLightColor(p.color_hex);
-                  return `
-                    <button
-                      class="color-button relative w-9 h-9 rounded-full border-2 transition-all ${isActive ? 'border-blue-500 ring-2 ring-blue-300' : 'border-gray-300 hover:border-blue-400'}"
-                      style="background-color: ${p.color_hex}"
-                      title="${colorName}"
-                      onclick="window.location.hash = '#product/${p.artikul}'"
-                      ${isActive ? 'disabled' : ''}
-                    >
-                      ${isActive ? `<span class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-sm font-bold ${isLight ? 'text-gray-800' : 'text-white'}" style="text-shadow: ${isLight ? '0 0 2px rgba(255,255,255,0.8)' : '0 0 2px rgba(0,0,0,0.5)'}">✓</span>` : ''}
-                    </button>
-                  `;
-                }).join('')}
-              </div>
-            </div>
-            ` : ''}
-
             <div class="flex items-center gap-4 mb-6">
               <label class="font-semibold text-gray-800">Количество:</label>
               <div class="flex items-center border rounded">
