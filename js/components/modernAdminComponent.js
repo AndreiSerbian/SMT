@@ -387,9 +387,6 @@ export class ModernAdminComponent {
       });
     }
   }
-      this.updateOrdersPagination();
-    });
-  }
 
   async loadMeta() {
     // Load categories
