@@ -21,6 +21,19 @@ export class AdminLayoutComponent {
     
     // Загружаем текущую секцию
     await this.loadSection(this.currentSection);
+    
+    // Слушаем изменения хеша для переключения между разделами
+    this.hashChangeHandler = () => {
+      const hash = window.location.hash;
+      if (hash.startsWith('#admin/')) {
+        const section = hash.replace('#admin/', '');
+        if (['products', 'categories', 'colors', 'orders'].includes(section)) {
+          this.handleSectionChange(section);
+        }
+      }
+    };
+    
+    window.addEventListener('hashchange', this.hashChangeHandler);
   }
 
   getHTML() {
@@ -174,6 +187,11 @@ export class AdminLayoutComponent {
   destroy() {
     if (this.sectionComponent && typeof this.sectionComponent.destroy === 'function') {
       this.sectionComponent.destroy();
+    }
+    
+    // Удаляем обработчик хеша
+    if (this.hashChangeHandler) {
+      window.removeEventListener('hashchange', this.hashChangeHandler);
     }
   }
 }
