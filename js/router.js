@@ -5,21 +5,12 @@ import OrderComponent from './components/orderComponent.js';
 import ContactsComponent from './components/contactsComponent.js';
 import PrivacyPolicyComponent from './components/privacyPolicyComponent.js';
 import TermsOfUseComponent from './components/termsOfUseComponent.js';
-import { ModernAdminComponent } from './components/modernAdminComponent.js';
+import { AdminAuthComponent } from './components/adminAuthComponent.js';
+import { AdminLayoutComponent } from './components/adminLayoutComponent.js';
 
 class Router {
   constructor() {
     this.currentComponent = null;
-    this.adminComponent = new ModernAdminComponent();
-    this.routes = {
-      '#': () => HomeComponent.render(this.getMainContainer()),
-      '#product': (id) => ProductComponent.render(id, this.getMainContainer()),
-      '#order': () => OrderComponent.render(this.getMainContainer()),
-      '#contacts': () => ContactsComponent.render(this.getMainContainer()),
-      '#privacy-policy': () => PrivacyPolicyComponent.render(this.getMainContainer()),
-      '#terms-of-use': () => TermsOfUseComponent.render(this.getMainContainer()),
-      '#admin': () => this.adminComponent.mount(this.getMainContainer())
-    };
     
     window.addEventListener('hashchange', () => this.handleRouteChange());
     window.addEventListener('load', () => this.handleRouteChange());
@@ -41,38 +32,75 @@ class Router {
     window.scrollTo({ top: 0, behavior: 'auto' });
   }
   
-  handleRouteChange() {
+  async handleRouteChange() {
     // Очищаем предыдущий контент ПЕРЕД рендером нового
     this.clearContainer();
     
     const hash = window.location.hash || '#';
+    const container = this.getMainContainer();
     
     if (hash === '#') {
       this.currentComponent = HomeComponent;
-      this.routes['#']();
+      HomeComponent.render(container);
     } else if (hash.startsWith('#product/')) {
       const productId = hash.slice(9);
       this.currentComponent = ProductComponent;
-      this.routes['#product'](productId);
+      ProductComponent.render(productId, container);
     } else if (hash === '#order') {
       this.currentComponent = OrderComponent;
-      this.routes['#order']();
+      OrderComponent.render(container);
     } else if (hash === '#contacts') {
       this.currentComponent = ContactsComponent;
-      this.routes['#contacts']();
+      ContactsComponent.render(container);
     } else if (hash === '#privacy-policy') {
       this.currentComponent = PrivacyPolicyComponent;
-      this.routes['#privacy-policy']();
+      PrivacyPolicyComponent.render(container);
     } else if (hash === '#terms-of-use') {
       this.currentComponent = TermsOfUseComponent;
-      this.routes['#terms-of-use']();
+      TermsOfUseComponent.render(container);
     } else if (hash === '#admin') {
-      this.currentComponent = this.adminComponent;
-      this.routes['#admin']();
+      // Форма входа в админку
+      await this.renderAdminAuth();
+    } else if (hash.startsWith('#admin/')) {
+      // Разделы админки
+      const section = hash.replace('#admin/', '');
+      await this.renderAdminSection(section);
     }
     
     // Скролл к верху страницы
     this.scrollToTop();
+  }
+  
+  /**
+   * Рендер формы входа в админку
+   */
+  async renderAdminAuth() {
+    // Если уже авторизован, редирект на админку
+    if (AdminAuthComponent.isAuthenticated()) {
+      window.location.hash = '#admin/products';
+      return;
+    }
+
+    const container = this.getMainContainer();
+    this.currentComponent = new AdminAuthComponent();
+    await this.currentComponent.mount(container);
+  }
+
+  /**
+   * Рендер раздела админки (products/categories/colors/orders)
+   */
+  async renderAdminSection(section) {
+    // Проверка авторизации
+    if (!AdminAuthComponent.isAuthenticated()) {
+      window.location.hash = '#admin';
+      return;
+    }
+
+    const container = this.getMainContainer();
+    
+    this.currentComponent = new AdminLayoutComponent();
+    this.currentComponent.currentSection = section;
+    await this.currentComponent.mount(container);
   }
   
   getMainContainer() {
