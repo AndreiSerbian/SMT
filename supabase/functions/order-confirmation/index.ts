@@ -335,13 +335,16 @@ serve(async (req) => {
       
       if (!orderId) {
         console.error("ОШИБКА: Отсутствует order_id в GET параметрах");
-        return new Response(
-          generateErrorHTML("ID заказа не указан в ссылке"),
-          { 
-            status: 400,
-            headers: { "Content-Type": "text/html; charset=utf-8" }
+        const publicSiteUrl = Deno.env.get("PUBLIC_SITE_URL") || "https://smtgiftboxes.netlify.app";
+        const redirectUrl = `${publicSiteUrl}/#order-confirmation?status=error`;
+        
+        return new Response(null, {
+          status: 302,
+          headers: {
+            'Location': redirectUrl,
+            ...corsHeaders
           }
-        );
+        });
       }
       
       console.log("Поиск заказа в базе данных...");
@@ -357,13 +360,16 @@ serve(async (req) => {
       // Проверяем успешность получения заказа
       if (fetchError || !order) {
         console.error("ОШИБКА: Заказ не найден или ошибка получения:", fetchError);
-        return new Response(
-          generateErrorHTML("Заказ не найден в системе"),
-          { 
-            status: 404,
-            headers: { "Content-Type": "text/html; charset=utf-8" }
+        const publicSiteUrl = Deno.env.get("PUBLIC_SITE_URL") || "https://smtgiftboxes.netlify.app";
+        const redirectUrl = `${publicSiteUrl}/#order-confirmation?order_id=${orderId}&status=error`;
+        
+        return new Response(null, {
+          status: 302,
+          headers: {
+            'Location': redirectUrl,
+            ...corsHeaders
           }
-        );
+        });
       }
       
       console.log("Заказ найден:", order);
@@ -372,12 +378,16 @@ serve(async (req) => {
       // Проверяем, не подтверждён ли заказ уже
       if (order.order_status === 'confirmed') {
         console.log("Заказ уже был подтверждён:", order.id);
-        return new Response(
-          generateConfirmationHTML(order.order_number || order.id, true),
-          { 
-            headers: { "Content-Type": "text/html; charset=utf-8" }
+        const publicSiteUrl = Deno.env.get("PUBLIC_SITE_URL") || "https://smtgiftboxes.netlify.app";
+        const redirectUrl = `${publicSiteUrl}/#order-confirmation?order_id=${orderId}&status=already_confirmed`;
+        
+        return new Response(null, {
+          status: 302,
+          headers: {
+            'Location': redirectUrl,
+            ...corsHeaders
           }
-        );
+        });
       }
       
       console.log("Обновление статуса заказа на 'confirmed'...");
@@ -398,13 +408,16 @@ serve(async (req) => {
       // Проверяем успешность обновления
       if (updateError) {
         console.error("ОШИБКА: Не удалось обновить заказ:", updateError);
-        return new Response(
-          generateErrorHTML("Не удалось обновить статус заказа"),
-          { 
-            status: 500,
-            headers: { "Content-Type": "text/html; charset=utf-8" }
+        const publicSiteUrl = Deno.env.get("PUBLIC_SITE_URL") || "https://smtgiftboxes.netlify.app";
+        const redirectUrl = `${publicSiteUrl}/#order-confirmation?order_id=${orderId}&status=error`;
+        
+        return new Response(null, {
+          status: 302,
+          headers: {
+            'Location': redirectUrl,
+            ...corsHeaders
           }
-        );
+        });
       }
       
       console.log("Заказ успешно подтверждён:", updatedOrder);
@@ -427,24 +440,33 @@ serve(async (req) => {
         console.log("=== КОНЕЦ РЕЗУЛЬТАТОВ ===");
       });
       
-      // Возвращаем HTML страницу подтверждения
-      return new Response(
-        generateConfirmationHTML(updatedOrder.order_number || updatedOrder.id),
-        { 
-          headers: { "Content-Type": "text/html; charset=utf-8" }
+      // Делаем редирект на страницу подтверждения в приложении
+      const publicSiteUrl = Deno.env.get("PUBLIC_SITE_URL") || "https://smtgiftboxes.netlify.app";
+      const redirectUrl = `${publicSiteUrl}/#order-confirmation?order_id=${orderId}&status=confirmed`;
+      
+      console.log("Редирект на:", redirectUrl);
+      
+      return new Response(null, {
+        status: 302,
+        headers: {
+          'Location': redirectUrl,
+          ...corsHeaders
         }
-      );
+      });
       
     } catch (error) {
       console.error("КРИТИЧЕСКАЯ ОШИБКА в GET обработчике:", error);
       console.error("Стек ошибки:", error instanceof Error ? error.stack : 'No stack');
-      return new Response(
-        generateErrorHTML(`Системная ошибка: ${error instanceof Error ? error.message : 'Unknown error'}`),
-        { 
-          status: 500,
-          headers: { "Content-Type": "text/html; charset=utf-8" }
+      const publicSiteUrl = Deno.env.get("PUBLIC_SITE_URL") || "https://smtgiftboxes.netlify.app";
+      const redirectUrl = `${publicSiteUrl}/#order-confirmation?status=error`;
+      
+      return new Response(null, {
+        status: 302,
+        headers: {
+          'Location': redirectUrl,
+          ...corsHeaders
         }
-      );
+      });
     }
   }
 

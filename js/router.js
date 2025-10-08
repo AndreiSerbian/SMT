@@ -2,6 +2,7 @@
 import HomeComponent from './components/homeComponent.js';
 import ProductComponent from './components/productComponent.js';
 import OrderComponent from './components/orderComponent.js';
+import OrderConfirmationComponent from './components/orderConfirmationComponent.js';
 import ContactsComponent from './components/contactsComponent.js';
 import PrivacyPolicyComponent from './components/privacyPolicyComponent.js';
 import TermsOfUseComponent from './components/termsOfUseComponent.js';
@@ -49,6 +50,9 @@ class Router {
     } else if (hash === '#order') {
       this.currentComponent = OrderComponent;
       OrderComponent.render(container);
+    } else if (hash.startsWith('#order-confirmation')) {
+      this.currentComponent = new OrderConfirmationComponent();
+      this.currentComponent.render(container);
     } else if (hash === '#contacts') {
       this.currentComponent = ContactsComponent;
       ContactsComponent.render(container);
