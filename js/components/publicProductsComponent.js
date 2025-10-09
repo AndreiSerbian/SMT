@@ -202,7 +202,6 @@ export const PublicProductsComponent = {
     if (!this.data.categoryCards || this.data.categoryCards.length === 0) {
       return `
         <div class="products-empty">
-          <h2>Каталог товаров</h2>
           <p>Категории товаров временно недоступны</p>
         </div>
       `;
@@ -210,8 +209,6 @@ export const PublicProductsComponent = {
 
     return `
       <div class="products-section">
-        <h2 class="products-title">Каталог товаров</h2>
-        
         <div class="category-cards-grid">
           ${this.data.categoryCards.map(category => this.renderCategoryCard(category)).join('')}
         </div>
