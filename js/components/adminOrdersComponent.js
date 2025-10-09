@@ -45,12 +45,13 @@ export class AdminOrdersComponent {
           <div class="flex flex-wrap gap-2">
             <select id="orderStatusFilter" class="px-3 py-2 border rounded-lg bg-white">
               <option value="">Все статусы</option>
-              <option value="pending">В ожидании</option>
+              <option value="pending">Создан</option>
               <option value="confirmed">Подтверждён</option>
               <option value="processing">В обработке</option>
               <option value="shipped">Отправлен</option>
               <option value="delivered">Доставлен</option>
               <option value="cancelled">Отменён</option>
+              <option value="rejected">Отказан</option>
             </select>
             <input type="date" id="orderDateFrom" class="px-3 py-2 border rounded-lg" placeholder="От">
             <input type="date" id="orderDateTo" class="px-3 py-2 border rounded-lg" placeholder="До">
@@ -144,16 +145,18 @@ export class AdminOrdersComponent {
       processing: 'bg-purple-100 text-purple-700',
       shipped: 'bg-indigo-100 text-indigo-700',
       delivered: 'bg-green-100 text-green-700',
-      cancelled: 'bg-red-100 text-red-700'
+      cancelled: 'bg-red-100 text-red-700',
+      rejected: 'bg-rose-100 text-rose-700'
     };
 
     const statusNames = {
-      pending: 'В ожидании',
+      pending: 'Создан',
       confirmed: 'Подтверждён',
       processing: 'В обработке',
       shipped: 'Отправлен',
       delivered: 'Доставлен',
-      cancelled: 'Отменён'
+      cancelled: 'Отменён',
+      rejected: 'Отказан'
     };
 
     const date = new Date(order.created_at);
@@ -378,12 +381,13 @@ export class AdminOrdersComponent {
             <div>
               <label class="block text-sm font-medium mb-2">Статус заказа</label>
               <select id="orderStatus" class="w-full px-3 py-2 border rounded-lg">
-                <option value="pending" ${order.order_status === 'pending' ? 'selected' : ''}>В ожидании</option>
+                <option value="pending" ${order.order_status === 'pending' ? 'selected' : ''}>Создан</option>
                 <option value="confirmed" ${order.order_status === 'confirmed' ? 'selected' : ''}>Подтверждён</option>
                 <option value="processing" ${order.order_status === 'processing' ? 'selected' : ''}>В обработке</option>
                 <option value="shipped" ${order.order_status === 'shipped' ? 'selected' : ''}>Отправлен</option>
                 <option value="delivered" ${order.order_status === 'delivered' ? 'selected' : ''}>Доставлен</option>
                 <option value="cancelled" ${order.order_status === 'cancelled' ? 'selected' : ''}>Отменён</option>
+                <option value="rejected" ${order.order_status === 'rejected' ? 'selected' : ''}>Отказан</option>
               </select>
             </div>
 
