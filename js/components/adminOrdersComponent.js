@@ -347,7 +347,7 @@ export class AdminOrdersComponent {
             <div>
               <h4 class="font-semibold mb-2">Товары</h4>
               <div class="space-y-2">
-                ${JSON.parse(order.cart_items || '[]').map(item => `
+                ${(Array.isArray(order.cart_items) ? order.cart_items : []).map(item => `
                   <div class="flex justify-between items-center bg-slate-50 rounded-lg p-3">
                     <div>
                       <p class="font-medium">${item.name}</p>
