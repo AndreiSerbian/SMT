@@ -8,11 +8,30 @@ export class ModernAdminComponent {
     this.colors = [];
     this.currentTab = 'products';
     this.isLoading = false;
-        this.currentProductId = null;
-        this.sortField = null;
-        this.sortDirection = 'asc';
-        this.ordersPage = 0;
-        this.ORDERS_PAGE_SIZE = 20;
+    this.currentProductId = null;
+    this.sortField = null;
+    this.sortDirection = 'asc';
+    this.ordersPage = 0;
+    this.ORDERS_PAGE_SIZE = 20;
+    
+    // Получаем логин администратора из сессии
+    const sessionData = sessionStorage.getItem('admin_session');
+    if (sessionData) {
+      try {
+        const session = JSON.parse(sessionData);
+        this.adminLogin = session.admin_login;
+      } catch (error) {
+        console.error('Error parsing admin session:', error);
+        this.adminLogin = null;
+      }
+    } else {
+      this.adminLogin = null;
+    }
+  }
+
+  // Метод для проверки режима технических работ (заглушка для совместимости)
+  checkMaintenanceMode() {
+    return false;
   }
 
   async mount(container) {
@@ -407,6 +426,17 @@ export class ModernAdminComponent {
       document.getElementById('tableBody').innerHTML = '';
     }
 
+    // Устанавливаем контекст администратора
+    if (this.adminLogin) {
+      try {
+        await this.supabase.rpc('set_admin_login_context', {
+          admin_login: this.adminLogin
+        });
+      } catch (error) {
+        console.error('Error setting admin context:', error);
+      }
+    }
+
     this.isLoading = true;
 
     let query = this.supabase
@@ -646,11 +676,10 @@ export class ModernAdminComponent {
     e.preventDefault();
     
     // Устанавливаем контекст администратора перед операцией
-    if (this.adminLogin && this.adminPassword) {
+    if (this.adminLogin) {
       try {
-        await this.supabase.rpc('set_admin_context', {
-          admin_login: this.adminLogin,
-          admin_password: this.adminPassword
+        await this.supabase.rpc('set_admin_login_context', {
+          admin_login: this.adminLogin
         });
       } catch (error) {
         alert('Ошибка установки контекста: ' + error.message);
@@ -703,11 +732,10 @@ export class ModernAdminComponent {
     if (!confirm('Вы уверены, что хотите удалить этот товар?')) return;
     
     // Устанавливаем контекст администратора перед операцией
-    if (this.adminLogin && this.adminPassword) {
+    if (this.adminLogin) {
       try {
-        await this.supabase.rpc('set_admin_context', {
-          admin_login: this.adminLogin,
-          admin_password: this.adminPassword
+        await this.supabase.rpc('set_admin_login_context', {
+          admin_login: this.adminLogin
         });
       } catch (error) {
         alert('Ошибка установки контекста: ' + error.message);
