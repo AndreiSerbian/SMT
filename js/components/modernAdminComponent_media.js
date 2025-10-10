@@ -211,11 +211,10 @@ const MediaMethods = {
     if (!product?.id && !product?.artikul) return;
 
     // Устанавливаем контекст администратора перед операцией
-    if (this.adminLogin && this.adminPassword) {
+    if (this.adminLogin) {
       try {
-        await this.supabase.rpc('set_admin_context', {
-          admin_login: this.adminLogin,
-          admin_password: this.adminPassword
+        await this.supabase.rpc('set_admin_login_context', {
+          admin_login: this.adminLogin
         });
       } catch (error) {
         alert('Ошибка установки контекста: ' + error.message);

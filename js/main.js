@@ -93,16 +93,16 @@ export function initApp() {
     cartService.updateCartUI();
     
     // Проверяем режим технических работ при загрузке
-    if (window.adminComponent) {
-      await window.adminComponent.loadSettings();
-      window.adminComponent.checkMaintenanceMode();
+    if (window.modernAdminComponent) {
+      await window.modernAdminComponent.loadSettings?.();
+      window.modernAdminComponent.checkMaintenanceMode?.();
     }
   });
 }
 
 // Добавляем обработчик изменения хеша для проверки режима технических работ
 window.addEventListener('hashchange', () => {
-  if (window.adminComponent) {
-    window.adminComponent.checkMaintenanceMode();
+  if (window.modernAdminComponent) {
+    window.modernAdminComponent.checkMaintenanceMode?.();
   }
 });
