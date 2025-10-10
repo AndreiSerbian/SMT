@@ -6,6 +6,8 @@ export class ModernAdminComponent {
     this.PAGE_SIZE = 24;
     this.categories = [];
     this.colors = [];
+    this.boxTypes = [];
+    this.sizes = [];
     this.currentTab = 'products';
     this.isLoading = false;
     this.currentProductId = null;
@@ -49,6 +51,9 @@ export class ModernAdminComponent {
     
     // Инициализация событий
     this.attachEvents();
+    
+    // Загружаем мета-данные (категории, типы коробок, размеры, цвета)
+    await this.loadMeta();
     
     // Загружаем данные товаров
     await this.loadPage(true);
@@ -196,11 +201,18 @@ export class ModernAdminComponent {
               </label>
 
               <label class="block">
-                <span class="text-sm font-medium">Размер</span>
-                <select name="size" class="mt-1 w-full px-3 py-2 rounded-xl border">
-                  <option value="small">Малая</option>
-                  <option value="medium">Средняя</option>
-                  <option value="big">Большая</option>
+                <span class="text-sm font-medium">Тип коробки *</span>
+                <select name="box_type" required class="mt-1 w-full px-3 py-2 rounded-xl border">
+                  <option value="">Выберите тип</option>
+                  <!-- Будет заполнено динамически -->
+                </select>
+              </label>
+
+              <label class="block">
+                <span class="text-sm font-medium">Размер *</span>
+                <select name="size" required class="mt-1 w-full px-3 py-2 rounded-xl border">
+                  <option value="">Выберите размер</option>
+                  <!-- Будет заполнено динамически -->
                 </select>
               </label>
 
@@ -229,13 +241,23 @@ export class ModernAdminComponent {
                 <input name="price_rub" type="number" step="0.01" required class="mt-1 w-full px-3 py-2 rounded-xl border">
               </label>
 
-              <label class="block">
-                <span class="text-sm font-medium">Цвет (HEX) *</span>
-                <div class="flex gap-2 mt-1">
-                  <input name="color_hex" type="color" class="w-12 h-10 rounded-xl border cursor-pointer">
-                  <input name="color_hex_text" type="text" placeholder="#000000" 
-                         class="flex-1 px-3 py-2 rounded-xl border font-mono text-sm" 
-                         pattern="^#[0-9A-Fa-f]{6}$">
+              <label class="block sm:col-span-2">
+                <span class="text-sm font-medium">Цвет *</span>
+                <div class="space-y-2 mt-1">
+                  <!-- Dropdown с цветами из БД -->
+                  <select name="color_select" class="w-full px-3 py-2 rounded-xl border">
+                    <option value="">Выберите из справочника</option>
+                    <!-- Будет заполнено динамически -->
+                  </select>
+                  
+                  <!-- Или ручной ввод HEX -->
+                  <div class="flex gap-2">
+                    <input name="color_hex" type="color" class="w-12 h-10 rounded-xl border cursor-pointer">
+                    <input name="color_hex_text" type="text" placeholder="#000000" required
+                           class="flex-1 px-3 py-2 rounded-xl border font-mono text-sm" 
+                           pattern="^#[0-9A-Fa-f]{6}$">
+                  </div>
+                  <p class="text-xs text-slate-500">Выберите цвет из списка или введите HEX код вручную</p>
                 </div>
               </label>
 
@@ -391,32 +413,72 @@ export class ModernAdminComponent {
       if (this.handleImageUpload) this.handleImageUpload(e);
     });
 
-    // Color picker synchronization
+    // Синхронизация выбора цвета из dropdown с color picker
+    const colorSelect = document.querySelector('select[name="color_select"]');
     const colorInput = document.querySelector('input[name="color_hex"]');
     const colorTextInput = document.querySelector('input[name="color_hex_text"]');
-    if (colorInput && colorTextInput) {
+
+    if (colorSelect && colorInput && colorTextInput) {
+      colorSelect.addEventListener('change', (e) => {
+        if (e.target.value) {
+          const hexValue = e.target.value.toUpperCase();
+          colorInput.value = hexValue;
+          colorTextInput.value = hexValue;
+        }
+      });
+      
+      // Обратная синхронизация: если меняем color picker
       colorInput.addEventListener('input', (e) => {
         colorTextInput.value = e.target.value.toUpperCase();
+        colorSelect.value = ''; // Сбрасываем выбор из справочника
       });
+      
       colorTextInput.addEventListener('input', (e) => {
-        const value = e.target.value;
-        if (/^#[0-9A-Fa-f]{6}$/.test(value)) {
-          colorInput.value = value;
+        const hex = e.target.value;
+        if (/^#[0-9A-Fa-f]{6}$/.test(hex)) {
+          colorInput.value = hex;
+          colorSelect.value = ''; // Сбрасываем выбор из справочника
         }
       });
     }
   }
 
   async loadMeta() {
-    // Load categories
-    const { data: categories } = await this.supabase.from('categories').select('id,name,slug').order('sort_order', { ascending: true });
-    this.categories = categories || [];
-    
-    // Load colors with russian names
-    const { data: colors } = await this.supabase.from('colors').select('id,name,hex_code,russian_name,is_active,sort_order').order('sort_order', { ascending: true });
-    this.colors = colors || [];
-
-    // No need to populate filter dropdown as it's now hardcoded
+    try {
+      // Load categories
+      const { data: categories } = await this.supabase
+        .from('categories')
+        .select('id,name,slug')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true });
+      this.categories = categories || [];
+      
+      // Load box types
+      const { data: boxTypes } = await this.supabase
+        .from('box_types')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true });
+      this.boxTypes = boxTypes || [];
+      
+      // Load sizes
+      const { data: sizes } = await this.supabase
+        .from('sizes')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true });
+      this.sizes = sizes || [];
+      
+      // Load colors with russian names
+      const { data: colors } = await this.supabase
+        .from('colors')
+        .select('id,name,hex_code,russian_name,is_active,sort_order')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true });
+      this.colors = colors || [];
+    } catch (error) {
+      console.error('Error loading meta:', error);
+    }
   }
 
   async loadPage(reset) {
@@ -592,6 +654,30 @@ export class ModernAdminComponent {
     
     form.reset();
     
+    // Заполняем dropdown'ы типов коробок и размеров
+    const boxTypeSelect = form.querySelector('select[name="box_type"]');
+    boxTypeSelect.innerHTML = '<option value="">Выберите тип</option>' +
+      this.boxTypes.map(type => 
+        `<option value="${type.slug}">${type.name}</option>`
+      ).join('');
+    
+    const sizeSelect = form.querySelector('select[name="size"]');
+    sizeSelect.innerHTML = '<option value="">Выберите размер</option>' +
+      this.sizes.map(size => 
+        `<option value="${size.value}">${size.name}</option>`
+      ).join('');
+    
+    // Заполняем dropdown цветов
+    const colorSelect = form.querySelector('select[name="color_select"]');
+    if (colorSelect) {
+      colorSelect.innerHTML = '<option value="">Выберите из справочника</option>' +
+        this.colors.map(color => 
+          `<option value="${color.hex_code}">
+            ${color.russian_name || color.name}
+          </option>`
+        ).join('');
+    }
+    
     if (productId) {
       title.textContent = 'Изменить товар';
       
@@ -611,12 +697,34 @@ export class ModernAdminComponent {
       form.name.value = product.name || '';
       form.artikul.value = product.artikul || '';
       form.id_wb.value = product.id_wb || '';
-      form.size.value = product.size || 'small';
+      
+      // Определяем тип коробки из category_id
+      if (product.category_id) {
+        const category = this.categories.find(c => c.id === product.category_id);
+        if (category) {
+          // Парсим slug категории (например: "bow-box-small" → "bow")
+          const boxTypeSlug = category.slug.split('-')[0];
+          boxTypeSelect.value = boxTypeSlug;
+        }
+      }
+      
+      // Устанавливаем размер
+      sizeSelect.value = product.size || '';
+      
       form.price_rub.value = product.price_rub || '';
       form.color_hex.value = product.color_hex || '#000000';
       if (form.color_hex_text) {
         form.color_hex_text.value = product.color_hex || '#000000';
       }
+      
+      // Устанавливаем выбранный цвет в dropdown если найден
+      if (colorSelect && product.color_hex) {
+        const matchingColor = this.colors.find(c => c.hex_code.toUpperCase() === product.color_hex.toUpperCase());
+        if (matchingColor) {
+          colorSelect.value = matchingColor.hex_code;
+        }
+      }
+      
       form.is_active.value = product.is_active ? 'true' : 'false';
       
       if (product.dimensions) {
@@ -690,14 +798,34 @@ export class ModernAdminComponent {
     const formData = new FormData(e.target);
     const productId = formData.get('id');
     
+    // Получаем тип коробки и размер
+    const boxTypeSlug = formData.get('box_type')?.trim();
+    const sizeValue = formData.get('size')?.trim();
+    
+    if (!boxTypeSlug || !sizeValue) {
+      alert('Пожалуйста, выберите тип коробки и размер');
+      return;
+    }
+    
+    // Ищем соответствующую категорию
+    // Например: "bow" + "medium" → ищем категорию со slug "bow-box-medium"
+    const categorySlug = `${boxTypeSlug}-box-${sizeValue}`;
+    const category = this.categories.find(c => c.slug === categorySlug);
+    
+    if (!category) {
+      alert(`Категория для типа "${boxTypeSlug}" и размера "${sizeValue}" не найдена! Slug: ${categorySlug}`);
+      return;
+    }
+    
     const productData = {
       name: formData.get('name').trim(),
       artikul: formData.get('artikul').trim(),
       id_wb: formData.get('id_wb')?.trim() || null,
-      size: formData.get('size'),
+      category_id: category.id, // ← Сохраняем найденную категорию
+      size: sizeValue, // ← Сохраняем размер
       price_rub: parseFloat(formData.get('price_rub')) || 0,
       weight: parseFloat(formData.get('weight')) || null,
-      color_hex: formData.get('color_hex_text') || formData.get('color_hex'),
+      color_hex: (formData.get('color_hex_text') || formData.get('color_hex')).toUpperCase(),
       is_active: formData.get('is_active') === 'true',
       photos: this.currentProductImages || [],
       videos: this.currentProductVideos || [],
