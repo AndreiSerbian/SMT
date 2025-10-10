@@ -4,6 +4,7 @@ export class ProductsService {
   constructor() {
     this.cache = new Map();
     this.loading = false;
+    this.colorsCache = null;
   }
 
   /**
@@ -21,6 +22,9 @@ export class ProductsService {
     this.loading = true;
 
     try {
+      // Сначала загружаем цвета для корректного маппинга
+      await this.getColorsMap();
+
       const { data, error } = await supabase
         .from('products')
         .select('*')
@@ -140,28 +144,46 @@ export class ProductsService {
   }
 
   /**
-   * Получить название цвета по hex коду (упрощенный маппинг)
+   * Получить все цвета из БД с кешированием
+   */
+  async getColorsMap() {
+    if (this.colorsCache) {
+      return this.colorsCache;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('colors')
+        .select('hex_code, russian_name, name')
+        .eq('is_active', true);
+
+      if (error) throw error;
+
+      // Создаем маппинг hex -> russian_name
+      const colorsMap = {};
+      data.forEach(color => {
+        colorsMap[color.hex_code.toUpperCase()] = color.russian_name || color.name;
+      });
+
+      this.colorsCache = colorsMap;
+      return colorsMap;
+    } catch (error) {
+      console.error('Error loading colors:', error);
+      return {};
+    }
+  }
+
+  /**
+   * Получить название цвета по hex коду из таблицы colors
    */
   getColorNameFromHex(hex) {
-    const colorMapping = {
-      '#FFB6C1': 'Розовая',
-      '#1a1a1a': 'Черная',
-      '#FFFFFF': 'Белая', 
-      '#FFD700': 'Золотая',
-      '#C0C0C0': 'Серебряная',
-      '#FF0000': 'Красная',
-      '#FFA500': 'Оранжевая',
-      '#FFCBA4': 'Персиковая',
-      '#B0E0E6': 'Голубая ледяная',
-      '#003366': 'Синяя бархатная',
-      '#0ABAB5': 'Тиффани',
-      '#F3E5AB': 'Ванильная',
-      '#F8F8FF': 'Белая алмазная',
-      '#2F2F2F': 'Черная муар',
-      '#E6E6FA': 'Лавандовая',
-      '#DDA0DD': 'Сиреневая'
-    };
-    return colorMapping[hex] || hex;
+    if (!this.colorsCache) {
+      // Возвращаем hex если кеш еще не загружен
+      return hex;
+    }
+    
+    const normalizedHex = hex.toUpperCase();
+    return this.colorsCache[normalizedHex] || hex;
   }
 
   /**
@@ -207,6 +229,7 @@ export class ProductsService {
    */
   clearCache() {
     this.cache.clear();
+    this.colorsCache = null;
   }
 
   /**
