@@ -356,8 +356,16 @@ const ProductComponent = {
               </div>
               
               <!-- Navigation buttons -->
-              <div class="swiper-button-next" aria-label="Следующий"></div>
-              <div class="swiper-button-prev" aria-label="Предыдущий"></div>
+              <button class="swiper-button-prev" aria-label="Предыдущий слайд">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M15 18l-6-6 6-6" />
+                </svg>
+              </button>
+              <button class="swiper-button-next" aria-label="Следующий слайд">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M9 18l6-6-6-6" />
+                </svg>
+              </button>
               
               <!-- Pagination -->
               <div class="swiper-pagination"></div>
