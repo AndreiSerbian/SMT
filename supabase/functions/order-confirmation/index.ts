@@ -335,7 +335,7 @@ serve(async (req) => {
       
       if (!orderId) {
         console.error("ОШИБКА: Отсутствует order_id в GET параметрах");
-        const publicSiteUrl = Deno.env.get("PUBLIC_SITE_URL") || "https://smtgiftboxes.netlify.app";
+        const publicSiteUrl = Deno.env.get("PUBLIC_SITE_URL") || "https://giftboxopt.ru";
         const redirectUrl = `${publicSiteUrl}/#order-confirmation?status=error`;
         
         return new Response(null, {
@@ -360,7 +360,7 @@ serve(async (req) => {
       // Проверяем успешность получения заказа
       if (fetchError || !order) {
         console.error("ОШИБКА: Заказ не найден или ошибка получения:", fetchError);
-        const publicSiteUrl = Deno.env.get("PUBLIC_SITE_URL") || "https://smtgiftboxes.netlify.app";
+        const publicSiteUrl = Deno.env.get("PUBLIC_SITE_URL") || "https://giftboxopt.ru";
         const redirectUrl = `${publicSiteUrl}/#order-confirmation?order_id=${orderId}&status=error`;
         
         return new Response(null, {
@@ -378,7 +378,7 @@ serve(async (req) => {
       // Проверяем, не подтверждён ли заказ уже
       if (order.order_status === 'confirmed') {
         console.log("Заказ уже был подтверждён:", order.id);
-        const publicSiteUrl = Deno.env.get("PUBLIC_SITE_URL") || "https://smtgiftboxes.netlify.app";
+        const publicSiteUrl = Deno.env.get("PUBLIC_SITE_URL") || "https://giftboxopt.ru";
         const redirectUrl = `${publicSiteUrl}/#order-confirmation?order_id=${orderId}&status=already_confirmed`;
         
         return new Response(null, {
@@ -408,7 +408,7 @@ serve(async (req) => {
       // Проверяем успешность обновления
       if (updateError) {
         console.error("ОШИБКА: Не удалось обновить заказ:", updateError);
-        const publicSiteUrl = Deno.env.get("PUBLIC_SITE_URL") || "https://smtgiftboxes.netlify.app";
+        const publicSiteUrl = Deno.env.get("PUBLIC_SITE_URL") || "https://giftboxopt.ru";
         const redirectUrl = `${publicSiteUrl}/#order-confirmation?order_id=${orderId}&status=error`;
         
         return new Response(null, {
@@ -441,7 +441,7 @@ serve(async (req) => {
       });
       
       // Делаем редирект на страницу подтверждения в приложении
-      const publicSiteUrl = Deno.env.get("PUBLIC_SITE_URL") || "https://smtgiftboxes.netlify.app";
+      const publicSiteUrl = Deno.env.get("PUBLIC_SITE_URL") || "https://giftboxopt.ru";
       const redirectUrl = `${publicSiteUrl}/#order-confirmation?order_id=${orderId}&status=confirmed`;
       
       console.log("Редирект на:", redirectUrl);
@@ -457,7 +457,7 @@ serve(async (req) => {
     } catch (error) {
       console.error("КРИТИЧЕСКАЯ ОШИБКА в GET обработчике:", error);
       console.error("Стек ошибки:", error instanceof Error ? error.stack : 'No stack');
-      const publicSiteUrl = Deno.env.get("PUBLIC_SITE_URL") || "https://smtgiftboxes.netlify.app";
+      const publicSiteUrl = Deno.env.get("PUBLIC_SITE_URL") || "https://giftboxopt.ru";
       const redirectUrl = `${publicSiteUrl}/#order-confirmation?status=error`;
       
       return new Response(null, {
