@@ -259,34 +259,9 @@ const ProductComponent = {
                   src="${photo}" 
                   alt="${product.name}" 
                   class="product-thumbnail w-full h-32 object-cover rounded-lg cursor-pointer hover:opacity-75 transition"
-                  onclick="openImageModal('${photo}', ${index}, ${JSON.stringify(product.photos).replace(/"/g, '&quot;')})"
+                  data-index="${index}"
                 >
               `).join('')}
-            </div>
-            
-            <!-- Image Modal -->
-            <div id="imageModal" class="fixed inset-0 bg-black bg-opacity-75 z-50 hidden flex items-center justify-center">
-              <div class="relative max-w-4xl max-h-[90vh] mx-4">
-                <button onclick="closeImageModal()" class="absolute -top-10 right-0 text-white text-2xl hover:text-gray-300">
-                  <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                  </svg>
-                </button>
-                <img id="modalImage" src="" alt="" class="max-w-full max-h-[80vh] object-contain">
-                <div class="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-4">
-                  <button onclick="prevImage()" class="bg-white bg-opacity-20 text-white px-4 py-2 rounded-lg hover:bg-opacity-30 transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-                    </svg>
-                  </button>
-                  <span id="imageCounter" class="bg-white bg-opacity-20 text-white px-4 py-2 rounded-lg"></span>
-                  <button onclick="nextImage()" class="bg-white bg-opacity-20 text-white px-4 py-2 rounded-lg hover:bg-opacity-30 transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                    </svg>
-                  </button>
-                </div>
-              </div>
             </div>
             ${product.videos && product.videos.length > 0 ? `
               <div class="mt-6">
@@ -370,26 +345,22 @@ const ProductComponent = {
         </div>
 
         <!-- Модальное окно для просмотра медиа -->
-        <div id="imageModal" class="fixed inset-0 bg-black bg-opacity-75 hidden z-50">
-          <div class="relative w-full h-full flex items-center justify-center">
-            <button 
-              class="close-modal-btn absolute top-4 right-4 text-white hover:text-gray-300 text-4xl font-bold z-20 cursor-pointer"
-            >
-              ×
-            </button>
+        <div id="imageModal">
+          <div class="relative w-full h-full">
+            <button class="close-modal-btn" aria-label="Закрыть">×</button>
             
             <!-- Swiper container -->
-            <div class="swiper modal-swiper w-full h-full max-w-4xl max-h-4xl">
+            <div class="swiper modal-swiper">
               <div class="swiper-wrapper" id="modal-swiper-wrapper">
                 <!-- Слайды будут добавлены динамически -->
               </div>
               
               <!-- Navigation buttons -->
-              <div class="swiper-button-next text-white z-10"></div>
-              <div class="swiper-button-prev text-white z-10"></div>
+              <div class="swiper-button-next" aria-label="Следующий"></div>
+              <div class="swiper-button-prev" aria-label="Предыдущий"></div>
               
               <!-- Pagination -->
-              <div class="swiper-pagination z-10"></div>
+              <div class="swiper-pagination"></div>
             </div>
           </div>
         </div>
@@ -493,13 +464,12 @@ const ProductComponent = {
           allMedia.forEach((media, index) => {
             const isVideo = product.videos && product.videos.includes(media);
             const slide = document.createElement('div');
-            slide.className = 'swiper-slide flex items-center justify-center';
+            slide.className = 'swiper-slide';
             
             if (isVideo) {
               slide.innerHTML = `
                 <video 
                   controls 
-                  class="max-w-full max-h-full object-contain"
                   preload="metadata"
                 >
                   <source src="${media}" type="video/mp4">
@@ -508,7 +478,7 @@ const ProductComponent = {
               `;
             } else {
               slide.innerHTML = `
-                <img src="${media}" alt="${product.name}" class="max-w-full max-h-full object-contain">
+                <img src="${media}" alt="${product.name}">
               `;
             }
             
@@ -516,7 +486,8 @@ const ProductComponent = {
           });
           
           // Показываем модальное окно
-          imageModal.classList.remove('hidden');
+          imageModal.classList.add('show');
+          document.body.style.overflow = 'hidden';
           
           // Инициализируем или обновляем Swiper
           if (window.modalSwiper) {
@@ -527,13 +498,24 @@ const ProductComponent = {
             loop: allMedia.length > 1,
             initialSlide: startIndex,
             navigation: {
-              nextEl: '.swiper-button-next',
-              prevEl: '.swiper-button-prev',
+              nextEl: '.modal-swiper .swiper-button-next',
+              prevEl: '.modal-swiper .swiper-button-prev',
             },
             pagination: {
-              el: '.swiper-pagination',
+              el: '.modal-swiper .swiper-pagination',
               clickable: true,
-              type: 'bullets',
+              type: 'fraction',
+              formatFractionCurrent: function (number) {
+                return number;
+              },
+              formatFractionTotal: function (number) {
+                return number;
+              },
+              renderFraction: function (currentClass, totalClass) {
+                return '<span class="' + currentClass + '"></span>' +
+                       ' / ' +
+                       '<span class="' + totalClass + '"></span>';
+              },
             },
             keyboard: {
               enabled: true,
@@ -547,7 +529,8 @@ const ProductComponent = {
       const closeImageModal = () => {
         const imageModal = container.querySelector('#imageModal');
         if (imageModal) {
-          imageModal.classList.add('hidden');
+          imageModal.classList.remove('show');
+          document.body.style.overflow = '';
           
           // Уничтожаем Swiper при закрытии
           if (window.modalSwiper) {
@@ -564,8 +547,9 @@ const ProductComponent = {
         ProductComponent.addEventListenerWithCleanup(mainImage, 'click', mainImageHandler);
       }
       
-      thumbnails.forEach((thumbnail, index) => {
+      thumbnails.forEach((thumbnail) => {
         const thumbnailHandler = function() {
+          const index = parseInt(this.getAttribute('data-index'));
           if (mainImage) {
             mainImage.src = this.src;
           }
@@ -578,15 +562,27 @@ const ProductComponent = {
         ProductComponent.addEventListenerWithCleanup(closeModalBtn, 'click', closeImageModal);
       }
       
-      // Закрытие модального окна по клику на фон
+      // Закрытие модального окна по клику на фон (но не на Swiper)
       if (imageModal) {
         const modalBackgroundHandler = function(e) {
-          if (e.target === this) {
+          // Закрываем только если клик был именно по imageModal (черный фон), а не по его дочерним элементам
+          if (e.target === imageModal) {
             closeImageModal();
           }
         };
         ProductComponent.addEventListenerWithCleanup(imageModal, 'click', modalBackgroundHandler);
       }
+      
+      // Закрытие модального окна по клавише ESC
+      const handleEscKey = function(e) {
+        if (e.key === 'Escape') {
+          const imageModal = container.querySelector('#imageModal');
+          if (imageModal && imageModal.classList.contains('show')) {
+            closeImageModal();
+          }
+        }
+      };
+      ProductComponent.addEventListenerWithCleanup(document, 'keydown', handleEscKey);
       
       // Сохраняем ссылку на quantityInput
       window.quantityInput = container.querySelector('#quantityInput');
