@@ -232,6 +232,8 @@ export const cartService = {
     
     // Update cart icon count - ищем правильный элемент счетчика
     const cartCountElement = document.querySelector('.absolute.-top-1.-right-1.bg-blue-500');
+    const cartButton = document.querySelector('.fixed.bottom-4.right-4.z-50 button');
+    
     if (cartCountElement) {
       cartCountElement.textContent = cart.length;
       if (cart.length > 0) {
@@ -239,6 +241,12 @@ export const cartService = {
       } else {
         cartCountElement.style.display = 'none';
       }
+    } else if (cartButton && cart.length > 0) {
+      // Создаём badge если его нет, но есть товары в корзине
+      const badge = document.createElement('span');
+      badge.className = 'absolute -top-1 -right-1 bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs';
+      badge.textContent = cart.length;
+      cartButton.appendChild(badge);
     }
     
     // Update cart modal content
