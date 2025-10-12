@@ -87,24 +87,47 @@ serve(async (req) => {
         if (product.sizeType === 'средняя') price = 800;
         if (product.sizeType === 'большая') price = 1200;
 
-        const { error } = await supabaseClient
+        // Проверяем, существует ли товар с таким artikul или id
+        const { data: existingProduct } = await supabaseClient
           .from('products')
-          .upsert({
-            id: product.artikul, // Используем artikul как id
-            artikul: product.artikul,
-            name: product.name,
-            size: size,
-            color_hex: colorHex,
-            price_rub: price,
-            id_wb: product.idWB,
-            dimensions: product.dimensions,
-            weight: product.weight,
-            photos: product.photo,
-            videos: product.videos || [],
-            is_active: true
-          }, {
-            onConflict: 'artikul'
-          });
+          .select('id, artikul')
+          .or(`id.eq.${product.artikul},artikul.eq.${product.artikul}`)
+          .maybeSingle();
+
+        const productData = {
+          artikul: product.artikul,
+          name: product.name,
+          size: size,
+          color_hex: colorHex,
+          price_rub: price,
+          id_wb: product.idWB,
+          dimensions: product.dimensions,
+          weight: product.weight,
+          photos: product.photo,
+          videos: product.videos || [],
+          is_active: true
+        };
+
+        let error;
+        if (existingProduct) {
+          // Обновляем существующий товар
+          console.log(`Updating existing product ${product.artikul}`);
+          const result = await supabaseClient
+            .from('products')
+            .update(productData)
+            .eq('id', existingProduct.id);
+          error = result.error;
+        } else {
+          // Создаём новый товар
+          console.log(`Creating new product ${product.artikul}`);
+          const result = await supabaseClient
+            .from('products')
+            .insert({
+              ...productData,
+              id: product.artikul
+            });
+          error = result.error;
+        }
 
         if (error) {
           console.error(`Error importing product ${product.artikul}:`, error);
@@ -112,7 +135,7 @@ serve(async (req) => {
         } else {
           imported++;
           
-          // Также добавляем запись в product_prices
+          // Также добавляем/обновляем запись в product_prices
           await supabaseClient
             .from('product_prices')
             .upsert({

@@ -817,12 +817,32 @@ export class ModernAdminComponent {
       return;
     }
     
+    const produktArtikul = formData.get('artikul').trim();
+    
+    // Проверка дублирования артикула (только для новых товаров)
+    if (!productId) {
+      const { data: existingProducts, error: checkError } = await this.supabase
+        .from('products')
+        .select('id, artikul, name')
+        .or(`id.eq.${produktArtikul},artikul.eq.${produktArtikul}`);
+      
+      if (checkError) {
+        console.error('Ошибка проверки артикула:', checkError);
+      }
+      
+      if (existingProducts && existingProducts.length > 0) {
+        const existing = existingProducts[0];
+        alert(`⚠️ Товар с артикулом "${produktArtikul}" уже существует!\n\nСуществующий товар:\n${existing.name}\nID: ${existing.id}`);
+        return;
+      }
+    }
+    
     const productData = {
       name: formData.get('name').trim(),
-      artikul: formData.get('artikul').trim(),
+      artikul: produktArtikul,
       id_wb: formData.get('id_wb')?.trim() || null,
-      category_id: category.id, // ← Сохраняем найденную категорию
-      size: sizeValue, // ← Сохраняем размер
+      category_id: category.id,
+      size: sizeValue,
       price_rub: parseFloat(formData.get('price_rub')) || 0,
       weight: parseFloat(formData.get('weight')) || null,
       color_hex: (formData.get('color_hex_text') || formData.get('color_hex')).toUpperCase(),
@@ -846,7 +866,10 @@ export class ModernAdminComponent {
     }
 
     if (result.error) {
-      alert('Ошибка сохранения: ' + result.error.message);
+      const errorMsg = result.error.code === '23505' 
+        ? `Товар с артикулом "${produktArtikul}" уже существует в базе данных!`
+        : result.error.message;
+      alert('Ошибка сохранения: ' + errorMsg);
       return;
     }
 
