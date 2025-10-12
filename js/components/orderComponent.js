@@ -83,7 +83,7 @@ const OrderComponent = {
       const actualPrice = product.price;
       if (!actualPrice) return ''; // Если цены нет, не показываем товар
       const itemSum = actualPrice * item.quantity;
-      const itemWeightGrams = product.weight * 1000 * item.quantity;
+      const itemWeightGrams = product.weight * item.quantity; // Weight already in grams
       return `
         <tr>
           <td class="border-b p-2">
