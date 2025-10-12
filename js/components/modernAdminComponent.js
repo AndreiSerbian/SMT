@@ -654,6 +654,9 @@ export class ModernAdminComponent {
     
     form.reset();
     
+    // КРИТИЧНО: Явно очищаем скрытое поле ID для новых товаров
+    form.id.value = '';
+    
     // Заполняем dropdown'ы типов коробок и размеров
     const boxTypeSelect = form.querySelector('select[name="box_type"]');
     boxTypeSelect.innerHTML = '<option value="">Выберите тип</option>' +
@@ -819,6 +822,11 @@ export class ModernAdminComponent {
     
     const produktArtikul = formData.get('artikul').trim();
     
+    console.log('=== СОХРАНЕНИЕ ТОВАРА ===');
+    console.log('productId:', productId);
+    console.log('produktArtikul:', produktArtikul);
+    console.log('form.id.value:', form.id.value);
+    
     // Проверка дублирования артикула (только для новых товаров)
     if (!productId) {
       const { data: existingProducts, error: checkError } = await this.supabase
@@ -829,6 +837,8 @@ export class ModernAdminComponent {
       if (checkError) {
         console.error('Ошибка проверки артикула:', checkError);
       }
+      
+      console.log('Проверка дублирования:', existingProducts);
       
       if (existingProducts && existingProducts.length > 0) {
         const existing = existingProducts[0];
@@ -858,10 +868,13 @@ export class ModernAdminComponent {
 
     let result;
     if (productId) {
+      console.log('UPDATE существующего товара, ID:', productId);
       result = await this.supabase.from('products').update(productData).eq('id', productId);
     } else {
-      // Для нового товара используем артикул как ID
-      productData.id = productData.artikul;
+      // КРИТИЧНО: Для нового товара используем артикул как ID
+      productData.id = produktArtikul; // Берем напрямую из переменной, а не из productData.artikul!
+      console.log('INSERT нового товара, ID будет установлен как:', productData.id);
+      console.log('Данные для вставки:', productData);
       result = await this.supabase.from('products').insert([productData]);
     }
 
