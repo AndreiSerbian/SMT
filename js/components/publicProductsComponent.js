@@ -428,7 +428,7 @@ export const PublicProductsComponent = {
             <span class="product-dimensions">
               ${product.dimensions.length}×${product.dimensions.width}×${product.dimensions.height} см
             </span>
-            <span class="product-weight">${product.weight} кг</span>
+            <span class="product-weight">${(product.weight / 1000).toFixed(2)} кг</span>
           </div>
           
           <div class="product-price">

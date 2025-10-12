@@ -311,7 +311,7 @@ const ProductComponent = {
               <p class="text-gray-600">Длина: ${product.dimensions.length}см</p>
               <p class="text-gray-600">Ширина: ${product.dimensions.width}см</p>
               <p class="text-gray-600">Высота: ${product.dimensions.height}см</p>
-              <p class="text-gray-600">Вес: ${product.weight}кг</p>
+              <p class="text-gray-600">Вес: ${(product.weight / 1000).toFixed(2)} кг</p>
             </div>
 
             <div class="flex items-center gap-4 mb-6">

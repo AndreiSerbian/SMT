@@ -65,7 +65,7 @@ const OrderComponent = {
     const totalWeightGrams = cart.reduce((total, item) => {
       const product = products.find(p => p.id === item.id);
       if (!product) return total;
-      return total + (product.weight * 1000 * item.quantity); // Convert kg to grams
+      return total + (product.weight * item.quantity); // Weight already in grams
     }, 0);
     
     const formatWeight = (weightInGrams) => {
