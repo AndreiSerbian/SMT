@@ -825,7 +825,7 @@ export class ModernAdminComponent {
     console.log('=== СОХРАНЕНИЕ ТОВАРА ===');
     console.log('productId:', productId);
     console.log('produktArtikul:', produktArtikul);
-    console.log('form.id.value:', form.id.value);
+    console.log('Hidden field id:', e.target.id?.value);
     
     // Проверка дублирования артикула (только для новых товаров)
     if (!productId) {
