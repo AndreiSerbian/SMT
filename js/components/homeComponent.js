@@ -1,20 +1,19 @@
-
-import { cartService } from '../services/cartService.js';
-import SwiperService from '../services/swiperService.js';
-import { ColorService } from '../services/colorService.js';
-import { productsService } from '../services/productsService.js';
-import { PublicProductsComponent } from './publicProductsComponent.js';
+import { cartService } from "../services/cartService.js";
+import SwiperService from "../services/swiperService.js";
+import { ColorService } from "../services/colorService.js";
+import { productsService } from "../services/productsService.js";
+import { PublicProductsComponent } from "./publicProductsComponent.js";
 
 const HomeComponent = {
   swipersById: {},
   eventListeners: [],
   timeouts: [],
   productsWithPrices: [],
-  
+
   // Получение уникальных категорий
   getCategories() {
     const categories = new Set();
-    this.productsWithPrices.forEach(product => {
+    this.productsWithPrices.forEach((product) => {
       categories.add(`${product.name} (${product.sizeType})`);
     });
     return Array.from(categories);
@@ -24,9 +23,9 @@ const HomeComponent = {
   async loadProducts() {
     try {
       this.productsWithPrices = await productsService.getActiveProducts();
-      console.log('Товары загружены:', this.productsWithPrices.length);
+      console.log("Товары загружены:", this.productsWithPrices.length);
     } catch (error) {
-      console.error('Ошибка загрузки товаров:', error);
+      console.error("Ошибка загрузки товаров:", error);
       this.productsWithPrices = [];
     }
   },
@@ -36,12 +35,12 @@ const HomeComponent = {
     // Можно добавить логику обновления цен в UI если нужно
     console.log(`Цена товара ${productId} обновлена до ${newPrice}`);
   },
-  
+
   destroy(container) {
     // Очищаем таймеры
-    this.timeouts.forEach(timeoutId => clearTimeout(timeoutId));
+    this.timeouts.forEach((timeoutId) => clearTimeout(timeoutId));
     this.timeouts = [];
-    
+
     // Очищаем слушатели событий
     this.eventListeners.forEach(({ element, event, handler }) => {
       if (element && element.removeEventListener) {
@@ -49,22 +48,22 @@ const HomeComponent = {
       }
     });
     this.eventListeners = [];
-    
+
     // Очищаем слайдеры
     if (SwiperService && SwiperService.destroyAll) {
       SwiperService.destroyAll();
     }
     this.swipersById = {};
   },
-  
+
   addEventListenerWithCleanup(element, event, handler) {
     element.addEventListener(event, handler);
     this.eventListeners.push({ element, event, handler });
   },
 
-  // Загрузка каталога товаров  
+  // Загрузка каталога товаров
   async loadProductsCatalog(container) {
-    const catalogContainer = container.querySelector('#products-catalog-container');
+    const catalogContainer = container.querySelector("#products-catalog-container");
     if (catalogContainer) {
       try {
         // Показываем индикатор загрузки
@@ -74,12 +73,12 @@ const HomeComponent = {
             <p class="mt-2 text-gray-500">Загрузка каталога товаров...</p>
           </div>
         `;
-        
+
         const catalogHTML = await PublicProductsComponent.render();
         catalogContainer.innerHTML = catalogHTML;
-        console.log('Products catalog loaded successfully');
+        console.log("Products catalog loaded successfully");
       } catch (error) {
-        console.error('Error loading products catalog:', error);
+        console.error("Error loading products catalog:", error);
         catalogContainer.innerHTML = `
           <div class="text-center py-8">
             <p class="text-gray-500">Ошибка загрузки каталога товаров: ${error.message}</p>
@@ -91,19 +90,19 @@ const HomeComponent = {
       }
     }
   },
-  
+
   async render(container) {
     if (!container) {
-      console.error('Container not provided to HomeComponent');
+      console.error("Container not provided to HomeComponent");
       return;
     }
-    
+
     // Загружаем товары с актуальными ценами
     await this.loadProducts();
-    
+
     const categories = HomeComponent.getCategories();
     const cartHTML = await cartService.renderCart();
-    
+
     container.innerHTML = `
       <nav class="bg-white shadow-md relative">
         <div class="container mx-auto px-6 py-3">
@@ -145,7 +144,7 @@ const HomeComponent = {
 
 <section class="bg-white py-12 px-4 text-center">
   <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4">SMT Premium Box</h1>
-  <p class="text-lg md:text-xl text-gray-600 mb-6">Оптовые продажи подарочных упаковок</p>
+  <p class="text-lg md:text-xl text-gray-600 mb-6">Подарочная упаковка оптом</p>
   <a href="#catalog" class="inline-block bg-blue-900 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg transition">
     Перейти в каталог коробок
   </a>
@@ -169,7 +168,7 @@ const HomeComponent = {
               Самосборные подарочные коробки
             </h3>
             <p class="text-gray-600 mt-1">
-              Продаём самосборные подарочные упаковки: на магнитах и на лентах. Удобная конструкция — без клея и лишних инструментов.
+              На магнитах и лентах. Удобная конструкция — без клея.
             </p>
           </div>
         </div>
@@ -196,10 +195,10 @@ const HomeComponent = {
          <svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" width="fill" height="auto" x="0" y="0" viewBox="0 0 64 64" style="enable-background:new 0 0 512 512" xml:space="preserve" class="hovered-paths"><g><g data-name="calander-gift box-party-celebration"><path d="M61 6h-5V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2H16V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2H3a1 1 0 0 0-1 1v27h2V22h4v-2H4v-2h56v8h2V7a1 1 0 0 0-1-1ZM50 4h4v6h-4ZM10 4h4v6h-4ZM4 16V8h4v2a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V8h32v2a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V8h4v8Z" fill="#1e3a8a" opacity="1" data-original="#000000" class="hovered-path"></path><path d="M43 9H21a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h22a1 1 0 0 0 1-1v-4a1 1 0 0 0-1-1Zm-1 4H22v-2h20ZM10 20h2v2h-2zM61 49h-2.184A2.966 2.966 0 0 0 59 48V36h1a1 1 0 0 0 1-1v-4a3 3 0 0 0-3-3h-4.051a2.5 2.5 0 0 0-2.449-3H50a1 1 0 0 0-.707.293l-.293.293-.293-.293A1 1 0 0 0 48 25h-1.5a2.5 2.5 0 0 0-2.449 3H40a3 3 0 0 0-3 3v4a1 1 0 0 0 1 1h1v12a2.966 2.966 0 0 0 .184 1H37v-5.278A1.993 1.993 0 0 0 38 42v-4a2 2 0 0 0-2-2h-5a4 4 0 0 0-4-4h-2.172a2.978 2.978 0 0 0-2.121.879L21 34.586l-1.707-1.707A2.978 2.978 0 0 0 17.172 32H15a4 4 0 0 0-4 4H5a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2v16H4V46H2v15a1 1 0 0 0 1 1h58a1 1 0 0 0 1-1V50a1 1 0 0 0-1-1Zm-1 4H49v-2h11Zm-15-2h2v2h-2Zm-2 2H32v-2h11Zm7-19h-2v-4h2Zm-2 2h2v13h-2Zm9 12a1 1 0 0 1-1 1h-4V36h5Zm2-17v3h-7v-4h6a1 1 0 0 1 1 1Zm-13-3.5a.5.5 0 0 1 .5-.5h1.086l.707.707a1 1 0 0 0 1.414 0l.707-.707H51.5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5ZM39 31a1 1 0 0 1 1-1h6v4h-7Zm2 17V36h5v13h-4a1 1 0 0 1-1-1Zm-10 1a1 1 0 0 0-1 1v10h-5V44h10v5Zm-7-11v4h-6v-4Zm-1 6v16h-4V44Zm13-6v4H26v-4Zm-11.879-3.707a1 1 0 0 1 .707-.293H27a2 2 0 0 1 2 2h-6.586ZM15 34h2.172a1 1 0 0 1 .707.293L19.586 36H13a2 2 0 0 1 2-2ZM5 38h11v4H5Zm2 20h3v-2H7V44h10v16H7Zm25-3h11v5H32Zm13 5v-5h2v5Zm4 0v-5h11v5Z" fill="#1e3a8a" opacity="1" data-original="#000000" class="hovered-path"></path><path d="M12 56h2v2h-2zM60 38h2v9h-2z" fill="#1e3a8a" opacity="1" data-original="#000000" class="hovered-path"></path></g></g></svg>
           <div>
             <h3 class="text-xl font-semibold text-gray-800">
-              Широкий выбор
+              Широкий ассортимент
             </h3>
             <p class="text-gray-600 mt-1">
-              У нас вы найдёте коробки для косметики, сладостей, одежды, аксессуаров, техники и многого другого.
+              Для косметики, сладостей, одежды, аксессуаров, техники и многого другого.
             </p>
           </div>
         </div>
@@ -329,74 +328,74 @@ const HomeComponent = {
         </div>
       </footer>
     `;
-    
+
     // Добавляем обработчики для мобильного меню
-    const mobileMenuToggle = container.querySelector('#mobile-menu-toggle');
-    const mobileMenu = container.querySelector('#mobile-menu');
-    const mobileMenuClose = container.querySelector('#mobile-menu-close');
-    const mobileHome = container.querySelector('#mobile-home');
-    const mobileContacts = container.querySelector('#mobile-contacts');
-    
+    const mobileMenuToggle = container.querySelector("#mobile-menu-toggle");
+    const mobileMenu = container.querySelector("#mobile-menu");
+    const mobileMenuClose = container.querySelector("#mobile-menu-close");
+    const mobileHome = container.querySelector("#mobile-home");
+    const mobileContacts = container.querySelector("#mobile-contacts");
+
     const openMobileMenu = () => {
       // Проверяем что это действительно мобильное устройство
       if (window.innerWidth < 768) {
-        mobileMenu.classList.remove('hidden');
-        document.body.style.overflow = 'hidden';
+        mobileMenu.classList.remove("hidden");
+        document.body.style.overflow = "hidden";
       }
     };
-    
+
     const closeMobileMenu = () => {
-      mobileMenu.classList.add('hidden');
-      document.body.style.overflow = '';
+      mobileMenu.classList.add("hidden");
+      document.body.style.overflow = "";
     };
-    
+
     if (mobileMenuToggle) {
-      HomeComponent.addEventListenerWithCleanup(mobileMenuToggle, 'click', openMobileMenu);
+      HomeComponent.addEventListenerWithCleanup(mobileMenuToggle, "click", openMobileMenu);
     }
-    
+
     if (mobileMenuClose) {
-      HomeComponent.addEventListenerWithCleanup(mobileMenuClose, 'click', closeMobileMenu);
+      HomeComponent.addEventListenerWithCleanup(mobileMenuClose, "click", closeMobileMenu);
     }
-    
+
     if (mobileHome) {
-      HomeComponent.addEventListenerWithCleanup(mobileHome, 'click', () => {
+      HomeComponent.addEventListenerWithCleanup(mobileHome, "click", () => {
         closeMobileMenu();
-        window.location.href = '#';
+        window.location.href = "#";
       });
     }
-    
+
     if (mobileContacts) {
-      HomeComponent.addEventListenerWithCleanup(mobileContacts, 'click', () => {
+      HomeComponent.addEventListenerWithCleanup(mobileContacts, "click", () => {
         closeMobileMenu();
-        window.location.href = '#contacts';
+        window.location.href = "#contacts";
       });
     }
-    
+
     // Плавный скролл к каталогу по кнопке в герое
     const catalogBtn = container.querySelector('a[href="#catalog"]');
-    const catalogSection = container.querySelector('#catalog');
+    const catalogSection = container.querySelector("#catalog");
     if (catalogBtn && catalogSection) {
-      HomeComponent.addEventListenerWithCleanup(catalogBtn, 'click', (e) => {
+      HomeComponent.addEventListenerWithCleanup(catalogBtn, "click", (e) => {
         e.preventDefault();
-        catalogSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        catalogSection.scrollIntoView({ behavior: "smooth", block: "start" });
       });
     }
-    
+
     // Инициализируем все слайдеры
     const timeoutId = setTimeout(() => {
       SwiperService.initSwipers();
-      
+
       // Добавляем обработчики для кнопок цветов
-      container.querySelectorAll('.color-button').forEach(button => {
+      container.querySelectorAll(".color-button").forEach((button) => {
         let clickCount = 0;
         let clickTimer = null;
-        
-        const clickHandler = function(e) {
+
+        const clickHandler = function (e) {
           e.preventDefault();
           e.stopPropagation();
-          
+
           clickCount++;
-          
+
           if (clickCount === 1) {
             clickTimer = setTimeout(() => {
               // Первый клик - меняем изображения
@@ -404,92 +403,88 @@ const HomeComponent = {
               const baseName = this.dataset.baseName;
               const baseSize = this.dataset.baseSize;
               const chosenColor = this.dataset.color;
-              
-              console.log('First click on color:', chosenColor, 'for product:', productId);
-              
+
+              console.log("First click on color:", chosenColor, "for product:", productId);
+
               // Находим соответствующий продукт с выбранным цветом
-              const matchingProduct = HomeComponent.productsWithPrices.find(p =>
-                p.name === baseName &&
-                p.sizeType === baseSize &&
-                p.color === chosenColor
+              const matchingProduct = HomeComponent.productsWithPrices.find(
+                (p) => p.name === baseName && p.sizeType === baseSize && p.color === chosenColor,
               );
-              
+
               if (matchingProduct) {
                 // Обновляем изображения в слайдере
                 SwiperService.updateSliderPhotos(productId, matchingProduct.photo);
-                
+
                 // Обновляем активную кнопку цвета
                 ColorService.updateButtonColor(productId, chosenColor);
               }
-              
+
               clickCount = 0;
             }, 300);
           } else if (clickCount === 2) {
             // Второй клик - переходим к товару
             clearTimeout(clickTimer);
-            
+
             const productId = this.dataset.productId;
             const baseName = this.dataset.baseName;
             const baseSize = this.dataset.baseSize;
             const chosenColor = this.dataset.color;
-            
-            console.log('Second click on color:', chosenColor, 'navigating to product');
-            
+
+            console.log("Second click on color:", chosenColor, "navigating to product");
+
             // Находим соответствующий продукт с выбранным цветом
-            const matchingProduct = HomeComponent.productsWithPrices.find(p =>
-              p.name === baseName &&
-              p.sizeType === baseSize &&
-              p.color === chosenColor
+            const matchingProduct = HomeComponent.productsWithPrices.find(
+              (p) => p.name === baseName && p.sizeType === baseSize && p.color === chosenColor,
             );
-            
+
             if (matchingProduct) {
               window.location.href = `#product/${matchingProduct.id}`;
             }
-            
+
             clickCount = 0;
           }
         };
-        
-        HomeComponent.addEventListenerWithCleanup(button, 'click', clickHandler);
+
+        HomeComponent.addEventListenerWithCleanup(button, "click", clickHandler);
       });
-      
+
       // Добавляем обработчики для кнопок "Подробно"
-      container.querySelectorAll('.view-all-btn').forEach(button => {
-        const clickHandler = function() {
+      container.querySelectorAll(".view-all-btn").forEach((button) => {
+        const clickHandler = function () {
           const productId = this.dataset.productId;
-          
+
           // Находим активную кнопку цвета
-          const activeColorButton = container.querySelector(`.color-button[data-product-id="${productId}"][data-active="true"]`);
-          
+          const activeColorButton = container.querySelector(
+            `.color-button[data-product-id="${productId}"][data-active="true"]`,
+          );
+
           if (activeColorButton) {
             // Получаем данные о выбранном цвете
             const baseName = activeColorButton.dataset.baseName;
             const baseSize = activeColorButton.dataset.baseSize;
             const chosenColor = activeColorButton.dataset.color;
-            
+
             // Находим соответствующий продукт с выбранным цветом
-            const matchingProduct = HomeComponent.productsWithPrices.find(p =>
-              p.name === baseName &&
-              p.sizeType === baseSize &&
-              p.color === chosenColor
+            const matchingProduct = HomeComponent.productsWithPrices.find(
+              (p) => p.name === baseName && p.sizeType === baseSize && p.color === chosenColor,
             );
-            
+
             if (matchingProduct) {
               window.location.href = `#product/${matchingProduct.id}`;
               return;
             }
           }
-          
+
           // Если активной кнопки нет, просто переходим к текущему продукту
           window.location.href = `#product/${productId}`;
         };
-        
-        HomeComponent.addEventListenerWithCleanup(button, 'click', clickHandler);
+
+        HomeComponent.addEventListenerWithCleanup(button, "click", clickHandler);
       });
     }, 100);
-    
+
     this.timeouts.push(timeoutId);
-    
+
     // Асинхронно загружаем кнопки цветов для каждого продукта
     setTimeout(() => {
       this.loadColorButtons();
@@ -499,21 +494,21 @@ const HomeComponent = {
     setTimeout(() => {
       this.loadProductsCatalog(container);
     }, 300);
-  }
+  },
 };
 
 // Добавляем метод для асинхронной загрузки кнопок цветов
-HomeComponent.loadColorButtons = async function() {
+HomeComponent.loadColorButtons = async function () {
   const categories = this.getCategories();
-  
+
   for (const category of categories) {
-    const [name, sizeTypeRaw] = category.split(' (');
-    const sizeType = (sizeTypeRaw || '').slice(0, -1);
-    
+    const [name, sizeTypeRaw] = category.split(" (");
+    const sizeType = (sizeTypeRaw || "").slice(0, -1);
+
     // Находим продукт по умолчанию
-    const product = this.productsWithPrices.find(p => p.name === name && p.sizeType === sizeType);
+    const product = this.productsWithPrices.find((p) => p.name === name && p.sizeType === sizeType);
     if (!product) continue;
-    
+
     // Загружаем кнопки цветов
     try {
       const colorButtons = await ColorService.renderColorButtons(product);
@@ -522,7 +517,7 @@ HomeComponent.loadColorButtons = async function() {
         container.innerHTML = colorButtons;
       }
     } catch (error) {
-      console.error('Ошибка загрузки кнопок цветов для продукта:', product.id, error);
+      console.error("Ошибка загрузки кнопок цветов для продукта:", product.id, error);
     }
   }
 };
