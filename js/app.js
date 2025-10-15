@@ -1,6 +1,6 @@
 
 import Router from './router.js';
-import { initApp } from './legacy-main.js';
+import { initApp } from './main.js';
 import { env } from './utils/env.js';
 
 // Initialize the app when DOM is loaded
