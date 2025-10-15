@@ -14,18 +14,14 @@ export default defineConfig({
         main: path.resolve(__dirname, 'index.html')
       },
       output: {
-        // Хеширование файлов для долгосрочного кеширования
         entryFileNames: 'assets/js/[name]-[hash].js',
         chunkFileNames: 'assets/js/[name]-[hash].js',
         assetFileNames: (assetInfo) => {
-          // CSS в отдельную папку
           if (assetInfo.name.endsWith('.css')) {
             return 'assets/css/[name]-[hash][extname]';
           }
-          // Остальные ресурсы
           return 'assets/[name]-[hash][extname]';
         },
-        // Разделение вендорных библиотек
         manualChunks: {
           'vendor-supabase': ['@supabase/supabase-js'],
           'vendor-swiper': ['swiper'],
@@ -33,7 +29,6 @@ export default defineConfig({
       }
     },
     
-    // Оптимизация для продакшена
     minify: 'terser',
     terserOptions: {
       compress: {
@@ -67,5 +62,11 @@ export default defineConfig({
     host: '0.0.0.0'
   },
   
-  envPrefix: 'VITE_'
+  envPrefix: 'VITE_',
+  
+  // Отключаем проверку TypeScript
+  esbuild: {
+    jsxFactory: 'h',
+    jsxFragment: 'Fragment'
+  }
 });
