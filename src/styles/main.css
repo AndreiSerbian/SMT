@@ -1,0 +1,28 @@
+/* ===========================================
+   ГЛАВНЫЙ ФАЙЛ СТИЛЕЙ
+   =========================================== */
+
+/* Tailwind базовые слои */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Импорт кастомных стилей из public/css/ */
+@import '../../public/css/grouped-products.css';
+@import '../../public/css/admin-storage.css';
+@import '../../public/css/media-manager.css';
+@import '../../public/css/admin-drag-drop.css';
+@import '../../public/css/admin-media.css';
+@import '../../public/css/admin-media-modal.css';
+@import '../../public/css/product-modal.css';
+
+/* Глобальные стили для всего приложения */
+@layer base {
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 
+                 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 
+                 'Helvetica Neue', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}

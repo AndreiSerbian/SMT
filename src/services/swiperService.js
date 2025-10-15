@@ -1,3 +1,4 @@
+import Swiper from 'swiper';
 
 // Service for managing Swiper sliders
 const SwiperService = {
