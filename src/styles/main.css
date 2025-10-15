@@ -2,12 +2,7 @@
    ГЛАВНЫЙ ФАЙЛ СТИЛЕЙ
    =========================================== */
 
-/* Tailwind базовые слои */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-/* Импорт кастомных стилей из public/css/ */
+/* Импорт кастомных стилей из public/css/ - ДОЛЖНЫ БЫТЬ ПЕРВЫМИ */
 @import '../../public/css/grouped-products.css';
 @import '../../public/css/admin-storage.css';
 @import '../../public/css/media-manager.css';
@@ -15,6 +10,11 @@
 @import '../../public/css/admin-media.css';
 @import '../../public/css/admin-media-modal.css';
 @import '../../public/css/product-modal.css';
+
+/* Tailwind базовые слои - ПОСЛЕ всех @import */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 /* Глобальные стили для всего приложения */
 @layer base {
