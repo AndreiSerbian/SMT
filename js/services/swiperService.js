@@ -1,4 +1,6 @@
 
+import { Swiper, Navigation, Pagination } from '../libs/swiper.js';
+
 // Service for managing Swiper sliders
 const SwiperService = {
   swipersById: {},
