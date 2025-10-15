@@ -4,16 +4,11 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "npm-run-all --parallel dev:css dev:server",
-    "dev:css": "tailwindcss -i ./src/css/input.css -o ./dist/styles.css --watch",
-    "dev:server": "node build-scripts/dev-server.js",
-    "build": "npm-run-all build:clean build:css build:js build:html build:assets",
-    "build:clean": "node -e \"const fs=require('fs'); if(fs.existsSync('dist')) fs.rmSync('dist', {recursive:true}); fs.mkdirSync('dist/js', {recursive:true});\"",
-    "build:css": "tailwindcss -i ./src/css/input.css -o ./dist/styles.css --minify",
-    "build:js": "node build-scripts/bundle-js.js",
-    "build:html": "node -e \"const fs=require('fs'); fs.copyFileSync('index.html', 'dist/index.html');\"",
-    "build:assets": "node -e \"const fs=require('fs'); fs.cpSync('public', 'dist/public', {recursive:true});\"",
-    "preview": "node build-scripts/dev-server.js"
+    "dev": "vite",
+    "build": "vite build",
+    "build:dev": "vite build --mode development",
+    "lint": "eslint .",
+    "preview": "vite preview"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
