@@ -141,7 +141,7 @@ export const cartService = {
           </div>
 
           <!-- Контент, который прокручивается, если товаров много -->
-          <div class="overflow-y-auto max-h-[80vh]">
+          <div class="overflow-y-auto max-h-[50vh]">
             ${cart.length === 0 ? `
               <div class="text-center py-8">
                 <p class="text-gray-500">Ваша корзина пуста</p>

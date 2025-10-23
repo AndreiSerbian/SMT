@@ -27,7 +27,7 @@ export class AdminLayoutComponent {
       const hash = window.location.hash;
       if (hash.startsWith('#admin/')) {
         const section = hash.replace('#admin/', '');
-        if (['products', 'categories', 'colors', 'orders'].includes(section)) {
+        if (['products', 'categories', 'colors', 'orders', 'analytics'].includes(section)) {
           this.handleSectionChange(section);
         }
       }
@@ -55,6 +55,7 @@ export class AdminLayoutComponent {
                 <a href="#admin/categories" data-section="categories" class="nav-link px-3 py-1.5 rounded-full">Категории</a>
                 <a href="#admin/colors" data-section="colors" class="nav-link px-3 py-1.5 rounded-full">Цвета</a>
                 <a href="#admin/orders" data-section="orders" class="nav-link px-3 py-1.5 rounded-full">Заказы</a>
+                <a href="#admin/analytics" data-section="analytics" class="nav-link px-3 py-1.5 rounded-full">Аналитика</a>
               </nav>
               <button id="btnLogout" class="px-3 py-1.5 rounded-lg bg-rose-600 text-white hover:bg-rose-700 transition">
                 Выйти
@@ -67,6 +68,7 @@ export class AdminLayoutComponent {
             <a href="#admin/categories" data-section="categories" class="nav-link px-3 py-1.5 rounded-full whitespace-nowrap">Категории</a>
             <a href="#admin/colors" data-section="colors" class="nav-link px-3 py-1.5 rounded-full whitespace-nowrap">Цвета</a>
             <a href="#admin/orders" data-section="orders" class="nav-link px-3 py-1.5 rounded-full whitespace-nowrap">Заказы</a>
+            <a href="#admin/analytics" data-section="analytics" class="nav-link px-3 py-1.5 rounded-full whitespace-nowrap">Аналитика</a>
           </div>
         </header>
 
@@ -141,6 +143,10 @@ export class AdminLayoutComponent {
         case 'orders':
           const ordersModule = await import('./adminOrdersComponent.js');
           Component = ordersModule.AdminOrdersComponent;
+          break;
+        case 'analytics':
+          const analyticsModule = await import('./adminAnalyticsComponent.js');
+          Component = analyticsModule.AdminAnalyticsComponent;
           break;
         default:
           throw new Error('Unknown section');
