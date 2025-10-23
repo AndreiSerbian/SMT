@@ -210,63 +210,73 @@ export class AdminAnalyticsComponent {
 
         <!-- KPI Cards -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div class="bg-white rounded-lg shadow p-6">
-            <div class="text-sm text-gray-600 mb-1">Общая выручка</div>
-            <div class="text-3xl font-bold text-blue-600">₽${kpis.totalRevenue.toLocaleString()}</div>
+          <div class="bg-white rounded-lg shadow p-4">
+            <div class="text-xs text-gray-600 mb-1">Общая выручка</div>
+            <div class="text-2xl font-bold text-blue-600">₽${kpis.totalRevenue.toLocaleString()}</div>
           </div>
-          <div class="bg-white rounded-lg shadow p-6">
-            <div class="text-sm text-gray-600 mb-1">Всего заказов</div>
-            <div class="text-3xl font-bold text-green-600">${kpis.totalOrders}</div>
+          <div class="bg-white rounded-lg shadow p-4">
+            <div class="text-xs text-gray-600 mb-1">Всего заказов</div>
+            <div class="text-2xl font-bold text-green-600">${kpis.totalOrders}</div>
           </div>
-          <div class="bg-white rounded-lg shadow p-6">
-            <div class="text-sm text-gray-600 mb-1">Средний чек</div>
-            <div class="text-3xl font-bold text-purple-600">₽${kpis.avgCheck.toLocaleString(undefined, {maximumFractionDigits: 0})}</div>
+          <div class="bg-white rounded-lg shadow p-4">
+            <div class="text-xs text-gray-600 mb-1">Средний чек</div>
+            <div class="text-2xl font-bold text-purple-600">₽${kpis.avgCheck.toLocaleString(undefined, {maximumFractionDigits: 0})}</div>
           </div>
-          <div class="bg-white rounded-lg shadow p-6">
-            <div class="text-sm text-gray-600 mb-1">Подтверждено</div>
-            <div class="text-3xl font-bold text-green-500">${kpis.confirmedOrders}</div>
+          <div class="bg-white rounded-lg shadow p-4">
+            <div class="text-xs text-gray-600 mb-1">Подтверждено</div>
+            <div class="text-2xl font-bold text-green-500">${kpis.confirmedOrders}</div>
           </div>
-          <div class="bg-white rounded-lg shadow p-6">
-            <div class="text-sm text-gray-600 mb-1">Ожидает</div>
-            <div class="text-3xl font-bold text-yellow-500">${kpis.pendingOrders}</div>
+          <div class="bg-white rounded-lg shadow p-4">
+            <div class="text-xs text-gray-600 mb-1">Ожидает</div>
+            <div class="text-2xl font-bold text-yellow-500">${kpis.pendingOrders}</div>
           </div>
-          <div class="bg-white rounded-lg shadow p-6">
-            <div class="text-sm text-gray-600 mb-1">Отменено</div>
-            <div class="text-3xl font-bold text-red-500">${kpis.cancelledOrders}</div>
+          <div class="bg-white rounded-lg shadow p-4">
+            <div class="text-xs text-gray-600 mb-1">Отменено</div>
+            <div class="text-2xl font-bold text-red-500">${kpis.cancelledOrders}</div>
           </div>
         </div>
 
         <!-- Графики -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <!-- График выручки -->
-          <div class="bg-white rounded-lg shadow p-6">
-            <h3 class="text-lg font-semibold mb-4">Выручка по дням</h3>
-            <canvas id="revenue-chart" class="w-full" height="300"></canvas>
+          <div class="bg-white rounded-lg shadow p-4">
+            <h3 class="text-sm font-semibold mb-2">Выручка по дням</h3>
+            <div class="h-48">
+              <canvas id="revenue-chart"></canvas>
+            </div>
           </div>
 
           <!-- График заказов -->
-          <div class="bg-white rounded-lg shadow p-6">
-            <h3 class="text-lg font-semibold mb-4">Количество заказов по дням</h3>
-            <canvas id="orders-chart" class="w-full" height="300"></canvas>
+          <div class="bg-white rounded-lg shadow p-4">
+            <h3 class="text-sm font-semibold mb-2">Количество заказов по дням</h3>
+            <div class="h-48">
+              <canvas id="orders-chart"></canvas>
+            </div>
           </div>
 
           <!-- График статусов -->
-          <div class="bg-white rounded-lg shadow p-6">
-            <h3 class="text-lg font-semibold mb-4">Распределение статусов</h3>
-            <canvas id="status-chart" class="w-full" height="300"></canvas>
+          <div class="bg-white rounded-lg shadow p-4">
+            <h3 class="text-sm font-semibold mb-2">Распределение статусов</h3>
+            <div class="h-48">
+              <canvas id="status-chart"></canvas>
+            </div>
           </div>
 
           <!-- График среднего чека -->
-          <div class="bg-white rounded-lg shadow p-6">
-            <h3 class="text-lg font-semibold mb-4">Средний чек по дням</h3>
-            <canvas id="avg-check-chart" class="w-full" height="300"></canvas>
+          <div class="bg-white rounded-lg shadow p-4">
+            <h3 class="text-sm font-semibold mb-2">Средний чек по дням</h3>
+            <div class="h-48">
+              <canvas id="avg-check-chart"></canvas>
+            </div>
           </div>
         </div>
 
         <!-- Топ товаров -->
-        <div class="bg-white rounded-lg shadow p-6">
-          <h3 class="text-lg font-semibold mb-4">Топ-10 товаров по продажам</h3>
-          <canvas id="top-products-chart" class="w-full" height="400"></canvas>
+        <div class="bg-white rounded-lg shadow p-4">
+          <h3 class="text-sm font-semibold mb-2">Топ-10 товаров по продажам</h3>
+          <div class="h-64">
+            <canvas id="top-products-chart"></canvas>
+          </div>
         </div>
       </div>
     `;
