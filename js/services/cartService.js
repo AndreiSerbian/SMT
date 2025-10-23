@@ -126,9 +126,10 @@ export const cartService = {
       </div>
 
       <div id="cartModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-40">
-        <div
+      <div
           class="fixed right-0 top-0 bottom-0 w-full max-w-md
-                 bg-white shadow-lg p-6 transform transition-transform duration-300 translate-x-full"
+                 bg-white shadow-lg p-6 transform transition-transform duration-300 translate-x-full
+                 flex flex-col"
         >
           <div class="flex justify-between items-center mb-6">
             <h2 class="text-2xl font-bold text-gray-800">Корзина</h2>
@@ -140,14 +141,14 @@ export const cartService = {
             </button>
           </div>
 
-          <!-- Контент, который прокручивается, если товаров много -->
-          <div class="overflow-y-auto max-h-[50vh]">
-            ${cart.length === 0 ? `
-              <div class="text-center py-8">
-                <p class="text-gray-500">Ваша корзина пуста</p>
-              </div>
-            ` : `
-              <div class="space-y-4 mb-6">
+          ${cart.length === 0 ? `
+            <div class="text-center py-8">
+              <p class="text-gray-500">Ваша корзина пуста</p>
+            </div>
+          ` : `
+            <!-- Прокручиваемый список товаров -->
+            <div class="overflow-y-auto flex-1 mb-4">
+              <div class="space-y-4">
                 ${cart.map(item => {
                   const product = products.find(p => p.id === item.id);
                   return product ? `
@@ -192,35 +193,36 @@ export const cartService = {
                   ` : '';
                 }).join('')}
               </div>
+            </div>
 
-              <div class="border-t pt-4">
-                <div class="flex justify-between items-center mb-4">
-                  <span class="font-semibold text-gray-800">Всего:</span>
-                  <span class="font-bold text-xl text-gray-800">₽${total}</span>
-                </div>
-                ${meetsMinimum ? `
-                  <button
-                    onclick="goToOrderPage()"
-                    class="w-full bg-blue-200 text-gray-800 px-6 py-3 rounded-lg
-                         font-semibold hover:bg-blue-300 transition duration-300"
-                  >
-                    Оформить предзаказ
-                  </button>
-                ` : `
-                  <div class="text-orange-500 text-center mb-4">
-                    Минимальная сумма заказа: ₽${env.minOrderAmount}
-                  </div>
-                  <button
-                    class="w-full bg-gray-200 text-gray-500 px-6 py-3 rounded-lg
-                         font-semibold cursor-not-allowed"
-                    disabled
-                  >
-                    Оформить предзаказ
-                  </button>
-                `}
+            <!-- Фиксированная кнопка внизу -->
+            <div class="border-t pt-4 mt-auto">
+              <div class="flex justify-between items-center mb-4">
+                <span class="font-semibold text-gray-800">Всего:</span>
+                <span class="font-bold text-xl text-gray-800">₽${total}</span>
               </div>
-            `}
-          </div>
+              ${meetsMinimum ? `
+                <button
+                  onclick="goToOrderPage()"
+                  class="w-full bg-blue-200 text-gray-800 px-6 py-3 rounded-lg
+                       font-semibold hover:bg-blue-300 transition duration-300"
+                >
+                  Оформить предзаказ
+                </button>
+              ` : `
+                <div class="text-orange-500 text-center mb-4">
+                  Минимальная сумма заказа: ₽${env.minOrderAmount}
+                </div>
+                <button
+                  class="w-full bg-gray-200 text-gray-500 px-6 py-3 rounded-lg
+                       font-semibold cursor-not-allowed"
+                  disabled
+                >
+                  Оформить предзаказ
+                </button>
+              `}
+            </div>
+          `}
         </div>
       </div>
     `;
@@ -251,19 +253,26 @@ export const cartService = {
     
     // Update cart modal content
     const cartModalContent = document.querySelector('#cartModal .overflow-y-auto');
+    const cartFooter = document.querySelector('#cartModal .border-t.pt-4.mt-auto');
+    
     if (cartModalContent) {
       if (cart.length === 0) {
-        cartModalContent.innerHTML = `
-          <div class="text-center py-8">
-            <p class="text-gray-500">Ваша корзина пуста</p>
-          </div>
-        `;
+        const parentContainer = cartModalContent.parentElement;
+        if (parentContainer) {
+          parentContainer.innerHTML = `
+            <div class="text-center py-8">
+              <p class="text-gray-500">Ваша корзина пуста</p>
+            </div>
+          `;
+        }
       } else {
         const products = await this.getProducts();
         const total = cart.reduce((sum, item) => {
           const product = products.find(p => p.id === item.id);
           return sum + (product && product.price ? product.price * item.quantity : 0);
         }, 0);
+        
+        const meetsMinimum = total >= env.minOrderAmount;
         
         // Update cart items
         const itemsHTML = cart.map(item => {
@@ -311,23 +320,40 @@ export const cartService = {
         }).join('');
         
         cartModalContent.innerHTML = `
-          <div class="space-y-4 mb-6">
+          <div class="space-y-4">
             ${itemsHTML}
           </div>
-          <div class="border-t pt-4">
+        `;
+        
+        // Update footer
+        if (cartFooter) {
+          cartFooter.innerHTML = `
             <div class="flex justify-between items-center mb-4">
               <span class="font-semibold text-gray-800">Всего:</span>
               <span class="font-bold text-xl text-gray-800">₽${total}</span>
             </div>
-            <button
-              onclick="goToOrderPage()"
-              class="w-full bg-blue-200 text-gray-800 px-6 py-3 rounded-lg
-                     font-semibold hover:bg-blue-300 transition duration-300"
-            >
-              Оформить предзаказ
-            </button>
-          </div>
-        `;
+            ${meetsMinimum ? `
+              <button
+                onclick="goToOrderPage()"
+                class="w-full bg-blue-200 text-gray-800 px-6 py-3 rounded-lg
+                       font-semibold hover:bg-blue-300 transition duration-300"
+              >
+                Оформить предзаказ
+              </button>
+            ` : `
+              <div class="text-orange-500 text-center mb-4">
+                Минимальная сумма заказа: ₽${env.minOrderAmount}
+              </div>
+              <button
+                class="w-full bg-gray-200 text-gray-500 px-6 py-3 rounded-lg
+                       font-semibold cursor-not-allowed"
+                disabled
+              >
+                Оформить предзаказ
+              </button>
+            `}
+          `;
+        }
       }
     }
   }
