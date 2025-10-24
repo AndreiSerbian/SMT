@@ -186,12 +186,6 @@ const OrderComponent = {
           
           <!-- Карточки товаров для мобильных -->
           <div class="md:hidden">
-            <div class="grid grid-cols-4 gap-2 text-sm font-semibold mb-4 pb-2 border-b">
-              <div>Товар</div>
-              <div>Количество</div>
-              <div>Цена</div>
-              <div>Сумма</div>
-            </div>
             ${cartCards}
           </div>
 
@@ -270,12 +264,8 @@ const OrderComponent = {
                 <span>Доставка</span>
               </label>
               <label class="flex items-center">
-                <input type="radio" name="delivery" value="pickup_moscow" style="accent-color: #00008b;" class="mr-2">
-                <span>Самовывоз – Москва, Производственная 12, к.2</span>
-              </label>
-              <label class="flex items-center">
-                <input type="radio" name="delivery" value="pickup_ershovo" style="accent-color: #00008b;" class="mr-2">
-                <span>Самовывоз – Московская область, Одинцовский район, д. Ершово</span>
+                <input type="radio" name="delivery" value="pickup" style="accent-color: #00008b;" class="mr-2">
+                <span>Самовывоз – Москва, 1я ул. Энтузиастов, д.3</span>
               </label>
             </div>
           </div>
