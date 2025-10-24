@@ -75,15 +75,14 @@ const OrderComponent = {
       return `${weightInGrams} г`;
     };
 
-    // Generate cart rows
+    // Generate cart rows for desktop table
     const cartRows = cart.map(item => {
       const product = products.find(p => p.id === item.id);
       if (!product) return '';
-      // Используем цену из базы данных или undefined если её нет
       const actualPrice = product.price;
-      if (!actualPrice) return ''; // Если цены нет, не показываем товар
+      if (!actualPrice) return '';
       const itemSum = actualPrice * item.quantity;
-      const itemWeightGrams = product.weight * item.quantity; // Weight already in grams
+      const itemWeightGrams = product.weight * item.quantity;
       return `
         <tr>
           <td class="border-b p-2">
@@ -94,6 +93,36 @@ const OrderComponent = {
           <td class="border-b p-2">₽${actualPrice}</td>
           <td class="border-b p-2">₽${itemSum}</td>
         </tr>
+      `;
+    }).join('');
+    
+    // Generate cart cards for mobile
+    const cartCards = cart.map(item => {
+      const product = products.find(p => p.id === item.id);
+      if (!product) return '';
+      const actualPrice = product.price;
+      if (!actualPrice) return '';
+      const itemSum = actualPrice * item.quantity;
+      const itemWeightGrams = product.weight * item.quantity;
+      return `
+        <div class="border-b pb-4 mb-4 last:border-b-0">
+          <div class="font-semibold mb-2">${product.name} (${product.color})</div>
+          <div class="text-sm text-gray-600 mb-2">Вес: ${formatWeight(itemWeightGrams)}</div>
+          <div class="grid grid-cols-3 gap-2 text-sm">
+            <div>
+              <div class="text-gray-600">Количество</div>
+              <div class="font-semibold">${item.quantity}</div>
+            </div>
+            <div>
+              <div class="text-gray-600">Цена</div>
+              <div class="font-semibold">₽${actualPrice}</div>
+            </div>
+            <div>
+              <div class="text-gray-600">Сумма</div>
+              <div class="font-semibold">₽${itemSum}</div>
+            </div>
+          </div>
+        </div>
       `;
     }).join('');
     
@@ -138,20 +167,33 @@ const OrderComponent = {
       <main class="container mx-auto p-4">
         <h2 class="text-3xl font-bold mb-6">Корзина</h2>
         <div class="bg-white shadow rounded p-6">
-          <!-- Таблица товаров -->
-          <table class="w-full text-left">
-            <thead>
-              <tr>
-                <th class="border-b p-2">Товар</th>
-                <th class="border-b p-2">Количество</th>
-                <th class="border-b p-2">Цена</th>
-                <th class="border-b p-2">Сумма</th>
-              </tr>
-            </thead>
-            <tbody id="cart-items">
-              ${cartRows}
-            </tbody>
-          </table>
+          <!-- Таблица товаров для десктопа -->
+          <div class="hidden md:block">
+            <table class="w-full text-left">
+              <thead>
+                <tr>
+                  <th class="border-b p-2">Товар</th>
+                  <th class="border-b p-2">Количество</th>
+                  <th class="border-b p-2">Цена</th>
+                  <th class="border-b p-2">Сумма</th>
+                </tr>
+              </thead>
+              <tbody id="cart-items">
+                ${cartRows}
+              </tbody>
+            </table>
+          </div>
+          
+          <!-- Карточки товаров для мобильных -->
+          <div class="md:hidden">
+            <div class="grid grid-cols-4 gap-2 text-sm font-semibold mb-4 pb-2 border-b">
+              <div>Товар</div>
+              <div>Количество</div>
+              <div>Цена</div>
+              <div>Сумма</div>
+            </div>
+            ${cartCards}
+          </div>
 
           <!-- Итоги -->
           <div class="mt-6 text-right">
