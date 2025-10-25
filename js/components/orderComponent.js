@@ -1,10 +1,10 @@
-import { cartService } from '../services/cartService.js';
-import { env } from '../utils/env.js';
-import { productsService } from '../services/productsService.js';
+import { cartService } from "../services/cartService.js";
+import { env } from "../utils/env.js";
+import { productsService } from "../services/productsService.js";
 
 const OrderComponent = {
   eventListeners: [],
-  
+
   destroy(container) {
     // Очищаем слушатели событий
     this.eventListeners.forEach(({ element, event, handler }) => {
@@ -14,38 +14,38 @@ const OrderComponent = {
     });
     this.eventListeners = [];
   },
-  
+
   addEventListenerWithCleanup(element, event, handler) {
     if (element && element.addEventListener) {
       element.addEventListener(event, handler);
       this.eventListeners.push({ element, event, handler });
     }
   },
-  
+
   async render(container) {
     if (!container) {
-      console.error('Container not provided to OrderComponent');
+      console.error("Container not provided to OrderComponent");
       return;
     }
-    
+
     // Принудительно сбрасываем стили прокрутки при загрузке
-    document.body.style.overflow = '';
-    document.body.style.position = '';
-    document.documentElement.style.overflow = '';
-    
+    document.body.style.overflow = "";
+    document.body.style.position = "";
+    document.documentElement.style.overflow = "";
+
     // Загружаем товары с ценами
     const products = await productsService.getActiveProducts();
     const cart = cartService.getCart();
-    
+
     // Check minimum order value
     const subtotal = await cartService.getCartTotal();
-    
+
     if (subtotal < env.minOrderAmount) {
       alert(`Минимальная сумма заказа — ${env.minOrderAmount}₽. Пожалуйста, добавьте ещё товары.`);
-      window.location.hash = '#';
+      window.location.hash = "#";
       return;
     }
-    
+
     // Calculate discount
     let discountRate = 0;
     if (subtotal >= 50000) {
@@ -57,17 +57,17 @@ const OrderComponent = {
     } else if (subtotal >= 20000) {
       discountRate = 2;
     }
-    
+
     const discount = Math.floor((subtotal * discountRate) / 100);
     const total = subtotal - discount;
-    
+
     // Calculate total weight
     const totalWeightGrams = cart.reduce((total, item) => {
-      const product = products.find(p => p.id === item.id);
+      const product = products.find((p) => p.id === item.id);
       if (!product) return total;
-      return total + (product.weight * item.quantity); // Weight already in grams
+      return total + product.weight * item.quantity; // Weight already in grams
     }, 0);
-    
+
     const formatWeight = (weightInGrams) => {
       if (weightInGrams >= 1000) {
         return `${(weightInGrams / 1000).toFixed(1)} кг`;
@@ -75,16 +75,16 @@ const OrderComponent = {
       return `${weightInGrams} г`;
     };
 
-    // Generate cart rows
-    const cartRows = cart.map(item => {
-      const product = products.find(p => p.id === item.id);
-      if (!product) return '';
-      // Используем цену из базы данных или undefined если её нет
-      const actualPrice = product.price;
-      if (!actualPrice) return ''; // Если цены нет, не показываем товар
-      const itemSum = actualPrice * item.quantity;
-      const itemWeightGrams = product.weight * item.quantity; // Weight already in grams
-      return `
+    // Generate cart rows for desktop table
+    const cartRows = cart
+      .map((item) => {
+        const product = products.find((p) => p.id === item.id);
+        if (!product) return "";
+        const actualPrice = product.price;
+        if (!actualPrice) return "";
+        const itemSum = actualPrice * item.quantity;
+        const itemWeightGrams = product.weight * item.quantity;
+        return `
         <tr>
           <td class="border-b p-2">
             <div>${product.name} (${product.color})</div>
@@ -95,8 +95,41 @@ const OrderComponent = {
           <td class="border-b p-2">₽${itemSum}</td>
         </tr>
       `;
-    }).join('');
-    
+      })
+      .join("");
+
+    // Generate cart cards for mobile
+    const cartCards = cart
+      .map((item) => {
+        const product = products.find((p) => p.id === item.id);
+        if (!product) return "";
+        const actualPrice = product.price;
+        if (!actualPrice) return "";
+        const itemSum = actualPrice * item.quantity;
+        const itemWeightGrams = product.weight * item.quantity;
+        return `
+        <div class="border-b pb-4 mb-4 last:border-b-0">
+          <div class="font-semibold mb-2">${product.name} (${product.color})</div>
+          <div class="text-sm text-gray-600 mb-2">Вес: ${formatWeight(itemWeightGrams)}</div>
+          <div class="grid grid-cols-3 gap-2 text-sm">
+            <div>
+              <div class="text-gray-600">Кол-во</div>
+              <div class="font-semibold">${item.quantity}</div>
+            </div>
+            <div>
+              <div class="text-gray-600">Цена</div>
+              <div class="font-semibold">₽${actualPrice}</div>
+            </div>
+            <div>
+              <div class="text-gray-600">Сумма</div>
+              <div class="font-semibold">₽${itemSum}</div>
+            </div>
+          </div>
+        </div>
+      `;
+      })
+      .join("");
+
     container.innerHTML = `
       <nav class="bg-white shadow-md relative">
         <div class="container mx-auto px-6 py-3">
@@ -138,20 +171,27 @@ const OrderComponent = {
       <main class="container mx-auto p-4">
         <h2 class="text-3xl font-bold mb-6">Корзина</h2>
         <div class="bg-white shadow rounded p-6">
-          <!-- Таблица товаров -->
-          <table class="w-full text-left">
-            <thead>
-              <tr>
-                <th class="border-b p-2">Товар</th>
-                <th class="border-b p-2">Количество</th>
-                <th class="border-b p-2">Цена</th>
-                <th class="border-b p-2">Сумма</th>
-              </tr>
-            </thead>
-            <tbody id="cart-items">
-              ${cartRows}
-            </tbody>
-          </table>
+          <!-- Таблица товаров для десктопа -->
+          <div class="hidden md:block">
+            <table class="w-full text-left">
+              <thead>
+                <tr>
+                  <th class="border-b p-2">Товар</th>
+                  <th class="border-b p-2">Кол-во</th>
+                  <th class="border-b p-2">Цена</th>
+                  <th class="border-b p-2">Сумма</th>
+                </tr>
+              </thead>
+              <tbody id="cart-items">
+                ${cartRows}
+              </tbody>
+            </table>
+          </div>
+          
+          <!-- Карточки товаров для мобильных -->
+          <div class="md:hidden">
+            ${cartCards}
+          </div>
 
           <!-- Итоги -->
           <div class="mt-6 text-right">
@@ -228,12 +268,8 @@ const OrderComponent = {
                 <span>Доставка</span>
               </label>
               <label class="flex items-center">
-                <input type="radio" name="delivery" value="pickup_moscow" style="accent-color: #00008b;" class="mr-2">
-                <span>Самовывоз – Москва, Производственная 12, к.2</span>
-              </label>
-              <label class="flex items-center">
-                <input type="radio" name="delivery" value="pickup_ershovo" style="accent-color: #00008b;" class="mr-2">
-                <span>Самовывоз – Московская область, Одинцовский район, д. Ершово</span>
+                <input type="radio" name="delivery" value="pickup" style="accent-color: #00008b;" class="mr-2">
+                <span>Самовывоз – Москва, 1я ул. Энтузиастов, д.3</span>
               </label>
             </div>
           </div>
@@ -276,191 +312,193 @@ const OrderComponent = {
         </div>
       </footer>
     `;
-    
+
     // Добавляем обработчики для мобильного меню
-    const mobileMenuToggle = container.querySelector('#mobile-menu-toggle');
-    const mobileMenu = container.querySelector('#mobile-menu');
-    const mobileMenuClose = container.querySelector('#mobile-menu-close');
-    const mobileHome = container.querySelector('#mobile-home');
-    const mobileOrder = container.querySelector('#mobile-order');
-    
+    const mobileMenuToggle = container.querySelector("#mobile-menu-toggle");
+    const mobileMenu = container.querySelector("#mobile-menu");
+    const mobileMenuClose = container.querySelector("#mobile-menu-close");
+    const mobileHome = container.querySelector("#mobile-home");
+    const mobileOrder = container.querySelector("#mobile-order");
+
     const openMobileMenu = () => {
       // Проверяем что это действительно мобильное устройство и не блокируем скролл на странице заказа
-      if (window.innerWidth < 768 && window.location.hash !== '#order') {
-        mobileMenu.classList.remove('hidden');
-        document.body.style.overflow = 'hidden';
+      if (window.innerWidth < 768 && window.location.hash !== "#order") {
+        mobileMenu.classList.remove("hidden");
+        document.body.style.overflow = "hidden";
       } else if (window.innerWidth < 768) {
         // На странице заказа показываем меню но не блокируем скролл
-        mobileMenu.classList.remove('hidden');
+        mobileMenu.classList.remove("hidden");
       }
     };
-    
+
     const closeMobileMenu = () => {
-      mobileMenu.classList.add('hidden');
+      mobileMenu.classList.add("hidden");
       // Всегда восстанавливаем скролл при закрытии меню
-      document.body.style.overflow = '';
+      document.body.style.overflow = "";
     };
-    
+
     if (mobileMenuToggle) {
-      OrderComponent.addEventListenerWithCleanup(mobileMenuToggle, 'click', openMobileMenu);
+      OrderComponent.addEventListenerWithCleanup(mobileMenuToggle, "click", openMobileMenu);
     }
-    
+
     if (mobileMenuClose) {
-      OrderComponent.addEventListenerWithCleanup(mobileMenuClose, 'click', closeMobileMenu);
+      OrderComponent.addEventListenerWithCleanup(mobileMenuClose, "click", closeMobileMenu);
     }
-    
+
     if (mobileHome) {
-      OrderComponent.addEventListenerWithCleanup(mobileHome, 'click', () => {
+      OrderComponent.addEventListenerWithCleanup(mobileHome, "click", () => {
         closeMobileMenu();
-        window.location.href = '#';
+        window.location.href = "#";
       });
     }
-    
+
     if (mobileOrder) {
-      OrderComponent.addEventListenerWithCleanup(mobileOrder, 'click', () => {
+      OrderComponent.addEventListenerWithCleanup(mobileOrder, "click", () => {
         closeMobileMenu();
-        window.location.href = '#order';
+        window.location.href = "#order";
       });
     }
-    
+
     // Add input validation event listeners
-    const nameInput = container.querySelector('#customerName');
-    const phoneInput = container.querySelector('#phone');
-    const emailInput = container.querySelector('#email');
-    
+    const nameInput = container.querySelector("#customerName");
+    const phoneInput = container.querySelector("#phone");
+    const emailInput = container.querySelector("#email");
+
     if (nameInput) {
       const nameBlurHandler = () => {
-        const errorElem = container.querySelector('#nameError');
+        const errorElem = container.querySelector("#nameError");
         if (!nameInput.value.trim()) {
-          errorElem.classList.remove('hidden');
+          errorElem.classList.remove("hidden");
         } else {
-          errorElem.classList.add('hidden');
+          errorElem.classList.add("hidden");
         }
       };
-      OrderComponent.addEventListenerWithCleanup(nameInput, 'blur', nameBlurHandler);
+      OrderComponent.addEventListenerWithCleanup(nameInput, "blur", nameBlurHandler);
     }
-    
+
     if (phoneInput) {
       const phoneBlurHandler = () => {
-        const errorElem = container.querySelector('#phoneError');
+        const errorElem = container.querySelector("#phoneError");
         if (!phoneInput.value.trim() || !phoneInput.checkValidity()) {
-          errorElem.classList.remove('hidden');
+          errorElem.classList.remove("hidden");
         } else {
-          errorElem.classList.add('hidden');
+          errorElem.classList.add("hidden");
         }
       };
-      
-      const phoneInputHandler = function() {
-        const errorElem = container.querySelector('#phoneError');
-        const cleanPhone = this.value.replace(/\D/g, '');
-        
+
+      const phoneInputHandler = function () {
+        const errorElem = container.querySelector("#phoneError");
+        const cleanPhone = this.value.replace(/\D/g, "");
+
         if (cleanPhone.length !== 11) {
-          errorElem.textContent = 'Пожалуйста, введите 11 цифр номера телефона';
-          errorElem.classList.remove('hidden');
+          errorElem.textContent = "Пожалуйста, введите 11 цифр номера телефона";
+          errorElem.classList.remove("hidden");
         } else {
-          errorElem.classList.add('hidden');
+          errorElem.classList.add("hidden");
         }
       };
-      
-      OrderComponent.addEventListenerWithCleanup(phoneInput, 'blur', phoneBlurHandler);
-      OrderComponent.addEventListenerWithCleanup(phoneInput, 'input', phoneInputHandler);
+
+      OrderComponent.addEventListenerWithCleanup(phoneInput, "blur", phoneBlurHandler);
+      OrderComponent.addEventListenerWithCleanup(phoneInput, "input", phoneInputHandler);
     }
-    
+
     if (emailInput) {
       const emailBlurHandler = () => {
-        const errorElem = container.querySelector('#emailError');
+        const errorElem = container.querySelector("#emailError");
         if (!emailInput.value.trim() || !emailInput.checkValidity()) {
-          errorElem.classList.remove('hidden');
+          errorElem.classList.remove("hidden");
         } else {
-          errorElem.classList.add('hidden');
+          errorElem.classList.add("hidden");
         }
       };
-      OrderComponent.addEventListenerWithCleanup(emailInput, 'blur', emailBlurHandler);
+      OrderComponent.addEventListenerWithCleanup(emailInput, "blur", emailBlurHandler);
     }
-    
+
     // Add form submission handler
-    const form = container.querySelector('#orderForm');
+    const form = container.querySelector("#orderForm");
     if (form) {
       const formSubmitHandler = async (event) => await OrderComponent.submitOrder(event, container);
-      OrderComponent.addEventListenerWithCleanup(form, 'submit', formSubmitHandler);
+      OrderComponent.addEventListenerWithCleanup(form, "submit", formSubmitHandler);
     }
   },
-  
+
   validateForm(form) {
     // Get form fields
     const name = form.customerName.value.trim();
     const phone = form.phone.value.trim();
     const email = form.email.value.trim();
-    
+
     // Reset error messages
-    form.querySelector('#nameError').classList.add('hidden');
-    form.querySelector('#phoneError').classList.add('hidden');
-    form.querySelector('#emailError').classList.add('hidden');
-    
+    form.querySelector("#nameError").classList.add("hidden");
+    form.querySelector("#phoneError").classList.add("hidden");
+    form.querySelector("#emailError").classList.add("hidden");
+
     // Validate required fields
     let isValid = true;
-    
+
     if (!name) {
-      form.querySelector('#nameError').classList.remove('hidden');
+      form.querySelector("#nameError").classList.remove("hidden");
       isValid = false;
     }
-    
-    if (!phone || !/^(8|\+7)?[\d\s-]{10,15}$/.test(phone.replace(/\D/g, ''))) {
-      form.querySelector('#phoneError').classList.remove('hidden');
+
+    if (!phone || !/^(8|\+7)?[\d\s-]{10,15}$/.test(phone.replace(/\D/g, ""))) {
+      form.querySelector("#phoneError").classList.remove("hidden");
       isValid = false;
     }
-    
+
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      form.querySelector('#emailError').classList.remove('hidden');
+      form.querySelector("#emailError").classList.remove("hidden");
       isValid = false;
     }
-    
+
     return isValid;
   },
-  
+
   async submitOrder(event, container) {
     event.preventDefault();
-    
+
     // Get form
     const form = event.target;
-    
+
     // Validate form
     if (!OrderComponent.validateForm(form)) {
       return;
     }
-    
+
     const name = form.customerName.value.trim();
     const phone = form.phone.value.trim();
     const email = form.email.value.trim();
-    const yandexAddress = form.yandexAddress ? form.yandexAddress.value.trim() : '';
-    const comment = form.comment ? form.comment.value.trim() : '';
+    const yandexAddress = form.yandexAddress ? form.yandexAddress.value.trim() : "";
+    const comment = form.comment ? form.comment.value.trim() : "";
     const paymentValue = form.payment.value;
     const deliveryValue = form.delivery.value;
-    
+
     // Загружаем товары с ценами для формирования заказа
     const products = await productsService.getActiveProducts();
     const cart = cartService.getCart();
-    
+
     // Преобразуем корзину, добавляя информацию о товарах
-    const cartItems = cart.map(item => {
-      const product = products.find(p => p.id === item.id);
-      if (!product) {
-        console.error('Продукт не найден:', item.id);
-        return null;
-      }
-      return {
-        id: item.id,
-        quantity: item.quantity,
-        name: product.name,
-        artikul: product.artikul,
-        color: product.color,
-        price: product.price || 0
-      };
-    }).filter(item => item !== null);
-    
+    const cartItems = cart
+      .map((item) => {
+        const product = products.find((p) => p.id === item.id);
+        if (!product) {
+          console.error("Продукт не найден:", item.id);
+          return null;
+        }
+        return {
+          id: item.id,
+          quantity: item.quantity,
+          name: product.name,
+          artikul: product.artikul,
+          color: product.color,
+          price: product.price || 0,
+        };
+      })
+      .filter((item) => item !== null);
+
     // Calculate order totals
     const subtotal = await cartService.getCartTotal();
-    
+
     let discountRate = 0;
     if (subtotal >= 50000) {
       discountRate = 5;
@@ -471,10 +509,10 @@ const OrderComponent = {
     } else if (subtotal >= 20000) {
       discountRate = 2;
     }
-    
+
     const discount = Math.floor((subtotal * discountRate) / 100);
     const total = subtotal - discount;
-    
+
     const orderData = {
       name: name,
       phone: phone,
@@ -486,74 +524,74 @@ const OrderComponent = {
       cart_items: cartItems,
       subtotal: subtotal,
       discount: discount,
-      total: total
+      total: total,
     };
-    
+
     // Показываем индикатор загрузки
     const submitButton = form.querySelector('button[type="submit"]');
     const originalButtonText = submitButton.innerHTML;
     submitButton.disabled = true;
-    submitButton.innerHTML = 'Обработка...';
-    
+    submitButton.innerHTML = "Обработка...";
+
     // Получаем URL API из переменной окружения
-    const apiUrl = env.supabaseUrl || 'https://bsndismiessofvhglzrv.supabase.co';
-    
-    console.log('Отправляем заказ на:', `${apiUrl}/functions/v1/order-processing`);
-    console.log('Данные заказа:', orderData);
-    
+    const apiUrl = env.supabaseUrl || "https://bsndismiessofvhglzrv.supabase.co";
+
+    console.log("Отправляем заказ на:", `${apiUrl}/functions/v1/order-processing`);
+    console.log("Данные заказа:", orderData);
+
     // Отправляем заказ в Supabase Edge Function с улучшенной обработкой ошибок
     fetch(`${apiUrl}/functions/v1/order-processing`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({ orderData }),
     })
-    .then(response => {
-      if (!response.ok) {
-        // Если ответ не OK, получаем текст ошибки
-        return response.text().then(text => {
-          throw new Error(`HTTP ошибка ${response.status}: ${text}`);
-        });
-      }
-      return response.json();
-    })
-    .then(data => {
-      // Обработка успешного ответа
-      if (data.success) {
-        // Очистка корзины
-        cartService.clearCart();
-        
-        // Показываем сообщение о подтверждении
-        container.querySelector('#orderStatus').classList.remove('hidden');
-        
-        // Меняем текст кнопки
-        submitButton.innerHTML = 'Заказ отправлен';
-        
-        // Скроллим к статусу заказа
-        container.querySelector('#orderStatus').scrollIntoView({ behavior: 'smooth' });
-        
-        // Отключаем все поля формы
-        const formInputs = form.querySelectorAll('input, textarea, button, select');
-        formInputs.forEach(input => {
-          input.disabled = true;
-        });
-      } else {
-        // Обработка ошибки
-        console.error('Ошибка данных:', data.error);
-        alert(`Ошибка при оформлении заказа: ${data.error}`);
+      .then((response) => {
+        if (!response.ok) {
+          // Если ответ не OK, получаем текст ошибки
+          return response.text().then((text) => {
+            throw new Error(`HTTP ошибка ${response.status}: ${text}`);
+          });
+        }
+        return response.json();
+      })
+      .then((data) => {
+        // Обработка успешного ответа
+        if (data.success) {
+          // Очистка корзины
+          cartService.clearCart();
+
+          // Показываем сообщение о подтверждении
+          container.querySelector("#orderStatus").classList.remove("hidden");
+
+          // Меняем текст кнопки
+          submitButton.innerHTML = "Заказ отправлен";
+
+          // Скроллим к статусу заказа
+          container.querySelector("#orderStatus").scrollIntoView({ behavior: "smooth" });
+
+          // Отключаем все поля формы
+          const formInputs = form.querySelectorAll("input, textarea, button, select");
+          formInputs.forEach((input) => {
+            input.disabled = true;
+          });
+        } else {
+          // Обработка ошибки
+          console.error("Ошибка данных:", data.error);
+          alert(`Ошибка при оформлении заказа: ${data.error}`);
+          submitButton.disabled = false;
+          submitButton.innerHTML = originalButtonText;
+        }
+      })
+      .catch((error) => {
+        // Обработка ошибки сети
+        console.error("Ошибка отправки заказа:", error);
+        alert(`Ошибка при отправке заказа: ${error.message}`);
         submitButton.disabled = false;
         submitButton.innerHTML = originalButtonText;
-      }
-    })
-    .catch(error => {
-      // Обработка ошибки сети
-      console.error('Ошибка отправки заказа:', error);
-      alert(`Ошибка при отправке заказа: ${error.message}`);
-      submitButton.disabled = false;
-      submitButton.innerHTML = originalButtonText;
-    });
-  }
+      });
+  },
 };
 
 export default OrderComponent;

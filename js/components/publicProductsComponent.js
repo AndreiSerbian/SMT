@@ -504,10 +504,6 @@ export const PublicProductsComponent = {
         productBtn.onclick = () => this.goToProductByColor(categorySlug, colorHex);
       }
     }
-    
-    const colorName = this.data.categoryCards
-      .find(c => c.slug === categorySlug)?.colorMap?.[colorHex] || 'Цвет';
-    this.showNotification(`Выбран цвет: ${colorName}`, 'info');
   },
 
   /**
@@ -599,9 +595,6 @@ export const PublicProductsComponent = {
     
     // Добавляем активный класс к выбранному цвету
     element.classList.add('selected');
-    
-    const colorName = this.getColorNameFromHex(hex);
-    this.showNotification(`Выбран цвет: ${colorName}`, 'info');
   },
 
   /**
