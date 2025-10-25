@@ -3,6 +3,7 @@ import SwiperService from "../services/swiperService.js";
 import { ColorService } from "../services/colorService.js";
 import { productsService } from "../services/productsService.js";
 import { PublicProductsComponent } from "./publicProductsComponent.js";
+import CookieConsentService from "../services/cookieConsentService.js";
 
 const HomeComponent = {
   swipersById: {},
@@ -494,6 +495,11 @@ const HomeComponent = {
     setTimeout(() => {
       this.loadProductsCatalog(container);
     }, 300);
+
+    // Показываем cookie-баннер с небольшой задержкой
+    setTimeout(() => {
+      CookieConsentService.show();
+    }, 500);
   },
 };
 
