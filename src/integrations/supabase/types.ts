@@ -349,10 +349,7 @@ export type Database = {
         Args: { color: string; size_category: string }
         Returns: string[]
       }
-      get_color_hex: {
-        Args: { color_name: string }
-        Returns: string
-      }
+      get_color_hex: { Args: { color_name: string }; Returns: string }
       get_product_size: {
         Args: { category: string; dimensions: Json }
         Returns: Database["public"]["Enums"]["product_size"]
@@ -361,14 +358,8 @@ export type Database = {
         Args: { login_input: string; password_input: string }
         Returns: boolean
       }
-      is_current_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      parse_dimensions: {
-        Args: { dimension_str: string }
-        Returns: Json
-      }
+      is_current_admin: { Args: never; Returns: boolean }
+      parse_dimensions: { Args: { dimension_str: string }; Returns: Json }
       set_admin_context: {
         Args: { admin_login: string; admin_password: string }
         Returns: undefined
