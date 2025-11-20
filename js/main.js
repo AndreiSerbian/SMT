@@ -3,21 +3,21 @@ import { cartService } from './services/cartService.js';
 import { notificationService } from './services/notificationService.js';
 
 // Глобальная функция для добавления товара в корзину
-window.addToCart = function(productId, quantity = 1) {
+window.addToCart = async function(productId, quantity = 1) {
   console.log(`Добавляем в корзину: товар ${productId}, количество ${quantity}`);
-  cartService.addToCart(productId, quantity);
+  await cartService.addToCart(productId, quantity);
   
   // Показываем уведомление
   notificationService.show(`Товар добавлен в корзину (${quantity} шт.)`);
 };
 
 // Глобальная функция для обновления количества в корзине
-window.updateQuantity = function(productId, quantity) {
+window.updateQuantity = async function(productId, quantity) {
   console.log(`Обновляем количество: товар ${productId}, новое количество ${quantity}`);
   if (quantity <= 0) {
-    cartService.removeFromCart(productId);
+    await cartService.removeFromCart(productId);
   } else {
-    cartService.updateQuantity(productId, quantity);
+    await cartService.updateQuantity(productId, quantity);
   }
 };
 
@@ -40,19 +40,19 @@ window.toggleCart = function() {
 };
 
 // Глобальная функция для обновления количества товара в корзине
-window.updateCartQuantity = function(productId, quantity) {
+window.updateCartQuantity = async function(productId, quantity) {
   console.log(`Обновляем количество в корзине: товар ${productId}, количество ${quantity}`);
   if (quantity <= 0) {
-    cartService.removeFromCart(productId);
+    await cartService.removeFromCart(productId);
   } else {
-    cartService.updateQuantity(productId, quantity);
+    await cartService.updateQuantity(productId, quantity);
   }
 };
 
 // Глобальная функция для удаления товара из корзины
-window.removeFromCart = function(productId) {
+window.removeFromCart = async function(productId) {
   console.log(`Удаляем из корзины: товар ${productId}`);
-  cartService.removeFromCart(productId);
+  await cartService.removeFromCart(productId);
 };
 
 // Глобальная функция для перехода на страницу заказа
@@ -65,9 +65,9 @@ window.goToOrderPage = function() {
 window.quantityInput = null;
 
 // Глобальная функция для очистки корзины
-window.clearCart = function() {
+window.clearCart = async function() {
   console.log('Очищаем корзину');
-  cartService.clearCart();
+  await cartService.clearCart();
 };
 
 // Инициализация приложения
