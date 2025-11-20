@@ -6,9 +6,6 @@ import { notificationService } from './services/notificationService.js';
 window.addToCart = async function(productId, quantity = 1) {
   console.log(`Добавляем в корзину: товар ${productId}, количество ${quantity}`);
   await cartService.addToCart(productId, quantity);
-  
-  // Показываем уведомление
-  notificationService.show(`Товар добавлен в корзину (${quantity} шт.)`);
 };
 
 // Глобальная функция для обновления количества в корзине
