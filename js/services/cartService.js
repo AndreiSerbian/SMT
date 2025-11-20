@@ -20,7 +20,7 @@ export const cartService = {
   },
   
   // Add item to cart
-  addToCart(productId, quantity) {
+  async addToCart(productId, quantity) {
     const cart = this.getCart();
     const existingItem = cart.find(item => item.id === productId);
     
@@ -31,35 +31,35 @@ export const cartService = {
     }
     
     this.saveCart(cart);
-    this.updateCartUI();
+    await this.updateCartUI();
   },
   
   // Update quantity of item in cart
-  updateQuantity(productId, quantity) {
+  async updateQuantity(productId, quantity) {
     const cart = this.getCart();
     const existingItem = cart.find(item => item.id === productId);
     
     if (existingItem && quantity > 0) {
       existingItem.quantity = quantity;
       this.saveCart(cart);
-      this.updateCartUI();
+      await this.updateCartUI();
     }
   },
 
   // Remove item from cart
-  removeFromCart(productId) {
+  async removeFromCart(productId) {
     const cart = this.getCart();
     const updatedCart = cart.filter(item => item.id !== productId);
     
     this.saveCart(updatedCart);
-    this.updateCartUI();
+    await this.updateCartUI();
   },
   
   // Clear cart
-  clearCart() {
+  async clearCart() {
     localStorage.removeItem('cart');
     eventBus.emit('cart-updated', []);
-    this.updateCartUI();
+    await this.updateCartUI();
   },
   
   // Get cart total
