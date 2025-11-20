@@ -22,11 +22,14 @@ window.updateQuantity = async function(productId, quantity) {
 };
 
 // Глобальная функция для переключения отображения корзины
-window.toggleCart = function() {
+window.toggleCart = async function() {
   const cartModal = document.getElementById('cartModal');
   const cartSlide = cartModal.querySelector('.fixed.right-0');
   
   if (cartModal.classList.contains('hidden')) {
+    // Обновляем содержимое корзины перед открытием
+    await cartService.updateCartUI();
+    
     cartModal.classList.remove('hidden');
     cartSlide.classList.remove('translate-x-full');
     document.body.style.overflow = 'hidden';
