@@ -300,7 +300,9 @@ const ProductComponent = {
               <a href="https://www.wildberries.ru/catalog/${product.id_wb}/detail.aspx"
                  target="_blank"
                  rel="nofollow noopener"
-                 class="bg-indigo-600 hover:bg-indigo-700 text-white px-2 py-2 rounded transition duration-200">
+                 class="bg-indigo-600 hover:bg-indigo-700 text-white px-2 py-2 rounded transition duration-200"
+                 data-wb-link
+                 data-product-id="${product.id}">
                 Купить пробный товар на WB
               </a>
               ` : ''}
@@ -565,6 +567,38 @@ const ProductComponent = {
         };
         ProductComponent.addEventListenerWithCleanup(thumbnail, 'click', thumbnailHandler);
       });
+      
+      // Обработчик для ссылки на WB - логирование клика
+      const wbLink = container.querySelector('[data-wb-link]');
+      if (wbLink) {
+        const wbClickHandler = async (e) => {
+          try {
+            const productId = wbLink.dataset.productId;
+            
+            // Логируем клик в Supabase
+            const apiUrl = "https://bsndismiessofvhglzrv.supabase.co";
+            await fetch(`${apiUrl}/rest/v1/wb_clicks`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzbmRpc21pZXNzb2Z2aGdsenJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzg2ODYyNTIsImV4cCI6MjA1NDI2MjI1Mn0.4pumjrK8SV79xaegTEZaJMmi6lnp-_5uhSytvWpoZHY',
+                'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzbmRpc21pZXNzb2Z2aGdsenJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzg2ODYyNTIsImV4cCI6MjA1NDI2MjI1Mn0.4pumjrK8SV79xaegTEZaJMmi6lnp-_5uhSytvWpoZHY',
+                'Prefer': 'return=minimal'
+              },
+              body: JSON.stringify({
+                product_id: productId,
+                user_agent: navigator.userAgent,
+                referrer: document.referrer || null
+              })
+            });
+          } catch (error) {
+            console.error('Ошибка логирования клика на WB:', error);
+          }
+          // Ссылка откроется автоматически
+        };
+        ProductComponent.addEventListenerWithCleanup(wbLink, 'click', wbClickHandler);
+      }
+      
       
       if (closeModalBtn) {
         ProductComponent.addEventListenerWithCleanup(closeModalBtn, 'click', closeImageModal);

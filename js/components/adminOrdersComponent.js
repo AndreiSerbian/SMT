@@ -74,27 +74,38 @@ export class AdminOrdersComponent {
   }
 
   getAnalytics() {
-    const total = this.filteredOrders.length;
-    const totalRevenue = this.filteredOrders.reduce((sum, o) => sum + (parseFloat(o.total) || 0), 0);
-    const pending = this.filteredOrders.filter(o => o.order_status === 'pending').length;
-    const avgOrder = total > 0 ? totalRevenue / total : 0;
+    // Фильтруем только подтверждённые заказы (не отменённые и не отказанные)
+    const confirmedOrders = this.filteredOrders.filter(o => 
+      o.order_status !== 'cancelled' && o.order_status !== 'rejected'
+    );
+    
+    const totalRevenue = confirmedOrders.reduce((sum, o) => sum + (parseFloat(o.total) || 0), 0);
+    const confirmedCount = confirmedOrders.length;
+    const avgOrderValue = confirmedCount > 0 ? totalRevenue / confirmedCount : 0;
+    
+    // Все заказы (для общей статистики)
+    const allOrdersCount = this.filteredOrders.length;
+    const pendingCount = this.filteredOrders.filter(o => o.order_status === 'pending').length;
+    const cancelledCount = this.filteredOrders.filter(o => 
+      o.order_status === 'cancelled' || o.order_status === 'rejected'
+    ).length;
 
     return `
       <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div class="bg-white p-4 rounded-xl border">
-          <div class="text-2xl font-bold text-blue-600">${total}</div>
+          <div class="text-2xl font-bold text-blue-600">${allOrdersCount}</div>
           <div class="text-sm text-slate-600">Всего заказов</div>
         </div>
         <div class="bg-white p-4 rounded-xl border">
           <div class="text-2xl font-bold text-green-600">₽${totalRevenue.toFixed(2)}</div>
-          <div class="text-sm text-slate-600">Общая выручка</div>
+          <div class="text-sm text-slate-600">Выручка (подтв.)</div>
         </div>
         <div class="bg-white p-4 rounded-xl border">
-          <div class="text-2xl font-bold text-orange-600">${pending}</div>
+          <div class="text-2xl font-bold text-orange-600">${pendingCount}</div>
           <div class="text-sm text-slate-600">В ожидании</div>
         </div>
         <div class="bg-white p-4 rounded-xl border">
-          <div class="text-2xl font-bold text-purple-600">₽${avgOrder.toFixed(2)}</div>
+          <div class="text-2xl font-bold text-purple-600">₽${avgOrderValue.toFixed(2)}</div>
           <div class="text-sm text-slate-600">Средний чек</div>
         </div>
       </div>

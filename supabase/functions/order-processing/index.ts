@@ -273,7 +273,8 @@ serve(async (req) => {
         .insert({
           ...orderData,
           order_status: 'created', // Используем 'created' в соответствии с CHECK CONSTRAINT
-          created_at: new Date().toISOString()
+          created_at: new Date().toISOString(),
+          subscribe: orderData.subscribe !== undefined ? orderData.subscribe : true
         })
         .select()
         .single();

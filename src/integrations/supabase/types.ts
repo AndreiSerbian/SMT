@@ -167,6 +167,7 @@ export type Database = {
           order_status: string | null
           payment: string | null
           phone: string
+          subscribe: boolean
           subtotal: number
           total: number
           yandex_address: string | null
@@ -185,6 +186,7 @@ export type Database = {
           order_status?: string | null
           payment?: string | null
           phone: string
+          subscribe?: boolean
           subtotal: number
           total: number
           yandex_address?: string | null
@@ -203,6 +205,7 @@ export type Database = {
           order_status?: string | null
           payment?: string | null
           phone?: string
+          subscribe?: boolean
           subtotal?: number
           total?: number
           yandex_address?: string | null
@@ -337,6 +340,30 @@ export type Database = {
           sort_order?: number
           updated_at?: string | null
           value?: string
+        }
+        Relationships: []
+      }
+      wb_clicks: {
+        Row: {
+          clicked_at: string
+          id: string
+          product_id: string
+          referrer: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          clicked_at?: string
+          id?: string
+          product_id: string
+          referrer?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          clicked_at?: string
+          id?: string
+          product_id?: string
+          referrer?: string | null
+          user_agent?: string | null
         }
         Relationships: []
       }
