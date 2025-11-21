@@ -14,7 +14,8 @@ export const AdminProductsComponent = {
     uploadingImage: false,
     selectedImages: [],
     productImages: [], // Изображения из box_images для текущего товара
-    uploadingVideo: false
+    uploadingVideo: false,
+    wbClicksStats: {} // Статистика WB кликов
   },
 
   async render() {
@@ -81,6 +82,10 @@ export const AdminProductsComponent = {
             <span class="status-badge ${product.is_active ? 'active' : 'inactive'}">
               ${product.is_active ? 'Активен' : 'Неактивен'}
             </span>
+          </div>
+          <div class="wb-clicks-counter" style="margin-top: 8px; padding: 6px 10px; background: #f3f4f6; border-radius: 6px; font-size: 13px;">
+            <span style="color: #6b7280;">🔗 Переходы на WB:</span>
+            <strong style="color: #1f2937;">${this.data.wbClicksStats?.[product.id] || 0}</strong>
           </div>
         </div>
         <div class="product-actions">
@@ -391,12 +396,38 @@ export const AdminProductsComponent = {
 
       this.data.products = productsResult.data;
       
+      // Загружаем статистику WB кликов
+      await this.loadWBClicksStats();
+      
     } catch (error) {
       console.error('Error loading data:', error);
       this.showNotification('Ошибка загрузки данных', 'error');
     }
     
     this.data.loading = false;
+  },
+
+  async loadWBClicksStats() {
+    try {
+      // Загружаем статистику кликов для всех товаров
+      const { data, error } = await supabase
+        .from('wb_clicks')
+        .select('product_id');
+
+      if (error) throw error;
+
+      // Подсчитываем клики для каждого товара
+      const clicksMap = {};
+      (data || []).forEach(click => {
+        clicksMap[click.product_id] = (clicksMap[click.product_id] || 0) + 1;
+      });
+
+      // Сохраняем статистику
+      this.data.wbClicksStats = clicksMap;
+    } catch (error) {
+      console.error('Ошибка загрузки статистики WB кликов:', error);
+      this.data.wbClicksStats = {};
+    }
   },
 
   getSizeName(size) {
