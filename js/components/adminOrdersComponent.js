@@ -1,4 +1,5 @@
 import { supabase } from '../utils/supabase.js';
+import { StorageHelper } from '../utils/storageHelper.js';
 
 /**
  * Компонент управления заказами
@@ -438,6 +439,20 @@ export class AdminOrdersComponent {
     const newStatus = statusSelect.value;
 
     try {
+      // Получаем данные админа из localStorage
+      const adminData = StorageHelper.getAdminData();
+      if (!adminData) {
+        alert('Необходима авторизация администратора');
+        return;
+      }
+
+      // Устанавливаем контекст админа
+      const { error: contextError } = await supabase.rpc('set_admin_login_context', {
+        admin_login: adminData.login
+      });
+
+      if (contextError) throw contextError;
+
       const { error } = await supabase
         .from('orders')
         .update({ order_status: newStatus })
