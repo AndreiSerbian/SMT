@@ -15,7 +15,9 @@ export const AdminProductsComponent = {
     selectedImages: [],
     productImages: [], // Изображения из box_images для текущего товара
     uploadingVideo: false,
-    wbClicksStats: {} // Статистика WB кликов
+    wbClicksStats: {}, // Статистика WB кликов
+    statsProduct: null, // Товар для отображения статистики
+    statsData: null // Данные статистики
   },
 
   async render() {
@@ -39,6 +41,7 @@ export const AdminProductsComponent = {
 
         ${this.data.editingProduct ? this.renderProductModal() : ''}
         ${this.data.showImportModal ? this.renderImportModal() : ''}
+        ${this.data.statsProduct ? this.renderStatsModal() : ''}
       </div>
     `;
   },
@@ -91,6 +94,14 @@ export const AdminProductsComponent = {
         <div class="product-actions">
           <button class="btn btn-sm btn-secondary" onclick="AdminProductsComponent.editProduct('${product.id}')">
             Изменить
+          </button>
+          <button class="btn btn-sm btn-info" onclick="AdminProductsComponent.showProductStats('${product.id}')" style="display: flex; align-items: center; gap: 4px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="20" x2="12" y2="10"></line>
+              <line x1="18" y1="20" x2="18" y2="4"></line>
+              <line x1="6" y1="20" x2="6" y2="16"></line>
+            </svg>
+            Статистика
           </button>
           <button class="btn btn-sm ${product.is_active ? 'btn-warning' : 'btn-success'}" 
                   onclick="AdminProductsComponent.toggleActive('${product.id}')">
@@ -1344,6 +1355,225 @@ export const AdminProductsComponent = {
     
     modalImage.src = this.currentAdminImages[this.currentAdminImageIndex];
     counter.textContent = `${this.currentAdminImageIndex + 1} / ${this.currentAdminImages.length}`;
+  },
+
+  // Статистика товара
+  async showProductStats(productId) {
+    const product = this.data.products.find(p => p.id === productId);
+    if (!product) return;
+
+    this.data.statsProduct = product;
+    this.data.statsData = null;
+    
+    // Перерисовываем для показа загрузки
+    const container = document.getElementById('adminContent');
+    if (container) {
+      container.innerHTML = await this.render();
+    }
+
+    // Загружаем статистику
+    await this.loadProductStats(productId);
+    
+    // Перерисовываем со статистикой
+    if (container) {
+      container.innerHTML = await this.render();
+    }
+  },
+
+  async loadProductStats(productId) {
+    try {
+      // Загружаем переходы на WB
+      const { data: wbClicks, error: wbError } = await supabase
+        .from('wb_clicks')
+        .select('clicked_at')
+        .eq('product_id', productId)
+        .order('clicked_at', { ascending: false });
+
+      if (wbError) throw wbError;
+
+      // Загружаем заказы с этим товаром
+      const { data: orders, error: ordersError } = await supabase
+        .from('orders')
+        .select('id, cart_items, total, order_status, created_at')
+        .order('created_at', { ascending: false });
+
+      if (ordersError) throw ordersError;
+
+      // Фильтруем заказы, содержащие этот товар
+      const ordersWithProduct = orders.filter(order => {
+        const items = Array.isArray(order.cart_items) ? order.cart_items : [];
+        return items.some(item => item.id === productId);
+      });
+
+      // Подсчитываем статистику продаж
+      const salesStats = {
+        totalOrders: ordersWithProduct.length,
+        totalQuantity: 0,
+        totalRevenue: 0,
+        confirmedOrders: 0,
+        confirmedRevenue: 0
+      };
+
+      ordersWithProduct.forEach(order => {
+        const items = Array.isArray(order.cart_items) ? order.cart_items : [];
+        const productItem = items.find(item => item.id === productId);
+        
+        if (productItem) {
+          salesStats.totalQuantity += productItem.quantity || 0;
+          
+          // Считаем только подтверждённые заказы для выручки
+          if (order.order_status !== 'cancelled' && order.order_status !== 'rejected') {
+            salesStats.confirmedOrders++;
+            salesStats.confirmedRevenue += (productItem.price * productItem.quantity) || 0;
+          }
+        }
+      });
+
+      this.data.statsData = {
+        wbClicks: wbClicks || [],
+        wbClicksTotal: (wbClicks || []).length,
+        orders: ordersWithProduct,
+        salesStats
+      };
+
+    } catch (error) {
+      console.error('Ошибка загрузки статистики:', error);
+      this.data.statsData = {
+        error: 'Ошибка загрузки статистики'
+      };
+    }
+  },
+
+  renderStatsModal() {
+    const product = this.data.statsProduct;
+    const stats = this.data.statsData;
+
+    return `
+      <div class="modal-overlay" onclick="AdminProductsComponent.closeStatsModal(event)">
+        <div class="modal-content large-modal">
+          <div class="modal-header">
+            <h3>📊 Статистика товара: ${product.name}</h3>
+            <button class="close-btn" onclick="AdminProductsComponent.closeStatsModal()">&times;</button>
+          </div>
+          
+          <div class="stats-content" style="padding: 20px;">
+            ${!stats ? this.renderStatsLoader() : stats.error ? `<p class="error">${stats.error}</p>` : this.renderStatsData(stats)}
+          </div>
+        </div>
+      </div>
+    `;
+  },
+
+  renderStatsLoader() {
+    return `
+      <div style="text-align: center; padding: 40px;">
+        <div class="spinner" style="margin: 0 auto 16px;"></div>
+        <p>Загрузка статистики...</p>
+      </div>
+    `;
+  },
+
+  renderStatsData(stats) {
+    return `
+      <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+        <div class="stat-card" style="background: #f0f9ff; padding: 16px; border-radius: 8px;">
+          <div style="font-size: 24px; font-weight: bold; color: #0369a1;">${stats.wbClicksTotal}</div>
+          <div style="font-size: 14px; color: #64748b;">Переходов на WB</div>
+        </div>
+        
+        <div class="stat-card" style="background: #f0fdf4; padding: 16px; border-radius: 8px;">
+          <div style="font-size: 24px; font-weight: bold; color: #15803d;">${stats.salesStats.totalOrders}</div>
+          <div style="font-size: 14px; color: #64748b;">Всего заказов</div>
+        </div>
+        
+        <div class="stat-card" style="background: #fef3c7; padding: 16px; border-radius: 8px;">
+          <div style="font-size: 24px; font-weight: bold; color: #d97706;">${stats.salesStats.totalQuantity}</div>
+          <div style="font-size: 14px; color: #64748b;">Продано штук</div>
+        </div>
+        
+        <div class="stat-card" style="background: #f3e8ff; padding: 16px; border-radius: 8px;">
+          <div style="font-size: 24px; font-weight: bold; color: #7c3aed;">₽${stats.salesStats.confirmedRevenue.toFixed(2)}</div>
+          <div style="font-size: 14px; color: #64748b;">Выручка (подтв.)</div>
+        </div>
+      </div>
+
+      ${stats.wbClicksTotal > 0 ? `
+        <div class="stats-section" style="margin-bottom: 24px;">
+          <h4 style="margin-bottom: 12px; font-size: 16px; font-weight: 600;">🔗 Последние переходы на WB</h4>
+          <div style="max-height: 200px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 8px;">
+            ${stats.wbClicks.slice(0, 10).map(click => `
+              <div style="padding: 8px 12px; border-bottom: 1px solid #f3f4f6; font-size: 14px;">
+                ${new Date(click.clicked_at).toLocaleString('ru-RU')}
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      ` : ''}
+
+      ${stats.orders.length > 0 ? `
+        <div class="stats-section">
+          <h4 style="margin-bottom: 12px; font-size: 16px; font-weight: 600;">📦 Заказы с этим товаром</h4>
+          <div style="max-height: 300px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 8px;">
+            <table style="width: 100%; font-size: 14px;">
+              <thead style="background: #f9fafb; position: sticky; top: 0;">
+                <tr>
+                  <th style="padding: 8px; text-align: left; border-bottom: 1px solid #e5e7eb;">Дата</th>
+                  <th style="padding: 8px; text-align: left; border-bottom: 1px solid #e5e7eb;">Количество</th>
+                  <th style="padding: 8px; text-align: left; border-bottom: 1px solid #e5e7eb;">Статус</th>
+                  <th style="padding: 8px; text-align: right; border-bottom: 1px solid #e5e7eb;">Сумма</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${stats.orders.slice(0, 20).map(order => {
+                  const items = Array.isArray(order.cart_items) ? order.cart_items : [];
+                  const productItem = items.find(item => item.id === this.data.statsProduct.id);
+                  const statusColors = {
+                    pending: '#fbbf24',
+                    confirmed: '#3b82f6',
+                    processing: '#a855f7',
+                    shipped: '#6366f1',
+                    delivered: '#10b981',
+                    cancelled: '#ef4444',
+                    rejected: '#f43f5e'
+                  };
+                  const statusNames = {
+                    pending: 'Создан',
+                    confirmed: 'Подтверждён',
+                    processing: 'В обработке',
+                    shipped: 'Отправлен',
+                    delivered: 'Доставлен',
+                    cancelled: 'Отменён',
+                    rejected: 'Отказан'
+                  };
+                  return `
+                    <tr style="border-bottom: 1px solid #f3f4f6;">
+                      <td style="padding: 8px;">${new Date(order.created_at).toLocaleDateString('ru-RU')}</td>
+                      <td style="padding: 8px;">${productItem?.quantity || 0} шт.</td>
+                      <td style="padding: 8px;">
+                        <span style="color: ${statusColors[order.order_status] || '#6b7280'}; font-weight: 500;">
+                          ${statusNames[order.order_status] || order.order_status}
+                        </span>
+                      </td>
+                      <td style="padding: 8px; text-align: right;">₽${((productItem?.price || 0) * (productItem?.quantity || 0)).toFixed(2)}</td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ` : '<p style="color: #6b7280; text-align: center; padding: 20px;">Заказов с этим товаром пока нет</p>'}
+    `;
+  },
+
+  closeStatsModal(event) {
+    if (event && event.target !== event.currentTarget) return;
+    this.data.statsProduct = null;
+    this.data.statsData = null;
+    const container = document.getElementById('adminContent');
+    if (container) {
+      this.render().then(html => container.innerHTML = html);
+    }
   }
 };
 
