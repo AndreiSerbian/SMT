@@ -630,8 +630,15 @@ export class ModernAdminComponent {
             }">${product.is_active ? 'Активен' : 'Скрыт'}</span>
           </td>
           <td class="px-3 py-2 text-right">
-            <div class="flex gap-1">
+            <div class="flex gap-1 justify-end">
               ${product.id_wb ? `<a href="https://www.wildberries.ru/catalog/${product.id_wb}/detail.aspx" target="_blank" class="px-2 py-1 rounded-lg bg-purple-600 text-white text-sm hover:bg-purple-700" title="Посмотреть на WB">WB</a>` : ''}
+              <button class="px-2 py-1 rounded-lg bg-sky-500 text-white text-sm hover:bg-sky-600 flex items-center gap-1" data-stats="${product.id}" title="Статистика">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="12" y1="20" x2="12" y2="10"></line>
+                  <line x1="18" y1="20" x2="18" y2="4"></line>
+                  <line x1="6" y1="20" x2="6" y2="16"></line>
+                </svg>
+              </button>
               <button class="px-3 py-1.5 rounded-lg border text-sm hover:bg-slate-50" data-edit="${product.id}">Изменить</button>
             </div>
           </td>
@@ -644,6 +651,11 @@ export class ModernAdminComponent {
     // Attach edit events
     tableBody.querySelectorAll('[data-edit]').forEach(btn => {
       btn.addEventListener('click', () => this.openProduct(btn.dataset.edit));
+    });
+    
+    // Attach stats events
+    tableBody.querySelectorAll('[data-stats]').forEach(btn => {
+      btn.addEventListener('click', () => this.showProductStats(btn.dataset.stats));
     });
   }
 
@@ -993,5 +1005,211 @@ export class ModernAdminComponent {
       clearTimeout(timeout);
       timeout = setTimeout(later, wait);
     };
+  }
+
+  // Product Statistics Methods
+  async showProductStats(productId) {
+    // Create modal container if it doesn't exist
+    let modalContainer = document.getElementById('statsModalContainer');
+    if (!modalContainer) {
+      modalContainer = document.createElement('div');
+      modalContainer.id = 'statsModalContainer';
+      document.body.appendChild(modalContainer);
+    }
+
+    // Show loading state
+    modalContainer.innerHTML = `
+      <div class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-4xl w-full p-6">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-bold">Статистика товара</h3>
+            <button onclick="adminComponent.closeStatsModal()" class="text-2xl text-slate-400 hover:text-slate-600">&times;</button>
+          </div>
+          <div class="flex items-center justify-center py-12">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-900"></div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    try {
+      // Fetch product details
+      const { data: product } = await this.supabase
+        .from('products')
+        .select('*')
+        .eq('id', productId)
+        .single();
+
+      // Fetch WB clicks
+      const { data: wbClicks } = await this.supabase
+        .from('wb_clicks')
+        .select('*')
+        .eq('product_id', productId)
+        .order('clicked_at', { ascending: false });
+
+      // Fetch orders containing this product
+      const { data: allOrders } = await this.supabase
+        .from('orders')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      // Filter orders that contain this product
+      const ordersWithProduct = allOrders?.filter(order => {
+        const cartItems = Array.isArray(order.cart_items) ? order.cart_items : [];
+        return cartItems.some(item => item.id === productId);
+      }) || [];
+
+      // Calculate confirmed orders (shipped, delivered, completed)
+      const confirmedOrders = ordersWithProduct.filter(o => 
+        ['shipped', 'delivered', 'completed'].includes(o.order_status)
+      );
+
+      const totalQuantity = confirmedOrders.reduce((sum, order) => {
+        const cartItems = Array.isArray(order.cart_items) ? order.cart_items : [];
+        const item = cartItems.find(i => i.id === productId);
+        return sum + (item?.quantity || 0);
+      }, 0);
+
+      const totalRevenue = confirmedOrders.reduce((sum, order) => {
+        const cartItems = Array.isArray(order.cart_items) ? order.cart_items : [];
+        const item = cartItems.find(i => i.id === productId);
+        return sum + ((item?.price || 0) * (item?.quantity || 0));
+      }, 0);
+
+      // Render statistics
+      modalContainer.innerHTML = `
+        <div class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto"
+             onclick="if(event.target === this) adminComponent.closeStatsModal()">
+          <div class="bg-white rounded-2xl max-w-4xl w-full p-6 my-8">
+            <div class="flex justify-between items-start mb-6">
+              <div>
+                <h3 class="text-xl font-bold">${product?.name || 'Товар'}</h3>
+                <p class="text-sm text-slate-500">Артикул: ${product?.artikul || '—'}</p>
+              </div>
+              <button onclick="adminComponent.closeStatsModal()" class="text-2xl text-slate-400 hover:text-slate-600">&times;</button>
+            </div>
+
+            <!-- Analytics Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div class="bg-purple-50 p-4 rounded-xl border border-purple-200">
+                <div class="text-2xl font-bold text-purple-700">${wbClicks?.length || 0}</div>
+                <div class="text-sm text-purple-600">Переходов на WB</div>
+              </div>
+              <div class="bg-blue-50 p-4 rounded-xl border border-blue-200">
+                <div class="text-2xl font-bold text-blue-700">${ordersWithProduct.length}</div>
+                <div class="text-sm text-blue-600">Заказов (всего)</div>
+              </div>
+              <div class="bg-green-50 p-4 rounded-xl border border-green-200">
+                <div class="text-2xl font-bold text-green-700">${totalQuantity}</div>
+                <div class="text-sm text-green-600">Продано (подтв.)</div>
+              </div>
+            </div>
+
+            <div class="bg-emerald-50 p-4 rounded-xl border border-emerald-200 mb-6">
+              <div class="text-2xl font-bold text-emerald-700">₽${totalRevenue.toFixed(2)}</div>
+              <div class="text-sm text-emerald-600">Выручка (подтвержденная)</div>
+            </div>
+
+            <!-- Recent WB Clicks -->
+            ${wbClicks && wbClicks.length > 0 ? `
+              <div class="mb-6">
+                <h4 class="font-semibold mb-3">Последние переходы на WB</h4>
+                <div class="bg-slate-50 rounded-lg max-h-60 overflow-y-auto">
+                  ${wbClicks.slice(0, 10).map(click => `
+                    <div class="px-4 py-2 border-b last:border-b-0 text-sm">
+                      <div class="flex justify-between">
+                        <span class="text-slate-600">${new Date(click.clicked_at).toLocaleString('ru-RU')}</span>
+                        ${click.referrer ? `<span class="text-xs text-slate-400 truncate ml-2">${click.referrer}</span>` : ''}
+                      </div>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            ` : ''}
+
+            <!-- Orders with this product -->
+            ${ordersWithProduct.length > 0 ? `
+              <div>
+                <h4 class="font-semibold mb-3">Заказы с этим товаром</h4>
+                <div class="bg-slate-50 rounded-lg max-h-80 overflow-y-auto">
+                  ${ordersWithProduct.slice(0, 20).map(order => {
+                    const cartItems = Array.isArray(order.cart_items) ? order.cart_items : [];
+                    const item = cartItems.find(i => i.id === productId);
+                    const statusColors = {
+                      pending: 'bg-yellow-100 text-yellow-700',
+                      confirmed: 'bg-blue-100 text-blue-700',
+                      processing: 'bg-purple-100 text-purple-700',
+                      shipped: 'bg-indigo-100 text-indigo-700',
+                      delivered: 'bg-green-100 text-green-700',
+                      completed: 'bg-emerald-100 text-emerald-700',
+                      cancelled: 'bg-red-100 text-red-700',
+                      rejected: 'bg-rose-100 text-rose-700',
+                      returned: 'bg-orange-100 text-orange-700',
+                      problem: 'bg-amber-100 text-amber-700'
+                    };
+                    const statusNames = {
+                      pending: 'Создан',
+                      confirmed: 'Подтверждён',
+                      processing: 'В обработке',
+                      shipped: 'Отправлен',
+                      delivered: 'Доставлен',
+                      completed: 'Завершён',
+                      cancelled: 'Отменён',
+                      rejected: 'Отказан',
+                      returned: 'Возврат',
+                      problem: 'Проблема'
+                    };
+                    return `
+                      <div class="px-4 py-3 border-b last:border-b-0">
+                        <div class="flex justify-between items-start">
+                          <div>
+                            <div class="text-sm font-medium">Заказ №${order.order_number || order.id.slice(0, 8)}</div>
+                            <div class="text-xs text-slate-500">${new Date(order.created_at).toLocaleString('ru-RU')}</div>
+                            <div class="text-xs text-slate-600 mt-1">
+                              Количество: <strong>${item?.quantity || 0}</strong> шт. × ₽${item?.price || 0}
+                            </div>
+                          </div>
+                          <span class="px-2 py-1 rounded-full text-xs font-medium ${statusColors[order.order_status] || 'bg-gray-100 text-gray-700'}">
+                            ${statusNames[order.order_status] || order.order_status}
+                          </span>
+                        </div>
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
+              </div>
+            ` : '<p class="text-slate-500 text-center py-8">Заказов пока нет</p>'}
+
+            <div class="mt-6 flex justify-end">
+              <button onclick="adminComponent.closeStatsModal()" 
+                      class="px-4 py-2 rounded-lg border hover:bg-slate-50">
+                Закрыть
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    } catch (error) {
+      console.error('Error loading product stats:', error);
+      modalContainer.innerHTML = `
+        <div class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div class="bg-white rounded-2xl max-w-md w-full p-6">
+            <h3 class="text-xl font-bold mb-4">Ошибка</h3>
+            <p class="text-red-600 mb-4">Не удалось загрузить статистику</p>
+            <button onclick="adminComponent.closeStatsModal()" 
+                    class="w-full px-4 py-2 rounded-lg border hover:bg-slate-50">
+              Закрыть
+            </button>
+          </div>
+        </div>
+      `;
+    }
+  }
+
+  closeStatsModal() {
+    const modalContainer = document.getElementById('statsModalContainer');
+    if (modalContainer) {
+      modalContainer.remove();
+    }
   }
 }
