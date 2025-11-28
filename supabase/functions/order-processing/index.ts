@@ -267,12 +267,72 @@ serve(async (req) => {
       orderData.delivery = normalizeDeliveryValue(orderData.delivery);
       console.log("Normalized delivery value:", orderData.delivery);
 
-      // Сохраняем заказ в базе данных Supabase
+      // === B2B CLIENT MANAGEMENT ===
+      // Normalize and find/create client
+      const normalizedEmail = orderData.email ? orderData.email.toLowerCase().trim() : null;
+      let clientId = null;
+
+      if (normalizedEmail) {
+        console.log("Finding or creating B2B client for email:", normalizedEmail);
+        
+        // Try to find existing client
+        const { data: existingClient } = await supabase
+          .from('b2b_clients')
+          .select('id, phone, company_name, contact_name')
+          .eq('email', normalizedEmail)
+          .single();
+
+        if (existingClient) {
+          console.log("Found existing client:", existingClient.id);
+          clientId = existingClient.id;
+          
+          // Update client info if new data provided and old data is empty
+          const updates: any = {};
+          if (orderData.phone && !existingClient.phone) {
+            updates.phone = orderData.phone;
+          }
+          if (orderData.name && !existingClient.contact_name) {
+            updates.contact_name = orderData.name;
+          }
+          
+          if (Object.keys(updates).length > 0) {
+            console.log("Updating client with new info:", updates);
+            await supabase
+              .from('b2b_clients')
+              .update(updates)
+              .eq('id', clientId);
+          }
+        } else {
+          // Create new client
+          console.log("Creating new B2B client");
+          const { data: newClient, error: clientError } = await supabase
+            .from('b2b_clients')
+            .insert({
+              email: normalizedEmail,
+              phone: orderData.phone || null,
+              contact_name: orderData.name || null,
+              company_name: null
+            })
+            .select()
+            .single();
+
+          if (clientError) {
+            console.error("Error creating client:", clientError);
+            // Don't fail order if client creation fails
+          } else {
+            clientId = newClient.id;
+            console.log("Created new client:", clientId);
+          }
+        }
+      }
+
+      // Сохраняем заказ в базе данных Supabase с client_id
       const { data: order, error } = await supabase
         .from('orders')
         .insert({
           ...orderData,
-          order_status: 'created', // Используем 'created' в соответствии с CHECK CONSTRAINT
+          client_id: clientId,
+          order_status: 'created',
           created_at: new Date().toISOString(),
           subscribe: orderData.subscribe !== undefined ? orderData.subscribe : true
         })
@@ -292,9 +352,10 @@ serve(async (req) => {
         return `- ${item.name} (${item.color || 'Н/Д'}) Арт. ${item.artikul || 'Н/Д'} × ${item.quantity} = ${itemTotal} ₽`;
       }).join('\n');
       
-      // Отправляем уведомление в Telegram
+      // Отправляем уведомление в Telegram с информацией о клиенте
       const telegramMessage = `
 📦 *Новый заказ!*
+${clientId ? `🏢 *Клиент ID:* \`${clientId}\`` : ''}
 👤 *Имя:* ${order.name}
 📞 *Телефон:* ${order.phone}
 ✉️ *Email:* ${order.email}
