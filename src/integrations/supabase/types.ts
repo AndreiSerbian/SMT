@@ -35,6 +35,36 @@ export type Database = {
         }
         Relationships: []
       }
+      b2b_clients: {
+        Row: {
+          company_name: string | null
+          contact_name: string | null
+          created_at: string
+          email: string
+          id: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          company_name?: string | null
+          contact_name?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          company_name?: string | null
+          contact_name?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       box_types: {
         Row: {
           created_at: string | null
@@ -155,6 +185,7 @@ export type Database = {
       orders: {
         Row: {
           cart_items: Json
+          client_id: string | null
           comment: string | null
           confirmed_at: string | null
           created_at: string | null
@@ -174,6 +205,7 @@ export type Database = {
         }
         Insert: {
           cart_items: Json
+          client_id?: string | null
           comment?: string | null
           confirmed_at?: string | null
           created_at?: string | null
@@ -193,6 +225,7 @@ export type Database = {
         }
         Update: {
           cart_items?: Json
+          client_id?: string | null
           comment?: string | null
           confirmed_at?: string | null
           created_at?: string | null
@@ -210,7 +243,22 @@ export type Database = {
           total?: number
           yandex_address?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "orders_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "b2b_clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "client_analytics"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       product_prices: {
         Row: {
@@ -369,7 +417,22 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      client_analytics: {
+        Row: {
+          company_name: string | null
+          contact_name: string | null
+          created_at: string | null
+          customer_segment: string | null
+          email: string | null
+          id: string | null
+          last_order_date: string | null
+          phone: string | null
+          total_orders: number | null
+          total_revenue: number | null
+          updated_at: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       generate_photo_paths: {
