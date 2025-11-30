@@ -566,16 +566,24 @@ export class ModernAdminComponent {
         <article class="bg-white rounded-2xl border p-3 flex gap-3">
           <img src="${image}" class="w-20 h-20 rounded-xl object-cover border" alt="${product.name}">
           <div class="flex-1 min-w-0">
-            <div class="flex justify-between gap-2">
-              <h3 class="font-medium truncate">${product.name}</h3>
-              <button class="px-2 py-1 rounded-lg border text-sm hover:bg-slate-50" data-edit="${product.id}">Изм.</button>
-            </div>
+            <h3 class="font-medium truncate">${product.name}</h3>
             <div class="text-sm text-slate-500 truncate">${product.artikul || '—'}</div>
             <div class="text-sm mt-1">${product.price_rub ? `${product.price_rub} ₽` : '—'}</div>
             <div class="flex items-center gap-2 mt-1">
               <span class="text-xs text-slate-600">${sizeName}</span>
               <span class="w-3 h-3 rounded-full border" style="background-color: ${product.color_hex || '#ddd'}"></span>
               <span class="text-xs ${product.is_active ? 'text-green-600' : 'text-red-600'}">${product.is_active ? 'Активен' : 'Скрыт'}</span>
+            </div>
+            <div class="flex items-center gap-2 mt-2">
+              ${product.id_wb ? `<a href="https://www.wildberries.ru/catalog/${product.id_wb}/detail.aspx" target="_blank" class="px-2 py-1 rounded-lg bg-purple-600 text-white text-sm hover:bg-purple-700" title="Посмотреть на WB">WB</a>` : ''}
+              <button class="px-2 py-1 rounded-lg bg-sky-500 text-white text-sm hover:bg-sky-600 flex items-center gap-1" data-stats="${product.id}" title="Статистика">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="12" y1="20" x2="12" y2="10"></line>
+                  <line x1="18" y1="20" x2="18" y2="4"></line>
+                  <line x1="6" y1="20" x2="6" y2="16"></line>
+                </svg>
+              </button>
+              <button class="px-2 py-1 rounded-lg border text-sm hover:bg-slate-50 ml-auto" data-edit="${product.id}">Изм.</button>
             </div>
           </div>
         </article>
@@ -587,6 +595,11 @@ export class ModernAdminComponent {
     // Attach edit events
     cardsContainer.querySelectorAll('[data-edit]').forEach(btn => {
       btn.addEventListener('click', () => this.openProduct(btn.dataset.edit));
+    });
+    
+    // Attach stats events
+    cardsContainer.querySelectorAll('[data-stats]').forEach(btn => {
+      btn.addEventListener('click', () => this.showProductStats(btn.dataset.stats));
     });
   }
 
