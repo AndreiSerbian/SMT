@@ -11,7 +11,8 @@ export class AdminLayoutComponent {
 
   async mount(container) {
     // Проверка авторизации
-    if (!AdminAuthComponent.isAuthenticated()) {
+    const isAuth = await AdminAuthComponent.isAuthenticated();
+    if (!isAuth) {
       window.location.hash = '#admin';
       return;
     }
@@ -37,8 +38,6 @@ export class AdminLayoutComponent {
   }
 
   getHTML() {
-    const adminLogin = AdminAuthComponent.getAdminLogin();
-    
     return `
       <div class="h-full bg-slate-50 text-slate-900">
         <!-- HEADER -->
@@ -47,7 +46,7 @@ export class AdminLayoutComponent {
             <div class="flex items-center gap-2">
               <span class="text-xl">⚙️</span>
               <h1 class="text-lg font-semibold">Админ-панель</h1>
-              ${adminLogin ? `<span class="text-sm text-slate-600 ml-2">(${adminLogin})</span>` : ''}
+              <span id="admin-email-display" class="text-sm text-slate-600 ml-2"></span>
             </div>
             <div class="flex items-center gap-2">
               <nav class="hidden sm:flex gap-1">
@@ -87,13 +86,20 @@ export class AdminLayoutComponent {
     `;
   }
 
-  attachEvents() {
+  async attachEvents() {
+    // Display admin email
+    const adminEmail = await AdminAuthComponent.getAdminEmail();
+    const emailDisplay = document.getElementById('admin-email-display');
+    if (emailDisplay && adminEmail) {
+      emailDisplay.textContent = `(${adminEmail})`;
+    }
+
     // Logout
     const logoutBtn = document.getElementById('btnLogout');
     if (logoutBtn) {
-      logoutBtn.addEventListener('click', () => {
+      logoutBtn.addEventListener('click', async () => {
         if (confirm('Вы уверены, что хотите выйти?')) {
-          AdminAuthComponent.logout();
+          await AdminAuthComponent.logout();
         }
       });
     }
