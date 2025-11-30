@@ -9,10 +9,23 @@ export class AdminClientsComponent {
     this.filteredClients = [];
     this.searchTerm = '';
     this.filterSegment = 'all';
+    this.editingClientId = null;
+    this.currentClientId = null;
+    window.adminClientsComponent = this;
   }
 
   async mount(container) {
     container.innerHTML = this.getLoadingHTML();
+    
+    // Add edit styles
+    if (!document.getElementById('admin-clients-edit-styles')) {
+      const link = document.createElement('link');
+      link.id = 'admin-clients-edit-styles';
+      link.rel = 'stylesheet';
+      link.href = '/css/admin-clients-edit.css';
+      document.head.appendChild(link);
+    }
+    
     await this.loadClients();
     container.innerHTML = this.getHTML();
     this.attachEvents();
@@ -274,6 +287,8 @@ export class AdminClientsComponent {
   }
 
   async showClientDetails(clientId) {
+    this.currentClientId = clientId;
+    
     const modal = document.getElementById('clientDetailsModal');
     const content = document.getElementById('clientDetailsContent');
     
@@ -338,6 +353,8 @@ export class AdminClientsComponent {
   }
 
   getClientDetailsHTML(client, orders) {
+    const isEditMode = this.editingClientId === client.id;
+    
     const totalRevenue = orders
       .filter(o => ['shipped', 'delivered', 'completed'].includes(o.order_status))
       .reduce((sum, o) => sum + parseFloat(o.total || 0), 0);
@@ -350,22 +367,112 @@ export class AdminClientsComponent {
             <h3 class="text-2xl font-bold text-slate-900 mb-2">Карточка клиента</h3>
             <p class="text-sm text-slate-600">ID: ${client.id}</p>
           </div>
-          <button id="closeClientModal" class="text-slate-400 hover:text-slate-600">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-            </svg>
-          </button>
+          <div class="flex gap-2 items-center">
+            ${!isEditMode ? `
+              <button 
+                onclick="window.adminClientsComponent.startEditClient('${client.id}')"
+                class="edit-client-btn text-sm px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                </svg>
+                Редактировать
+              </button>
+              <button 
+                onclick="window.adminClientsComponent.showMergeDuplicates('${client.id}')"
+                class="merge-client-btn text-sm px-3 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 flex items-center gap-2"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+                </svg>
+                Объединить
+              </button>
+            ` : `
+              <button 
+                onclick="window.adminClientsComponent.saveClientEdit('${client.id}')"
+                class="save-client-btn text-sm px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                Сохранить
+              </button>
+              <button 
+                onclick="window.adminClientsComponent.cancelEditClient()"
+                class="cancel-edit-btn text-sm px-3 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700"
+              >
+                Отмена
+              </button>
+            `}
+            <button id="closeClientModal" class="text-slate-400 hover:text-slate-600">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
         </div>
 
         <!-- Client Info -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <div class="bg-slate-50 rounded-lg p-4">
             <h4 class="text-sm font-semibold text-slate-700 mb-3">Контактная информация</h4>
-            <div class="space-y-2 text-sm">
-              <div><span class="text-slate-600">Email:</span> <span class="font-medium">${client.email}</span></div>
-              <div><span class="text-slate-600">Телефон:</span> <span class="font-medium">${client.phone || '-'}</span></div>
-              <div><span class="text-slate-600">Контактное лицо:</span> <span class="font-medium">${client.contact_name || '-'}</span></div>
-              <div><span class="text-slate-600">Компания:</span> <span class="font-medium">${client.company_name || '-'}</span></div>
+            <div class="space-y-3 text-sm">
+              <div class="flex flex-col gap-1">
+                <span class="text-slate-600 font-medium">Email:</span>
+                ${isEditMode ? `
+                  <input 
+                    type="email" 
+                    id="edit-email" 
+                    value="${client.email || ''}"
+                    class="edit-input px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="email@example.com"
+                  />
+                ` : `
+                  <span class="font-medium">${client.email}</span>
+                `}
+              </div>
+              <div class="flex flex-col gap-1">
+                <span class="text-slate-600 font-medium">Телефон:</span>
+                ${isEditMode ? `
+                  <input 
+                    type="tel" 
+                    id="edit-phone" 
+                    value="${client.phone || ''}"
+                    class="edit-input px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="+7 (XXX) XXX-XX-XX"
+                  />
+                ` : `
+                  <span class="font-medium">${client.phone || '-'}</span>
+                `}
+              </div>
+              <div class="flex flex-col gap-1">
+                <span class="text-slate-600 font-medium">Контактное лицо:</span>
+                ${isEditMode ? `
+                  <input 
+                    type="text" 
+                    id="edit-contact-name" 
+                    value="${client.contact_name || ''}"
+                    class="edit-input px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Имя контакта"
+                  />
+                ` : `
+                  <span class="font-medium">${client.contact_name || '-'}</span>
+                `}
+              </div>
+              <div class="flex flex-col gap-1">
+                <span class="text-slate-600 font-medium">Компания:</span>
+                ${isEditMode ? `
+                  <input 
+                    type="text" 
+                    id="edit-company-name" 
+                    value="${client.company_name || ''}"
+                    class="edit-input px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Название компании"
+                  />
+                ` : `
+                  <span class="font-medium">${client.company_name || '-'}</span>
+                `}
+              </div>
             </div>
           </div>
 
@@ -457,7 +564,211 @@ export class AdminClientsComponent {
     return five;
   }
 
+  startEditClient(clientId) {
+    this.editingClientId = clientId;
+    this.showClientDetails(clientId);
+  }
+
+  cancelEditClient() {
+    this.editingClientId = null;
+    this.showClientDetails(this.currentClientId);
+  }
+
+  async saveClientEdit(clientId) {
+    const email = document.getElementById('edit-email')?.value.trim();
+    const phone = document.getElementById('edit-phone')?.value.trim();
+    const contactName = document.getElementById('edit-contact-name')?.value.trim();
+    const companyName = document.getElementById('edit-company-name')?.value.trim();
+
+    // Validation
+    if (!email || !phone) {
+      alert('Email и телефон обязательны для заполнения');
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      alert('Неверный формат email');
+      return;
+    }
+
+    const phoneDigits = phone.replace(/\D/g, '');
+    if (phoneDigits.length < 10) {
+      alert('Телефон должен содержать минимум 10 цифр');
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('b2b_clients')
+        .update({
+          email: email.toLowerCase(),
+          phone: phone,
+          contact_name: contactName || null,
+          company_name: companyName || null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', clientId);
+
+      if (error) throw error;
+
+      this.editingClientId = null;
+      await this.loadClients();
+      await this.showClientDetails(clientId);
+      
+      alert('Данные клиента успешно обновлены');
+    } catch (error) {
+      console.error('Error updating client:', error);
+      alert('Ошибка при обновлении данных клиента');
+    }
+  }
+
+  async showMergeDuplicates(clientId) {
+    try {
+      // Get current client
+      const { data: currentClient, error: clientError } = await supabase
+        .from('b2b_clients')
+        .select('*')
+        .eq('id', clientId)
+        .single();
+
+      if (clientError) throw clientError;
+
+      // Find potential duplicates
+      const { data: allClients, error: allError } = await supabase
+        .from('b2b_clients')
+        .select('*')
+        .neq('id', clientId);
+
+      if (allError) throw allError;
+
+      const currentPhone = currentClient.phone?.replace(/\D/g, '').slice(-10);
+      
+      const potentialDuplicates = allClients.filter(client => {
+        const clientPhone = client.phone?.replace(/\D/g, '').slice(-10);
+        return clientPhone === currentPhone || 
+               client.email?.toLowerCase() === currentClient.email?.toLowerCase();
+      });
+
+      if (potentialDuplicates.length === 0) {
+        alert('Дубликаты не найдены');
+        return;
+      }
+
+      this.showMergeDialog(currentClient, potentialDuplicates);
+    } catch (error) {
+      console.error('Error finding duplicates:', error);
+      alert('Ошибка при поиске дубликатов');
+    }
+  }
+
+  showMergeDialog(currentClient, duplicates) {
+    const modal = document.getElementById('clientDetailsModal');
+    const content = document.getElementById('clientDetailsContent');
+    
+    if (!modal || !content) return;
+    
+    content.innerHTML = `
+      <div class="p-6">
+        <div class="flex justify-between items-start mb-6">
+          <div>
+            <h3 class="text-2xl font-bold text-slate-900 mb-2">Объединение дубликатов</h3>
+            <p class="text-sm text-slate-600">Выберите клиента для объединения</p>
+          </div>
+          <button onclick="window.adminClientsComponent.showClientDetails('${currentClient.id}')" class="text-slate-400 hover:text-slate-600">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+        
+        <div class="space-y-4">
+          <div>
+            <p class="text-sm font-semibold text-slate-700 mb-2">Текущий клиент:</p>
+            <div class="bg-blue-50 border-2 border-blue-500 rounded-lg p-4">
+              <div class="text-sm space-y-1">
+                <div><span class="text-slate-600">Email:</span> <span class="font-medium">${currentClient.email}</span></div>
+                <div><span class="text-slate-600">Телефон:</span> <span class="font-medium">${currentClient.phone || '-'}</span></div>
+                <div><span class="text-slate-600">Контакт:</span> <span class="font-medium">${currentClient.contact_name || '-'}</span></div>
+                <div><span class="text-slate-600">Компания:</span> <span class="font-medium">${currentClient.company_name || '-'}</span></div>
+              </div>
+            </div>
+          </div>
+          
+          <div>
+            <p class="text-sm font-semibold text-slate-700 mb-2">Найдены возможные дубликаты:</p>
+            <p class="text-xs text-slate-600 mb-3">
+              Нажмите на карточку клиента, чтобы объединить его с текущим. Все заказы будут перенесены к текущему клиенту, дубликат будет удалён.
+            </p>
+            
+            <div class="space-y-3">
+              ${duplicates.map(dup => `
+                <div 
+                  class="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-4 cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition" 
+                  onclick="window.adminClientsComponent.confirmMerge('${currentClient.id}', '${dup.id}')"
+                >
+                  <div class="text-sm space-y-1">
+                    <div><span class="text-slate-600">Email:</span> <span class="font-medium">${dup.email}</span></div>
+                    <div><span class="text-slate-600">Телефон:</span> <span class="font-medium">${dup.phone || '-'}</span></div>
+                    <div><span class="text-slate-600">Контакт:</span> <span class="font-medium">${dup.contact_name || '-'}</span></div>
+                    <div><span class="text-slate-600">Компания:</span> <span class="font-medium">${dup.company_name || '-'}</span></div>
+                  </div>
+                  <div class="mt-3 flex items-center gap-2 text-sm text-blue-600 font-medium">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+                    </svg>
+                    Объединить с текущим клиентом
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    modal.classList.remove('hidden');
+  }
+
+  async confirmMerge(primaryId, duplicateId) {
+    const confirmed = confirm(
+      'Вы уверены, что хотите объединить этих клиентов?\n\n' +
+      'Все заказы дубликата будут перенесены к текущему клиенту.\n' +
+      'Дубликат будет удалён. Это действие нельзя отменить.'
+    );
+
+    if (!confirmed) return;
+
+    try {
+      // Transfer all orders from duplicate to primary
+      const { error: updateError } = await supabase
+        .from('orders')
+        .update({ client_id: primaryId })
+        .eq('client_id', duplicateId);
+
+      if (updateError) throw updateError;
+
+      // Delete duplicate client
+      const { error: deleteError } = await supabase
+        .from('b2b_clients')
+        .delete()
+        .eq('id', duplicateId);
+
+      if (deleteError) throw deleteError;
+
+      alert('Клиенты успешно объединены');
+      
+      await this.loadClients();
+      await this.showClientDetails(primaryId);
+    } catch (error) {
+      console.error('Error merging clients:', error);
+      alert('Ошибка при объединении клиентов');
+    }
+  }
+
   destroy() {
     // Cleanup if needed
+    this.editingClientId = null;
+    this.currentClientId = null;
   }
 }
