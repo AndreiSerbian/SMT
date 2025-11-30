@@ -268,61 +268,119 @@ serve(async (req) => {
       console.log("Normalized delivery value:", orderData.delivery);
 
       // === B2B CLIENT MANAGEMENT ===
-      // Normalize and find/create client
-      const normalizedEmail = orderData.email ? orderData.email.toLowerCase().trim() : null;
+      // Normalize email and phone for consistent comparison
+      const normalizedEmail = orderData.email.toLowerCase().trim();
+      const normalizedPhone = orderData.phone.replace(/\D/g, ''); // Only digits
+      
+      console.log('Searching for client with email:', normalizedEmail, 'phone:', normalizedPhone);
+      
+      // Step 1: Check if client exists by email
+      const { data: clientByEmail, error: emailError } = await supabase
+        .from('b2b_clients')
+        .select('*')
+        .ilike('email', normalizedEmail)
+        .maybeSingle();
+      
+      if (emailError) {
+        console.error('Error checking for existing client by email:', emailError);
+      }
+      
+      let client = clientByEmail;
+      let foundBy = client ? 'email' : null;
+      
+      // Step 2: If not found by email, search by phone (last 10 digits)
+      if (!client && normalizedPhone.length >= 10) {
+        const phoneSearchPattern = normalizedPhone.slice(-10);
+        console.log('Client not found by email, searching by phone pattern:', phoneSearchPattern);
+        
+        const { data: allClients, error: phoneError } = await supabase
+          .from('b2b_clients')
+          .select('*');
+        
+        if (phoneError) {
+          console.error('Error checking for existing client by phone:', phoneError);
+        } else if (allClients) {
+          // Find client with matching phone (last 10 digits)
+          client = allClients.find(c => {
+            if (!c.phone) return false;
+            const clientPhone = c.phone.replace(/\D/g, '');
+            return clientPhone.slice(-10) === phoneSearchPattern;
+          });
+          
+          if (client) {
+            foundBy = 'phone';
+            console.log('Found existing client by phone:', client.id);
+          }
+        }
+      }
+      
       let clientId = null;
 
-      if (normalizedEmail) {
-        console.log("Finding or creating B2B client for email:", normalizedEmail);
+      if (client) {
+        clientId = client.id;
+        console.log('Found existing client by', foundBy, ':', clientId);
         
-        // Try to find existing client
-        const { data: existingClient } = await supabase
-          .from('b2b_clients')
-          .select('id, phone, company_name, contact_name')
-          .eq('email', normalizedEmail)
-          .single();
-
-        if (existingClient) {
-          console.log("Found existing client:", existingClient.id);
-          clientId = existingClient.id;
-          
-          // Update client info if new data provided and old data is empty
-          const updates: any = {};
-          if (orderData.phone && !existingClient.phone) {
-            updates.phone = orderData.phone;
-          }
-          if (orderData.name && !existingClient.contact_name) {
-            updates.contact_name = orderData.name;
-          }
-          
-          if (Object.keys(updates).length > 0) {
-            console.log("Updating client with new info:", updates);
-            await supabase
-              .from('b2b_clients')
-              .update(updates)
-              .eq('id', clientId);
-          }
-        } else {
-          // Create new client
-          console.log("Creating new B2B client");
-          const { data: newClient, error: clientError } = await supabase
+        // Update email if found by phone and email differs (client corrected typo)
+        if (foundBy === 'phone' && client.email?.toLowerCase() !== normalizedEmail) {
+          console.log('Updating client email from', client.email, 'to', normalizedEmail);
+          const { error: updateError } = await supabase
             .from('b2b_clients')
-            .insert({
+            .update({ 
               email: normalizedEmail,
-              phone: orderData.phone || null,
-              contact_name: orderData.name || null,
-              company_name: null
+              updated_at: new Date().toISOString()
             })
-            .select()
-            .single();
-
-          if (clientError) {
-            console.error("Error creating client:", clientError);
-            // Don't fail order if client creation fails
+            .eq('id', clientId);
+          
+          if (updateError) {
+            console.error('Error updating client email:', updateError);
           } else {
-            clientId = newClient.id;
-            console.log("Created new client:", clientId);
+            console.log('Successfully updated client email');
           }
+        }
+        
+        // Soft update: only update fields that are currently empty
+        const updates: any = {};
+        
+        if (!client.phone && orderData.phone) {
+          updates.phone = orderData.phone;
+        }
+        
+        if (!client.contact_name && orderData.name) {
+          updates.contact_name = orderData.name;
+        }
+        
+        // Only update if there are fields to update
+        if (Object.keys(updates).length > 0) {
+          const { error: updateError } = await supabase
+            .from('b2b_clients')
+            .update(updates)
+            .eq('id', clientId);
+          
+          if (updateError) {
+            console.error('Error updating client:', updateError);
+          } else {
+            console.log('Updated existing client with new data:', updates);
+          }
+        }
+      } else {
+        // Create new client
+        console.log('No existing client found, creating new one');
+        const { data: newClient, error: createError } = await supabase
+          .from('b2b_clients')
+          .insert({
+            email: normalizedEmail,
+            phone: orderData.phone,
+            contact_name: orderData.name,
+            company_name: null
+          })
+          .select()
+          .single();
+        
+        if (createError) {
+          console.error('Error creating new client:', createError);
+        } else if (newClient) {
+          clientId = newClient.id;
+          console.log('Created new client:', clientId);
         }
       }
 
