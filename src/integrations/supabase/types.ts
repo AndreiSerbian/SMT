@@ -391,6 +391,27 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       wb_clicks: {
         Row: {
           clicked_at: string
@@ -444,11 +465,19 @@ export type Database = {
         Args: { category: string; dimensions: Json }
         Returns: Database["public"]["Enums"]["product_size"]
       }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       is_admin_user: {
         Args: { login_input: string; password_input: string }
         Returns: boolean
       }
       is_current_admin: { Args: never; Returns: boolean }
+      make_user_admin: { Args: { user_email: string }; Returns: undefined }
       parse_dimensions: { Args: { dimension_str: string }; Returns: Json }
       set_admin_context: {
         Args: { admin_login: string; admin_password: string }
@@ -464,6 +493,7 @@ export type Database = {
       }
     }
     Enums: {
+      app_role: "admin" | "user"
       product_size: "small" | "medium" | "big"
       size_type_enum: "малая" | "средняя" | "большая"
     }
@@ -593,6 +623,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin", "user"],
       product_size: ["small", "medium", "big"],
       size_type_enum: ["малая", "средняя", "большая"],
     },
