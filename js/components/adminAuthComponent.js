@@ -26,15 +26,15 @@ export class AdminAuthComponent {
             <form id="adminLoginForm" class="space-y-6">
               <div>
                 <label class="block text-sm font-medium text-slate-700 mb-2">
-                  Логин
+                  Email
                 </label>
                 <input 
-                  type="text" 
+                  type="email" 
                   name="login" 
                   required 
                   autocomplete="username"
                   class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
-                  placeholder="Введите логин"
+                  placeholder="Введите email"
                 />
               </div>
 
@@ -83,11 +83,11 @@ export class AdminAuthComponent {
     if (this.isLoading) return;
 
     const formData = new FormData(e.target);
-    const login = formData.get('login').trim();
+    const email = formData.get('login').trim();
     const password = formData.get('password');
 
     // Валидация
-    if (!login || !password) {
+    if (!email || !password) {
       this.showError('Заполните все поля');
       return;
     }
@@ -96,38 +96,42 @@ export class AdminAuthComponent {
     this.hideError();
 
     try {
-      // Проверка через RPC функцию is_admin_user
-      const { data, error } = await supabase.rpc('is_admin_user', {
-        login_input: login,
-        password_input: password
+      // Вход через Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password
       });
 
-      if (error) throw error;
+      if (authError) throw authError;
 
-      if (data === true) {
-        // Успешная авторизация
-        this.saveSession(login);
-        
-        // Редирект на главную страницу админки
-        window.location.hash = '#admin/products';
-      } else {
-        this.showError('Неверный логин или пароль');
+      // Проверяем, что пользователь имеет роль admin
+      const { data: hasAdminRole, error: roleError } = await supabase.rpc('has_role', {
+        _user_id: authData.user.id,
+        _role: 'admin'
+      });
+
+      if (roleError) throw roleError;
+
+      if (!hasAdminRole) {
+        // Если у пользователя нет роли админа, выходим
+        await supabase.auth.signOut();
+        throw new Error('У вас нет прав администратора');
       }
+
+      // Успешная авторизация - редирект на главную страницу админки
+      window.location.hash = '#admin/products';
     } catch (error) {
       console.error('Login error:', error);
-      this.showError('Ошибка авторизации. Попробуйте позже.');
+      if (error.message === 'Invalid login credentials') {
+        this.showError('Неверный email или пароль');
+      } else if (error.message.includes('прав администратора')) {
+        this.showError(error.message);
+      } else {
+        this.showError('Ошибка авторизации. Попробуйте позже.');
+      }
     } finally {
       this.setLoading(false);
     }
-  }
-
-  saveSession(login) {
-    // Сохраняем только логин и время входа (НЕ пароль!)
-    const sessionData = {
-      admin_login: login,
-      login_time: new Date().toISOString()
-    };
-    sessionStorage.setItem('admin_session', JSON.stringify(sessionData));
   }
 
   setLoading(loading) {
@@ -159,37 +163,40 @@ export class AdminAuthComponent {
   }
 
   // Статические методы для проверки сессии
-  static isAuthenticated() {
-    const sessionData = sessionStorage.getItem('admin_session');
-    if (!sessionData) return false;
-
+  static async isAuthenticated() {
     try {
-      const session = JSON.parse(sessionData);
-      // Проверяем, что сессия не старше 24 часов
-      const loginTime = new Date(session.login_time);
-      const now = new Date();
-      const hoursSinceLogin = (now - loginTime) / (1000 * 60 * 60);
-      
-      return hoursSinceLogin < 24;
-    } catch {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return false;
+
+      // Проверяем роль admin
+      const { data: hasAdminRole, error } = await supabase.rpc('has_role', {
+        _user_id: session.user.id,
+        _role: 'admin'
+      });
+
+      if (error) {
+        console.error('Role check error:', error);
+        return false;
+      }
+
+      return hasAdminRole === true;
+    } catch (error) {
+      console.error('Auth check error:', error);
       return false;
     }
   }
 
-  static getAdminLogin() {
-    const sessionData = sessionStorage.getItem('admin_session');
-    if (!sessionData) return null;
-
+  static async getAdminEmail() {
     try {
-      const session = JSON.parse(sessionData);
-      return session.admin_login;
+      const { data: { session } } = await supabase.auth.getSession();
+      return session?.user?.email || null;
     } catch {
       return null;
     }
   }
 
-  static logout() {
-    sessionStorage.removeItem('admin_session');
+  static async logout() {
+    await supabase.auth.signOut();
     window.location.hash = '#admin';
   }
 }
