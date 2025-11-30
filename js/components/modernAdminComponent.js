@@ -110,11 +110,14 @@ export class ModernAdminComponent {
       <div class="space-y-4">
 
             <!-- ACTION BAR -->
-            <section class="flex flex-col gap-3 sm:flex-row sm:items-center">
-              <div class="flex-1 flex gap-2">
-                <input id="search" type="search" placeholder="Поиск: название / артикул"
-                       class="w-full px-3 py-2 rounded-xl border outline-none focus:ring focus:ring-slate-200">
-                <select id="filterCategory" class="px-3 py-2 rounded-xl border bg-white">
+            <section class="flex flex-col gap-3">
+              <!-- Поиск - отдельной строкой на всю ширину -->
+              <input id="search" type="search" placeholder="Поиск: название / артикул"
+                     class="w-full px-3 py-2 rounded-xl border outline-none focus:ring focus:ring-slate-200">
+              
+              <!-- Фильтры и кнопки -->
+              <div class="flex flex-wrap gap-2 items-center">
+                <select id="filterCategory" class="flex-1 min-w-[140px] px-3 py-2 rounded-xl border bg-white">
                   <option value="">Все категории</option>
                   <option value="small">Малая коробка</option>
                   <option value="medium">Средняя коробка</option>
@@ -126,9 +129,21 @@ export class ModernAdminComponent {
                   <option value="active">Активные</option>
                   <option value="hidden">Скрытые</option>
                 </select>
+                <button id="btnAddProduct" class="px-3 py-2 rounded-xl bg-emerald-600 text-white whitespace-nowrap">Добавить товар</button>
               </div>
-              <div class="flex gap-2">
-                <button id="btnAddProduct" class="px-3 py-2 rounded-xl bg-emerald-600 text-white">Добавить товар</button>
+              
+              <!-- Сортировка - только для мобилки -->
+              <div class="flex gap-2 sm:hidden">
+                <button id="sortArtikul" class="flex-1 px-3 py-2 rounded-xl border bg-white text-sm flex items-center justify-center gap-1">
+                  Артикул
+                  <span id="sort-artikul-mobile-up" class="text-slate-400">▲</span>
+                  <span id="sort-artikul-mobile-down" class="text-slate-400">▼</span>
+                </button>
+                <button id="sortPrice" class="flex-1 px-3 py-2 rounded-xl border bg-white text-sm flex items-center justify-center gap-1">
+                  Цена
+                  <span id="sort-price_rub-mobile-up" class="text-slate-400">▲</span>
+                  <span id="sort-price_rub-mobile-down" class="text-slate-400">▼</span>
+                </button>
               </div>
             </section>
 
@@ -390,6 +405,10 @@ export class ModernAdminComponent {
     // Buttons
     document.getElementById('btnAddProduct').addEventListener('click', () => this.openProduct());
     document.getElementById('btnLoadMore').addEventListener('click', () => this.loadPage(false));
+    
+    // Mobile sort buttons
+    document.getElementById('sortArtikul')?.addEventListener('click', () => this.toggleSort('artikul'));
+    document.getElementById('sortPrice')?.addEventListener('click', () => this.toggleSort('price_rub'));
 
     // Modal events
     document.querySelectorAll('[data-close]').forEach(btn => {
@@ -971,6 +990,14 @@ export class ModernAdminComponent {
       if (arrow) {
         arrow.classList.remove('text-slate-400');
         arrow.classList.add('text-slate-700');
+      }
+      
+      // Also update mobile sort indicators
+      const mobileArrowId = `sort-${this.sortField}-mobile-${this.sortDirection === 'asc' ? 'up' : 'down'}`;
+      const mobileArrow = document.getElementById(mobileArrowId);
+      if (mobileArrow) {
+        mobileArrow.classList.remove('text-slate-400');
+        mobileArrow.classList.add('text-slate-700');
       }
     }
   }
