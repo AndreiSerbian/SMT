@@ -1,3 +1,5 @@
+// Tailwind CSS через Vite (вместо CDN)
+import '@/styles/tailwind.css';
 
 import Router from './router.js';
 import { initApp } from './main.js';

@@ -1,4 +1,3 @@
-
 import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
@@ -25,11 +24,17 @@ export default defineConfig(({ mode }) => {
         "@": path.resolve(__dirname, "./src"),
       },
     },
-    // Define env variables to be used in client-side
-    define: {
-      // By default, Vite only exposes environment variables that start with VITE_
-      // If you need to expose other variables, add them here
-      // '__APP_ENV__': JSON.stringify(env.APP_ENV),
+    // Явно указываем PostCSS
+    css: {
+      postcss: './postcss.config.js',
+    },
+    build: {
+      outDir: 'dist',
+      rollupOptions: {
+        input: {
+          main: path.resolve(__dirname, 'index.html'),
+        },
+      },
     },
   };
 });
