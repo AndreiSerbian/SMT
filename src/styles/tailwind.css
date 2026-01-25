@@ -2,14 +2,4 @@
 @tailwind components;
 @tailwind utilities;
 
-/* 
- * Импорт кастомных стилей из public/css
- * Эти файлы — чистый CSS без Tailwind директив
- */
-@import '../../public/css/grouped-products.css';
-@import '../../public/css/admin-storage.css';
-@import '../../public/css/media-manager.css';
-@import '../../public/css/admin-drag-drop.css';
-@import '../../public/css/admin-media.css';
-@import '../../public/css/admin-media-modal.css';
-@import '../../public/css/product-modal.css';
+/* Порядок CSS контролируется в js/app.js */

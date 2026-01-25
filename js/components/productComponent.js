@@ -1,7 +1,7 @@
 import { cartService } from '../services/cartService.js';
 import { ColorService } from '../services/colorService.js';
 import { productsService } from '../services/productsService.js';
-
+import SwiperService from '../services/swiperService.js';
 const ProductComponent = {
   eventListeners: [],
   timeouts: [],
@@ -499,40 +499,8 @@ const ProductComponent = {
           imageModal.classList.add('show');
           document.body.style.overflow = 'hidden';
           
-          // Инициализируем или обновляем Swiper
-          if (window.modalSwiper) {
-            window.modalSwiper.destroy(true, true);
-          }
-          
-          window.modalSwiper = new Swiper('.modal-swiper', {
-            loop: allMedia.length > 1,
-            initialSlide: startIndex,
-            navigation: {
-              nextEl: '.modal-swiper .swiper-button-next',
-              prevEl: '.modal-swiper .swiper-button-prev',
-            },
-            pagination: {
-              el: '.modal-swiper .swiper-pagination',
-              clickable: true,
-              type: 'fraction',
-              formatFractionCurrent: function (number) {
-                return number;
-              },
-              formatFractionTotal: function (number) {
-                return number;
-              },
-              renderFraction: function (currentClass, totalClass) {
-                return '<span class="' + currentClass + '"></span>' +
-                       ' / ' +
-                       '<span class="' + totalClass + '"></span>';
-              },
-            },
-            keyboard: {
-              enabled: true,
-              onlyInViewport: false,
-            },
-            spaceBetween: 10,
-          });
+          // Инициализируем Swiper через сервис (с защитой от race condition)
+          SwiperService.initModalSwiper(startIndex, allMedia.length);
         }
       };
       
@@ -542,11 +510,8 @@ const ProductComponent = {
           imageModal.classList.remove('show');
           document.body.style.overflow = '';
           
-          // Уничтожаем Swiper при закрытии
-          if (window.modalSwiper) {
-            window.modalSwiper.destroy(true, true);
-            window.modalSwiper = null;
-          }
+          // Уничтожаем Swiper через сервис
+          SwiperService.destroyModalSwiper();
         }
       };
       
