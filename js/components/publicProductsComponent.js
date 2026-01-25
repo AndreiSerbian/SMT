@@ -523,31 +523,7 @@ export const PublicProductsComponent = {
    * Обновление слайдера категории с новыми фотографиями
    */
   updateCategorySlider(categorySlug, newPhotos) {
-    const sliderId = `category-${categorySlug}-slider`;
-    const swiperElement = document.getElementById(sliderId);
-    
-    if (swiperElement && swiperElement.swiper) {
-      const swiper = swiperElement.swiper;
-      
-      // Удаляем старые слайды
-      swiper.removeAllSlides();
-      
-      // Добавляем новые слайды
-      newPhotos.forEach(photo => {
-        swiper.appendSlide(`
-          <div class="swiper-slide">
-            <img src="${this.getImageUrl(photo)}" 
-                 alt="Товар" 
-                 class="category-slide-image"
-                 loading="lazy"
-                 onerror="this.src='/images/placeholder.jpg'" />
-          </div>
-        `);
-      });
-      
-      // Обновляем слайдер
-      swiper.update();
-    }
+    SwiperService.updateCategorySlider(categorySlug, newPhotos, this.getImageUrl.bind(this));
   },
 
   /**
