@@ -1,6 +1,4 @@
-import 'swiper/css';
-import 'swiper/css/navigation';
-import 'swiper/css/pagination';
+import 'swiper/swiper-bundle.css';
 
 
 // 2) Tailwind CSS

@@ -1,12 +1,8 @@
-import Swiper, { Navigation, Pagination, Keyboard } from 'swiper';
-import 'swiper/css';
-import 'swiper/css/navigation';
-import 'swiper/css/pagination';
-
-Swiper.use([Navigation, Pagination, Keyboard]);
+import Swiper from 'swiper/bundle';
 
 const SwiperService = {
   swipersById: {},
+  categorySwipersById: {},
   modalSwiper: null,
   modalInitToken: 0,
   
@@ -58,11 +54,16 @@ const SwiperService = {
         const nextEl = sliderEl.querySelector('.swiper-button-next');
         const prevEl = sliderEl.querySelector('.swiper-button-prev');
         
-        new Swiper(sliderEl, {
+        const swiper = new Swiper(sliderEl, {
           loop: slidesCount > 1,
           pagination: pagEl ? { el: pagEl, clickable: true } : undefined,
           navigation: nextEl && prevEl ? { nextEl, prevEl } : undefined,
         });
+        
+        // Сохраняем ссылку по ID для обновления при смене цвета
+        if (sliderEl.id) {
+          this.categorySwipersById[sliderEl.id] = swiper;
+        }
       });
     });
   },
@@ -167,6 +168,39 @@ const SwiperService = {
       swiperContainer.style.height = '';
       swiperContainer.style.width = '';
     }, 100);
+  },
+  
+  // Обновление слайдера категории при смене цвета
+  updateCategorySlider(categorySlug, newPhotos, getImageUrl) {
+    const sliderId = `category-${categorySlug}-slider`;
+    let swiper = this.categorySwipersById[sliderId];
+    
+    // Fallback: попробовать через DOM
+    if (!swiper) {
+      const swiperElement = document.getElementById(sliderId);
+      if (swiperElement && swiperElement.swiper) {
+        swiper = swiperElement.swiper;
+      }
+    }
+    
+    if (!swiper) return;
+    
+    swiper.removeAllSlides();
+    
+    newPhotos.forEach(photo => {
+      const imageUrl = typeof getImageUrl === 'function' ? getImageUrl(photo) : photo;
+      swiper.appendSlide(`
+        <div class="swiper-slide">
+          <img src="${imageUrl}" 
+               alt="Товар" 
+               class="category-slide-image"
+               loading="lazy"
+               onerror="this.src='/images/placeholder.jpg'" />
+        </div>
+      `);
+    });
+    
+    swiper.update();
   }
 };
 
