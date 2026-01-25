@@ -1,4 +1,9 @@
-import Swiper from 'swiper/bundle';
+import Swiper, { Navigation, Pagination, Keyboard } from 'swiper';
+import 'swiper/css';
+import 'swiper/css/navigation';
+import 'swiper/css/pagination';
+
+Swiper.use([Navigation, Pagination, Keyboard]);
 
 const SwiperService = {
   swipersById: {},

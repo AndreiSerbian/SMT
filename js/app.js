@@ -1,5 +1,7 @@
-// 1) Swiper CSS (bundle включает всё)
-import 'swiper/css/bundle';
+import 'swiper/css';
+import 'swiper/css/navigation';
+import 'swiper/css/pagination';
+
 
 // 2) Tailwind CSS
 import '@/styles/tailwind.css';
