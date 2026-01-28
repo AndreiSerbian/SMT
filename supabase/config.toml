@@ -1,4 +1,3 @@
-
 project_id = "bsndismiessofvhglzrv"
 
 [functions.order-processing]
@@ -17,4 +16,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.media-manager]
+verify_jwt = false
+
+[functions.group-products-by-categories]
 verify_jwt = false
