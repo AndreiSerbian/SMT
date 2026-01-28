@@ -229,6 +229,11 @@ const OrderComponent = {
             <input type="email" id="email" name="email" required
               class="w-full border border-gray-300 px-3 py-2 rounded focus:outline-none focus:ring">
             <p id="emailError" class="text-red-500 text-sm mt-1 hidden">Пожалуйста, укажите корректный email</p>
+            
+            <label class="inline-flex items-center mt-3">
+              <input type="checkbox" id="subscribe" name="subscribe" checked style="accent-color: #00008b;" class="mr-2">
+              <span class="text-sm text-gray-700">Хочу получать информацию о новых товарах и акциях</span>
+            </label>
           </div>
 
           <div>
@@ -269,7 +274,7 @@ const OrderComponent = {
               </label>
               <label class="flex items-center">
                 <input type="radio" name="delivery" value="pickup" style="accent-color: #00008b;" class="mr-2">
-                <span>Самовывоз – Москва, 1я ул. Энтузиастов, д.3</span>
+                <span>Самовывоз – <a href="https://yandex.md/maps/-/CLSn4-iM" target="_blank" rel="noopener" class="text-blue-600 hover:underline">Москва, 1я ул. Энтузиастов, д.3</a></span>
               </label>
             </div>
           </div>
@@ -513,6 +518,8 @@ const OrderComponent = {
     const discount = Math.floor((subtotal * discountRate) / 100);
     const total = subtotal - discount;
 
+    const subscribe = form.subscribe ? form.subscribe.checked : true;
+
     const orderData = {
       name: name,
       phone: phone,
@@ -525,6 +532,7 @@ const OrderComponent = {
       subtotal: subtotal,
       discount: discount,
       total: total,
+      subscribe: subscribe,
     };
 
     // Показываем индикатор загрузки
@@ -544,6 +552,8 @@ const OrderComponent = {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "apikey": env.supabaseAnonKey || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzbmRpc21pZXNzb2Z2aGdsenJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzg2ODYyNTIsImV4cCI6MjA1NDI2MjI1Mn0.4pumjrK8SV79xaegTEZaJMmi6lnp-_5uhSytvWpoZHY",
+        "Authorization": `Bearer ${env.supabaseAnonKey || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzbmRpc21pZXNzb2Z2aGdsenJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzg2ODYyNTIsImV4cCI6MjA1NDI2MjI1Mn0.4pumjrK8SV79xaegTEZaJMmi6lnp-_5uhSytvWpoZHY"}`,
       },
       body: JSON.stringify({ orderData }),
     })

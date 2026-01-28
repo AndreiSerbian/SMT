@@ -1,4 +1,5 @@
 import { supabase } from '../utils/supabase.js';
+import { AdminAuthComponent } from './adminAuthComponent.js';
 
 /**
  * Компонент управления заказами
@@ -50,8 +51,11 @@ export class AdminOrdersComponent {
               <option value="processing">В обработке</option>
               <option value="shipped">Отправлен</option>
               <option value="delivered">Доставлен</option>
+              <option value="completed">Завершён</option>
               <option value="cancelled">Отменён</option>
               <option value="rejected">Отказан</option>
+              <option value="returned">Возврат</option>
+              <option value="problem">Проблема</option>
             </select>
             <input type="date" id="orderDateFrom" class="px-3 py-2 border rounded-lg" placeholder="От">
             <input type="date" id="orderDateTo" class="px-3 py-2 border rounded-lg" placeholder="До">
@@ -74,27 +78,50 @@ export class AdminOrdersComponent {
   }
 
   getAnalytics() {
-    const total = this.filteredOrders.length;
-    const totalRevenue = this.filteredOrders.reduce((sum, o) => sum + (parseFloat(o.total) || 0), 0);
-    const pending = this.filteredOrders.filter(o => o.order_status === 'pending').length;
-    const avgOrder = total > 0 ? totalRevenue / total : 0;
+    // Учитываем в выручке заказы со статусом shipped и далее (кроме отменённых, отказанных, возвратов)
+    const revenueStatuses = ['shipped', 'delivered', 'completed'];
+    const lossStatuses = ['cancelled', 'rejected', 'returned'];
+    
+    const revenueOrders = this.filteredOrders.filter(o => 
+      revenueStatuses.includes(o.order_status)
+    );
+    
+    const lossOrders = this.filteredOrders.filter(o =>
+      lossStatuses.includes(o.order_status)
+    );
+    
+    const totalRevenue = revenueOrders.reduce((sum, o) => sum + (parseFloat(o.total) || 0), 0);
+    const totalLosses = lossOrders.reduce((sum, o) => sum + (parseFloat(o.total) || 0), 0);
+    const revenueCount = revenueOrders.length;
+    const avgOrderValue = revenueCount > 0 ? totalRevenue / revenueCount : 0;
+    
+    // Все заказы (для общей статистики)
+    const allOrdersCount = this.filteredOrders.length;
+    const pendingCount = this.filteredOrders.filter(o => 
+      o.order_status === 'pending' || o.order_status === 'confirmed' || o.order_status === 'processing'
+    ).length;
+    const problemCount = this.filteredOrders.filter(o => o.order_status === 'problem').length;
 
     return `
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
         <div class="bg-white p-4 rounded-xl border">
-          <div class="text-2xl font-bold text-blue-600">${total}</div>
+          <div class="text-2xl font-bold text-blue-600">${allOrdersCount}</div>
           <div class="text-sm text-slate-600">Всего заказов</div>
         </div>
         <div class="bg-white p-4 rounded-xl border">
           <div class="text-2xl font-bold text-green-600">₽${totalRevenue.toFixed(2)}</div>
-          <div class="text-sm text-slate-600">Общая выручка</div>
+          <div class="text-sm text-slate-600">Выручка (отправлено+)</div>
         </div>
         <div class="bg-white p-4 rounded-xl border">
-          <div class="text-2xl font-bold text-orange-600">${pending}</div>
-          <div class="text-sm text-slate-600">В ожидании</div>
+          <div class="text-2xl font-bold text-red-600">₽${totalLosses.toFixed(2)}</div>
+          <div class="text-sm text-slate-600">Потери (отмены/возвраты)</div>
         </div>
         <div class="bg-white p-4 rounded-xl border">
-          <div class="text-2xl font-bold text-purple-600">₽${avgOrder.toFixed(2)}</div>
+          <div class="text-2xl font-bold text-orange-600">${pendingCount}</div>
+          <div class="text-sm text-slate-600">В обработке</div>
+        </div>
+        <div class="bg-white p-4 rounded-xl border">
+          <div class="text-2xl font-bold text-purple-600">₽${avgOrderValue.toFixed(2)}</div>
           <div class="text-sm text-slate-600">Средний чек</div>
         </div>
       </div>
@@ -145,8 +172,11 @@ export class AdminOrdersComponent {
       processing: 'bg-purple-100 text-purple-700',
       shipped: 'bg-indigo-100 text-indigo-700',
       delivered: 'bg-green-100 text-green-700',
+      completed: 'bg-emerald-100 text-emerald-700',
       cancelled: 'bg-red-100 text-red-700',
-      rejected: 'bg-rose-100 text-rose-700'
+      rejected: 'bg-rose-100 text-rose-700',
+      returned: 'bg-orange-100 text-orange-700',
+      problem: 'bg-amber-100 text-amber-700'
     };
 
     const statusNames = {
@@ -155,8 +185,11 @@ export class AdminOrdersComponent {
       processing: 'В обработке',
       shipped: 'Отправлен',
       delivered: 'Доставлен',
+      completed: 'Завершён',
       cancelled: 'Отменён',
-      rejected: 'Отказан'
+      rejected: 'Отказан',
+      returned: 'Возврат',
+      problem: 'Проблема'
     };
 
     const date = new Date(order.created_at);
@@ -386,8 +419,11 @@ export class AdminOrdersComponent {
                 <option value="processing" ${order.order_status === 'processing' ? 'selected' : ''}>В обработке</option>
                 <option value="shipped" ${order.order_status === 'shipped' ? 'selected' : ''}>Отправлен</option>
                 <option value="delivered" ${order.order_status === 'delivered' ? 'selected' : ''}>Доставлен</option>
+                <option value="completed" ${order.order_status === 'completed' ? 'selected' : ''}>Завершён</option>
                 <option value="cancelled" ${order.order_status === 'cancelled' ? 'selected' : ''}>Отменён</option>
                 <option value="rejected" ${order.order_status === 'rejected' ? 'selected' : ''}>Отказан</option>
+                <option value="returned" ${order.order_status === 'returned' ? 'selected' : ''}>Возврат</option>
+                <option value="problem" ${order.order_status === 'problem' ? 'selected' : ''}>Проблема</option>
               </select>
             </div>
 
@@ -427,6 +463,20 @@ export class AdminOrdersComponent {
     const newStatus = statusSelect.value;
 
     try {
+      // Получаем логин админа из сессии
+      const adminLogin = AdminAuthComponent.getAdminLogin();
+      if (!adminLogin) {
+        alert('Необходима авторизация администратора');
+        return;
+      }
+
+      // Устанавливаем контекст админа
+      const { error: contextError } = await supabase.rpc('set_admin_login_context', {
+        admin_login: adminLogin
+      });
+
+      if (contextError) throw contextError;
+
       const { error } = await supabase
         .from('orders')
         .update({ order_status: newStatus })

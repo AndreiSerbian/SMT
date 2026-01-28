@@ -1,5 +1,5 @@
 import { productsService } from '../services/productsService.js';
-
+import SwiperService from '../services/swiperService.js';
 /**
  * Компонент для отображения товаров на публичной витрине
  * Читает данные из Supabase через productsService
@@ -187,10 +187,10 @@ export const PublicProductsComponent = {
     // Иначе показываем карточки категорий
     const html = this.renderCategoryCards();
     
-    // Инициализируем слайдеры после рендера
-    setTimeout(() => {
+    // Инициализируем слайдеры после рендера (без setTimeout)
+    requestAnimationFrame(() => {
       this.initCategorySliders();
-    }, 100);
+    });
     
     return html;
   },
@@ -523,66 +523,14 @@ export const PublicProductsComponent = {
    * Обновление слайдера категории с новыми фотографиями
    */
   updateCategorySlider(categorySlug, newPhotos) {
-    const sliderId = `category-${categorySlug}-slider`;
-    const swiperElement = document.getElementById(sliderId);
-    
-    if (swiperElement && swiperElement.swiper) {
-      const swiper = swiperElement.swiper;
-      
-      // Удаляем старые слайды
-      swiper.removeAllSlides();
-      
-      // Добавляем новые слайды
-      newPhotos.forEach(photo => {
-        swiper.appendSlide(`
-          <div class="swiper-slide">
-            <img src="${this.getImageUrl(photo)}" 
-                 alt="Товар" 
-                 class="category-slide-image"
-                 loading="lazy"
-                 onerror="this.src='/images/placeholder.jpg'" />
-          </div>
-        `);
-      });
-      
-      // Обновляем слайдер
-      swiper.update();
-    }
+    SwiperService.updateCategorySlider(categorySlug, newPhotos, this.getImageUrl.bind(this));
   },
 
   /**
    * Инициализация слайдеров для карточек категорий
    */
   initCategorySliders() {
-    // Ждем немного чтобы DOM обновился
-    setTimeout(() => {
-      const categorySliders = document.querySelectorAll('[id$="-slider"]');
-      categorySliders.forEach(sliderEl => {
-        if (sliderEl.swiper) {
-          sliderEl.swiper.destroy(true, true);
-        }
-        
-        const slidesCount = sliderEl.querySelectorAll('.swiper-slide').length;
-        
-        const swiperInstance = new Swiper(sliderEl, {
-          loop: slidesCount > 1,
-          pagination: {
-            el: sliderEl.querySelector('.swiper-pagination'),
-            clickable: true,
-          },
-          navigation: {
-            nextEl: sliderEl.querySelector('.swiper-button-next'),
-            prevEl: sliderEl.querySelector('.swiper-button-prev'),
-          },
-          autoplay: false,
-          on: {
-            slideChange: function() {
-              // Можно добавить логику при смене слайда
-            }
-          }
-        });
-      });
-    }, 100);
+    SwiperService.initCategorySliders();
   },
 
   /**

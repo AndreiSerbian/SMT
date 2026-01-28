@@ -11,7 +11,8 @@ export class AdminLayoutComponent {
 
   async mount(container) {
     // Проверка авторизации
-    if (!AdminAuthComponent.isAuthenticated()) {
+    const isAuth = await AdminAuthComponent.isAuthenticated();
+    if (!isAuth) {
       window.location.hash = '#admin';
       return;
     }
@@ -27,7 +28,7 @@ export class AdminLayoutComponent {
       const hash = window.location.hash;
       if (hash.startsWith('#admin/')) {
         const section = hash.replace('#admin/', '');
-        if (['products', 'categories', 'colors', 'orders', 'analytics'].includes(section)) {
+        if (['products', 'categories', 'colors', 'orders', 'clients', 'analytics'].includes(section)) {
           this.handleSectionChange(section);
         }
       }
@@ -37,8 +38,6 @@ export class AdminLayoutComponent {
   }
 
   getHTML() {
-    const adminLogin = AdminAuthComponent.getAdminLogin();
-    
     return `
       <div class="h-full bg-slate-50 text-slate-900">
         <!-- HEADER -->
@@ -47,7 +46,7 @@ export class AdminLayoutComponent {
             <div class="flex items-center gap-2">
               <span class="text-xl">⚙️</span>
               <h1 class="text-lg font-semibold">Админ-панель</h1>
-              ${adminLogin ? `<span class="text-sm text-slate-600 ml-2">(${adminLogin})</span>` : ''}
+              <span id="admin-email-display" class="text-sm text-slate-600 ml-2"></span>
             </div>
             <div class="flex items-center gap-2">
               <nav class="hidden sm:flex gap-1">
@@ -55,6 +54,7 @@ export class AdminLayoutComponent {
                 <a href="#admin/categories" data-section="categories" class="nav-link px-3 py-1.5 rounded-full">Категории</a>
                 <a href="#admin/colors" data-section="colors" class="nav-link px-3 py-1.5 rounded-full">Цвета</a>
                 <a href="#admin/orders" data-section="orders" class="nav-link px-3 py-1.5 rounded-full">Заказы</a>
+                <a href="#admin/clients" data-section="clients" class="nav-link px-3 py-1.5 rounded-full">Клиенты</a>
                 <a href="#admin/analytics" data-section="analytics" class="nav-link px-3 py-1.5 rounded-full">Аналитика</a>
               </nav>
               <button id="btnLogout" class="px-3 py-1.5 rounded-lg bg-rose-600 text-white hover:bg-rose-700 transition">
@@ -68,6 +68,7 @@ export class AdminLayoutComponent {
             <a href="#admin/categories" data-section="categories" class="nav-link px-3 py-1.5 rounded-full whitespace-nowrap">Категории</a>
             <a href="#admin/colors" data-section="colors" class="nav-link px-3 py-1.5 rounded-full whitespace-nowrap">Цвета</a>
             <a href="#admin/orders" data-section="orders" class="nav-link px-3 py-1.5 rounded-full whitespace-nowrap">Заказы</a>
+            <a href="#admin/clients" data-section="clients" class="nav-link px-3 py-1.5 rounded-full whitespace-nowrap">Клиенты</a>
             <a href="#admin/analytics" data-section="analytics" class="nav-link px-3 py-1.5 rounded-full whitespace-nowrap">Аналитика</a>
           </div>
         </header>
@@ -85,13 +86,20 @@ export class AdminLayoutComponent {
     `;
   }
 
-  attachEvents() {
+  async attachEvents() {
+    // Display admin email
+    const adminEmail = await AdminAuthComponent.getAdminEmail();
+    const emailDisplay = document.getElementById('admin-email-display');
+    if (emailDisplay && adminEmail) {
+      emailDisplay.textContent = `(${adminEmail})`;
+    }
+
     // Logout
     const logoutBtn = document.getElementById('btnLogout');
     if (logoutBtn) {
-      logoutBtn.addEventListener('click', () => {
+      logoutBtn.addEventListener('click', async () => {
         if (confirm('Вы уверены, что хотите выйти?')) {
-          AdminAuthComponent.logout();
+          await AdminAuthComponent.logout();
         }
       });
     }
@@ -143,6 +151,10 @@ export class AdminLayoutComponent {
         case 'orders':
           const ordersModule = await import('./adminOrdersComponent.js');
           Component = ordersModule.AdminOrdersComponent;
+          break;
+        case 'clients':
+          const clientsModule = await import('./adminClientsComponent.js');
+          Component = clientsModule.AdminClientsComponent;
           break;
         case 'analytics':
           const analyticsModule = await import('./adminAnalyticsComponent.js');

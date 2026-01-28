@@ -35,6 +35,36 @@ export type Database = {
         }
         Relationships: []
       }
+      b2b_clients: {
+        Row: {
+          company_name: string | null
+          contact_name: string | null
+          created_at: string
+          email: string
+          id: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          company_name?: string | null
+          contact_name?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          company_name?: string | null
+          contact_name?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       box_types: {
         Row: {
           created_at: string | null
@@ -155,6 +185,7 @@ export type Database = {
       orders: {
         Row: {
           cart_items: Json
+          client_id: string | null
           comment: string | null
           confirmed_at: string | null
           created_at: string | null
@@ -167,12 +198,14 @@ export type Database = {
           order_status: string | null
           payment: string | null
           phone: string
+          subscribe: boolean
           subtotal: number
           total: number
           yandex_address: string | null
         }
         Insert: {
           cart_items: Json
+          client_id?: string | null
           comment?: string | null
           confirmed_at?: string | null
           created_at?: string | null
@@ -185,12 +218,14 @@ export type Database = {
           order_status?: string | null
           payment?: string | null
           phone: string
+          subscribe?: boolean
           subtotal: number
           total: number
           yandex_address?: string | null
         }
         Update: {
           cart_items?: Json
+          client_id?: string | null
           comment?: string | null
           confirmed_at?: string | null
           created_at?: string | null
@@ -203,11 +238,27 @@ export type Database = {
           order_status?: string | null
           payment?: string | null
           phone?: string
+          subscribe?: boolean
           subtotal?: number
           total?: number
           yandex_address?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "orders_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "b2b_clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "client_analytics"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       product_prices: {
         Row: {
@@ -340,35 +391,94 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      wb_clicks: {
+        Row: {
+          clicked_at: string
+          id: string
+          product_id: string
+          referrer: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          clicked_at?: string
+          id?: string
+          product_id: string
+          referrer?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          clicked_at?: string
+          id?: string
+          product_id?: string
+          referrer?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
-      [_ in never]: never
+      client_analytics: {
+        Row: {
+          company_name: string | null
+          contact_name: string | null
+          created_at: string | null
+          customer_segment: string | null
+          email: string | null
+          id: string | null
+          last_order_date: string | null
+          phone: string | null
+          total_orders: number | null
+          total_revenue: number | null
+          updated_at: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       generate_photo_paths: {
         Args: { color: string; size_category: string }
         Returns: string[]
       }
-      get_color_hex: {
-        Args: { color_name: string }
-        Returns: string
-      }
+      get_color_hex: { Args: { color_name: string }; Returns: string }
       get_product_size: {
         Args: { category: string; dimensions: Json }
         Returns: Database["public"]["Enums"]["product_size"]
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
       }
       is_admin_user: {
         Args: { login_input: string; password_input: string }
         Returns: boolean
       }
-      is_current_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      parse_dimensions: {
-        Args: { dimension_str: string }
-        Returns: Json
-      }
+      is_current_admin: { Args: never; Returns: boolean }
+      make_user_admin: { Args: { user_email: string }; Returns: undefined }
+      parse_dimensions: { Args: { dimension_str: string }; Returns: Json }
       set_admin_context: {
         Args: { admin_login: string; admin_password: string }
         Returns: undefined
@@ -383,6 +493,7 @@ export type Database = {
       }
     }
     Enums: {
+      app_role: "admin" | "user"
       product_size: "small" | "medium" | "big"
       size_type_enum: "малая" | "средняя" | "большая"
     }
@@ -512,6 +623,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin", "user"],
       product_size: ["small", "medium", "big"],
       size_type_enum: ["малая", "средняя", "большая"],
     },

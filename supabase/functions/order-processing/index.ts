@@ -267,13 +267,132 @@ serve(async (req) => {
       orderData.delivery = normalizeDeliveryValue(orderData.delivery);
       console.log("Normalized delivery value:", orderData.delivery);
 
-      // Сохраняем заказ в базе данных Supabase
+      // === B2B CLIENT MANAGEMENT ===
+      // Normalize email and phone for consistent comparison
+      const normalizedEmail = orderData.email.toLowerCase().trim();
+      const normalizedPhone = orderData.phone.replace(/\D/g, ''); // Only digits
+      
+      console.log('Searching for client with email:', normalizedEmail, 'phone:', normalizedPhone);
+      
+      // Step 1: Check if client exists by email
+      const { data: clientByEmail, error: emailError } = await supabase
+        .from('b2b_clients')
+        .select('*')
+        .ilike('email', normalizedEmail)
+        .maybeSingle();
+      
+      if (emailError) {
+        console.error('Error checking for existing client by email:', emailError);
+      }
+      
+      let client = clientByEmail;
+      let foundBy = client ? 'email' : null;
+      
+      // Step 2: If not found by email, search by phone (last 10 digits)
+      if (!client && normalizedPhone.length >= 10) {
+        const phoneSearchPattern = normalizedPhone.slice(-10);
+        console.log('Client not found by email, searching by phone pattern:', phoneSearchPattern);
+        
+        const { data: allClients, error: phoneError } = await supabase
+          .from('b2b_clients')
+          .select('*');
+        
+        if (phoneError) {
+          console.error('Error checking for existing client by phone:', phoneError);
+        } else if (allClients) {
+          // Find client with matching phone (last 10 digits)
+          client = allClients.find(c => {
+            if (!c.phone) return false;
+            const clientPhone = c.phone.replace(/\D/g, '');
+            return clientPhone.slice(-10) === phoneSearchPattern;
+          });
+          
+          if (client) {
+            foundBy = 'phone';
+            console.log('Found existing client by phone:', client.id);
+          }
+        }
+      }
+      
+      let clientId = null;
+
+      if (client) {
+        clientId = client.id;
+        console.log('Found existing client by', foundBy, ':', clientId);
+        
+        // Update email if found by phone and email differs (client corrected typo)
+        if (foundBy === 'phone' && client.email?.toLowerCase() !== normalizedEmail) {
+          console.log('Updating client email from', client.email, 'to', normalizedEmail);
+          const { error: updateError } = await supabase
+            .from('b2b_clients')
+            .update({ 
+              email: normalizedEmail,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', clientId);
+          
+          if (updateError) {
+            console.error('Error updating client email:', updateError);
+          } else {
+            console.log('Successfully updated client email');
+          }
+        }
+        
+        // Soft update: only update fields that are currently empty
+        const updates: any = {};
+        
+        if (!client.phone && orderData.phone) {
+          updates.phone = orderData.phone;
+        }
+        
+        if (!client.contact_name && orderData.name) {
+          updates.contact_name = orderData.name;
+        }
+        
+        // Only update if there are fields to update
+        if (Object.keys(updates).length > 0) {
+          const { error: updateError } = await supabase
+            .from('b2b_clients')
+            .update(updates)
+            .eq('id', clientId);
+          
+          if (updateError) {
+            console.error('Error updating client:', updateError);
+          } else {
+            console.log('Updated existing client with new data:', updates);
+          }
+        }
+      } else {
+        // Create new client
+        console.log('No existing client found, creating new one');
+        const { data: newClient, error: createError } = await supabase
+          .from('b2b_clients')
+          .insert({
+            email: normalizedEmail,
+            phone: orderData.phone,
+            contact_name: orderData.name,
+            company_name: null
+          })
+          .select()
+          .single();
+        
+        if (createError) {
+          console.error('Error creating new client:', createError);
+        } else if (newClient) {
+          clientId = newClient.id;
+          console.log('Created new client:', clientId);
+        }
+      }
+
+      // Сохраняем заказ в базе данных Supabase с client_id
       const { data: order, error } = await supabase
         .from('orders')
         .insert({
           ...orderData,
-          order_status: 'created', // Используем 'created' в соответствии с CHECK CONSTRAINT
-          created_at: new Date().toISOString()
+          client_id: clientId,
+          order_status: 'created',
+          created_at: new Date().toISOString(),
+          subscribe: orderData.subscribe !== undefined ? orderData.subscribe : true
         })
         .select()
         .single();
@@ -291,9 +410,10 @@ serve(async (req) => {
         return `- ${item.name} (${item.color || 'Н/Д'}) Арт. ${item.artikul || 'Н/Д'} × ${item.quantity} = ${itemTotal} ₽`;
       }).join('\n');
       
-      // Отправляем уведомление в Telegram
+      // Отправляем уведомление в Telegram с информацией о клиенте
       const telegramMessage = `
 📦 *Новый заказ!*
+${clientId ? `🏢 *Клиент ID:* \`${clientId}\`` : ''}
 👤 *Имя:* ${order.name}
 📞 *Телефон:* ${order.phone}
 ✉️ *Email:* ${order.email}
