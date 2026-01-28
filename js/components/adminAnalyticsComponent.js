@@ -118,8 +118,8 @@ export class AdminAnalyticsComponent {
     this.filteredOrders.forEach(order => {
       if (order.cart_items && Array.isArray(order.cart_items)) {
         order.cart_items.forEach(item => {
-          const key = item.id || item.name;
-          const existing = productMap.get(key) || { id: key, quantity: 0, revenue: 0 };
+          const key = item.name || item.id;
+          const existing = productMap.get(key) || { name: key, quantity: 0, revenue: 0 };
           existing.quantity += item.quantity || 0;
           existing.revenue += (item.price || 0) * (item.quantity || 0);
           productMap.set(key, existing);
@@ -489,7 +489,7 @@ export class AdminAnalyticsComponent {
       new Chart(topProductsCtx, {
         type: 'bar',
         data: {
-          labels: topProducts.map(p => p.id),
+          labels: topProducts.map(p => p.name.length > 30 ? p.name.substring(0, 30) + '...' : p.name),
           datasets: [{
             label: 'Количество продаж',
             data: topProducts.map(p => p.quantity),

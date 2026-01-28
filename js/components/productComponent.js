@@ -1,7 +1,7 @@
 import { cartService } from '../services/cartService.js';
 import { ColorService } from '../services/colorService.js';
 import { productsService } from '../services/productsService.js';
-import SwiperService from '../services/swiperService.js';
+
 const ProductComponent = {
   eventListeners: [],
   timeouts: [],
@@ -300,9 +300,7 @@ const ProductComponent = {
               <a href="https://www.wildberries.ru/catalog/${product.id_wb}/detail.aspx"
                  target="_blank"
                  rel="nofollow noopener"
-                 class="bg-indigo-600 hover:bg-indigo-700 text-white px-2 py-2 rounded transition duration-200"
-                 data-wb-link
-                 data-product-id="${product.id}">
+                 class="bg-indigo-600 hover:bg-indigo-700 text-white px-2 py-2 rounded transition duration-200">
                 Купить пробный товар на WB
               </a>
               ` : ''}
@@ -499,8 +497,40 @@ const ProductComponent = {
           imageModal.classList.add('show');
           document.body.style.overflow = 'hidden';
           
-          // Инициализируем Swiper через сервис (с защитой от race condition)
-          SwiperService.initModalSwiper(startIndex, allMedia.length);
+          // Инициализируем или обновляем Swiper
+          if (window.modalSwiper) {
+            window.modalSwiper.destroy(true, true);
+          }
+          
+          window.modalSwiper = new Swiper('.modal-swiper', {
+            loop: allMedia.length > 1,
+            initialSlide: startIndex,
+            navigation: {
+              nextEl: '.modal-swiper .swiper-button-next',
+              prevEl: '.modal-swiper .swiper-button-prev',
+            },
+            pagination: {
+              el: '.modal-swiper .swiper-pagination',
+              clickable: true,
+              type: 'fraction',
+              formatFractionCurrent: function (number) {
+                return number;
+              },
+              formatFractionTotal: function (number) {
+                return number;
+              },
+              renderFraction: function (currentClass, totalClass) {
+                return '<span class="' + currentClass + '"></span>' +
+                       ' / ' +
+                       '<span class="' + totalClass + '"></span>';
+              },
+            },
+            keyboard: {
+              enabled: true,
+              onlyInViewport: false,
+            },
+            spaceBetween: 10,
+          });
         }
       };
       
@@ -510,8 +540,11 @@ const ProductComponent = {
           imageModal.classList.remove('show');
           document.body.style.overflow = '';
           
-          // Уничтожаем Swiper через сервис
-          SwiperService.destroyModalSwiper();
+          // Уничтожаем Swiper при закрытии
+          if (window.modalSwiper) {
+            window.modalSwiper.destroy(true, true);
+            window.modalSwiper = null;
+          }
         }
       };
       
@@ -532,38 +565,6 @@ const ProductComponent = {
         };
         ProductComponent.addEventListenerWithCleanup(thumbnail, 'click', thumbnailHandler);
       });
-      
-      // Обработчик для ссылки на WB - логирование клика
-      const wbLink = container.querySelector('[data-wb-link]');
-      if (wbLink) {
-        const wbClickHandler = async (e) => {
-          try {
-            const productId = wbLink.dataset.productId;
-            
-            // Логируем клик в Supabase
-            const apiUrl = "https://bsndismiessofvhglzrv.supabase.co";
-            await fetch(`${apiUrl}/rest/v1/wb_clicks`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzbmRpc21pZXNzb2Z2aGdsenJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzg2ODYyNTIsImV4cCI6MjA1NDI2MjI1Mn0.4pumjrK8SV79xaegTEZaJMmi6lnp-_5uhSytvWpoZHY',
-                'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzbmRpc21pZXNzb2Z2aGdsenJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzg2ODYyNTIsImV4cCI6MjA1NDI2MjI1Mn0.4pumjrK8SV79xaegTEZaJMmi6lnp-_5uhSytvWpoZHY',
-                'Prefer': 'return=minimal'
-              },
-              body: JSON.stringify({
-                product_id: productId,
-                user_agent: navigator.userAgent,
-                referrer: document.referrer || null
-              })
-            });
-          } catch (error) {
-            console.error('Ошибка логирования клика на WB:', error);
-          }
-          // Ссылка откроется автоматически
-        };
-        ProductComponent.addEventListenerWithCleanup(wbLink, 'click', wbClickHandler);
-      }
-      
       
       if (closeModalBtn) {
         ProductComponent.addEventListenerWithCleanup(closeModalBtn, 'click', closeImageModal);

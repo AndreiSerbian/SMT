@@ -80,8 +80,7 @@ class Router {
    */
   async renderAdminAuth() {
     // Если уже авторизован, редирект на админку
-    const isAuth = await AdminAuthComponent.isAuthenticated();
-    if (isAuth) {
+    if (AdminAuthComponent.isAuthenticated()) {
       window.location.hash = '#admin/products';
       return;
     }
@@ -96,8 +95,7 @@ class Router {
    */
   async renderAdminSection(section) {
     // Проверка авторизации
-    const isAuth = await AdminAuthComponent.isAuthenticated();
-    if (!isAuth) {
+    if (!AdminAuthComponent.isAuthenticated()) {
       window.location.hash = '#admin';
       return;
     }
