@@ -1,130 +1,164 @@
 
-# Диагностика и план исправления
+
+# План исправления стилей на TimeWeb (prod.giftboxop.ru)
 
 ## Найденная проблема
 
-**Точная причина** (1-2 предложения):  
-Файл `js/utils/supabase.js` (строка 1) импортирует Supabase через CDN Skypack (`https://cdn.skypack.dev/@supabase/supabase-js`), который возвращает **504 Gateway Timeout**. Из-за этого JavaScript не загружается полностью, и приложение зависает на пустом экране.
+Проект работает на Netlify и локально, но на TimeWeb стили не применяются. Проверено:
+- Font Awesome CSS загружается корректно (`Content-Type: text/css`)
+- Товары загружаются (`Товары загружены: 46`)
+- Приложение работает (`Products catalog loaded successfully`)
 
-**Доказательства из Network**:
-```
-612.58 | GET | ERR | Script | - | https://cdn.skypack.dev/new/@supabase/supabase-js@v2.93.1/dist=es2019
-```
+**Причина**: TimeWeb — это Apache-хостинг, который требует `.htaccess` для:
+1. Правильной раздачи SPA (все роуты → index.html)
+2. Правильных MIME-типов для CSS/JS файлов
 
-**Доказательства из Console**:
-```
-[error] Failed to load resource: the server responded with a status of 504 ()
-(https://cdn.skypack.dev/new/@supabase/supabase-js@v2.93.1/dist=es2019:1)
+В проекте есть `netlify.toml` и `vercel.json`, но **нет `.htaccess`** для Apache-хостингов.
+
+---
+
+## Шаг 1: Создать `.htaccess` для TimeWeb
+
+Создать файл `.htaccess` в корне проекта (рядом с `index.html`):
+
+```apache
+# MIME Types (критично для CSS/JS)
+AddType text/css .css
+AddType application/javascript .js
+AddType application/json .json
+AddType image/svg+xml .svg
+AddType image/webp .webp
+AddType font/woff2 .woff2
+AddType font/woff .woff
+
+# Кодировка
+AddDefaultCharset UTF-8
+
+# SPA Routing — все запросы на index.html
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+  
+  # Не перезаписывать существующие файлы и директории
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  
+  # Все остальные запросы → index.html
+  RewriteRule ^(.*)$ /index.html [L,QSA]
+</IfModule>
+
+# Кэширование статики
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType text/css "access plus 1 year"
+  ExpiresByType application/javascript "access plus 1 year"
+  ExpiresByType image/webp "access plus 1 year"
+  ExpiresByType image/svg+xml "access plus 1 year"
+</IfModule>
+
+# Gzip сжатие
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css application/javascript application/json image/svg+xml
+</IfModule>
 ```
 
 ---
 
-## Архитектурная проблема проекта
+## Шаг 2: Добавить `.htaccess` в сборку Vite
 
-В проекте есть **два способа импорта Supabase**, которые конфликтуют:
+Файл `.htaccess` должен автоматически копироваться в `dist/` при сборке.
 
-| Файл | Способ импорта | Используется для |
-|------|----------------|------------------|
-| `js/utils/supabase.js` | CDN Skypack (нестабильный) | Vanilla JS (`js/app.js`, `productsService.js` и др.) |
-| `src/integrations/supabase/client.ts` | npm пакет | React компоненты |
+Изменить `vite.config.ts`:
 
-Основное приложение (`index.html`) загружает **vanilla JS** через `js/app.js`, а не React. Поэтому используется именно `js/utils/supabase.js`, который падает из-за CDN.
-
----
-
-## Шаги исправления
-
-### Шаг 1: Исправить `js/utils/supabase.js` — использовать npm вместо CDN
-
-**Файл:** `js/utils/supabase.js`
-
-**Текущий код (проблемный):**
-```javascript
-import { createClient } from 'https://cdn.skypack.dev/@supabase/supabase-js';
-```
-
-**Новый код (исправленный):**
-```javascript
-import { createClient } from '@supabase/supabase-js';
-
-const SUPABASE_URL = "https://bsndismiessofvhglzrv.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzbmRpc21pZXNzb2Z2aGdsenJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzg2ODYyNTIsImV4cCI6MjA1NDI2MjI1Mn0.4pumjrK8SV79xaegTEZaJMmi6lnp-_5uhSytvWpoZHY";
-
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-```
-
-**Почему это работает:**  
-- `@supabase/supabase-js` уже установлен в `package.json` (версия `^2.49.1`)
-- Vite разрешает npm-импорты и бандлит их корректно
-- Не зависит от внешнего CDN
-
----
-
-### Шаг 2: Убедиться, что Vite правильно обрабатывает JS-файлы
-
-**Проверить `vite.config.ts`** — убедиться, что `js/` папка включена в обработку.
-
-Текущая конфигурация уже корректна:
 ```typescript
-build: {
-  rollupOptions: {
-    input: {
-      main: path.resolve(__dirname, 'index.html'),
+import { defineConfig, loadEnv } from "vite";
+import react from "@vitejs/plugin-react-swc";
+import path from "path";
+import { componentTagger } from "lovable-tagger";
+
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd());
+
+  return {
+    server: {
+      host: "::",
+      port: 8080,
     },
-  },
-},
+    plugins: [
+      react(),
+      mode === 'development' && componentTagger(),
+    ].filter(Boolean),
+    resolve: {
+      alias: {
+        "@": path.resolve(__dirname, "./src"),
+      },
+    },
+    css: {
+      postcss: './postcss.config.js',
+    },
+    build: {
+      outDir: 'dist',
+      rollupOptions: {
+        input: {
+          main: path.resolve(__dirname, 'index.html'),
+        },
+      },
+    },
+    // НОВОЕ: Копировать .htaccess в dist
+    publicDir: 'public',
+  };
+});
 ```
 
-Vite следует за импортами из `index.html` → `js/app.js` → `js/utils/supabase.js`, поэтому npm-импорт будет работать.
+**Альтернатива**: Положить `.htaccess` в папку `public/` — Vite автоматически скопирует его в `dist/`.
 
 ---
 
-## Альтернативный вариант (если npm-импорт не сработает)
+## Шаг 3: Пересобрать и загрузить на TimeWeb
 
-Использовать более стабильный CDN — **esm.sh** вместо Skypack:
-
-```javascript
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-```
-
-Но **рекомендуется npm-импорт**, так как:
-1. Уже установлен в проекте
-2. Бандлится Vite — быстрее загрузка
-3. Не зависит от внешних CDN
+1. Положить `.htaccess` в папку `public/`
+2. Запустить `npm run build`
+3. Загрузить **всю папку `dist/`** на TimeWeb
+4. Очистить кэш браузера (Ctrl+Shift+R)
 
 ---
 
-## Проверка после исправления
+## Шаг 4: Проверка на TimeWeb
 
-### Локально:
-```bash
-npm run dev    # должен работать
-npm run build  # должен пройти без ошибок
-npm run preview  # должен открыться
-```
+После загрузки открыть DevTools → Network:
 
-### В браузере DevTools:
-1. **Console**: нет ошибок `504` или `Failed to fetch`
-2. **Network**: нет запросов к `cdn.skypack.dev`
-3. **UI**: каталог товаров загружается, не висит на "Загрузка..."
+1. Найти CSS файл Vite (например `assets/index-XXXXX.css`)
+2. Проверить заголовок `Content-Type: text/css`
+3. Убедиться что статус `200 OK`
 
-### На хостингах (Netlify/Timeweb):
-После деплоя приложение должно открываться без зависаний.
+---
+
+## Дополнительно: Диагностика
+
+Если стили всё ещё не работают, проверь в DevTools на prod.giftboxop.ru:
+
+**Network → Filter: CSS:**
+- Какие CSS файлы загружаются?
+- Какой статус (200/404)?
+- Какой Content-Type?
+
+**Console:**
+- Есть ли ошибка `Refused to apply style from '...' because its MIME type ('text/plain') is not a supported stylesheet MIME type`?
 
 ---
 
 ## Сводка изменений
 
-| Файл | Строка | Действие |
-|------|--------|----------|
-| `js/utils/supabase.js` | 1 | Заменить CDN импорт на npm: `import { createClient } from '@supabase/supabase-js';` |
+| Файл | Действие |
+|------|----------|
+| `public/.htaccess` | Создать — MIME types + SPA routing для TimeWeb |
 
 ---
 
-## Дополнительно: проблема с кнопками цветов (из предыдущего контекста)
+## Ожидаемый результат
 
-После исправления Skypack-проблемы, Swiper и кнопки цветов должны заработать, так как:
-1. Swiper-импорты уже исправлены на bundle (`import Swiper from 'swiper/bundle';`)
-2. `SwiperService` уже имеет `categorySwipersById` и `updateCategorySlider()`
+После добавления `.htaccess`:
+1. CSS файлы Vite будут раздаваться с правильным `Content-Type: text/css`
+2. SPA роутинг будет работать (refresh страницы не даст 404)
+3. Стили будут применяться корректно
 
-Если кнопки всё ещё не работают после Supabase-фикса — проверить, сохраняются ли инстансы слайдеров.
