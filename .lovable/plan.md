@@ -1,99 +1,108 @@
 
+# План отключения PageSpeed на TimeWeb
 
-# План исправления логотипа
+## Найденная проблема
 
-## Проблема
-
-Логотип не загружается потому что во всех навигационных компонентах используется **внешняя ссылка на устаревший домен**:
+Ошибка:
 ```
-https://giftboxopt.ru/assets/logo-B0ADOiza.svg
+Refused to apply style from 'https://www.giftboxopt.ru/assets/A.main-C2YBo3W3.css.pagespeed.cf.RdKhIsWaK7.css' because its MIME type ('text/html') is not a supported stylesheet MIME type
 ```
 
-Файл логотипа при этом **есть в проекте**: `public/images/logo.svg`
+**Причина**: На хостинге TimeWeb включён модуль **Google PageSpeed** (`mod_pagespeed`), который:
+1. Перехватывает CSS файлы Vite (`main-C2YBo3W3.css`)
+2. Переименовывает их (`A.main-C2YBo3W3.css.pagespeed.cf.RdKhIsWaK7.css`)
+3. При ошибке возвращает HTML страницу (404) вместо CSS
+4. Браузер отказывается применять стили из-за неправильного MIME type
 
 ---
 
 ## Решение
 
-Заменить все внешние ссылки на локальный путь `/images/logo.svg` в 4 файлах:
+Добавить директивы отключения PageSpeed в `.htaccess`:
 
----
+### Изменения в `public/.htaccess`
 
-### Файл 1: `js/components/homeComponent.js`
+```apache
+# ОТКЛЮЧЕНИЕ PageSpeed (критично для Vite-сборок)
+<IfModule pagespeed_module>
+  ModPagespeed off
+</IfModule>
+<IfModule mod_pagespeed.c>
+  ModPagespeed off
+</IfModule>
 
-**Строки 112 и 133** — заменить:
-```javascript
-// Было (в 2 местах):
-<img src="https://giftboxopt.ru/assets/logo-B0ADOiza.svg" alt="Logo" class="w-8 h-8 mr-2" />
+# MIME Types (критично для CSS/JS)
+AddType text/css .css
+AddType application/javascript .js
+AddType application/json .json
+AddType image/svg+xml .svg
+AddType image/webp .webp
+AddType font/woff2 .woff2
+AddType font/woff .woff
 
-// Станет:
-<img src="/images/logo.svg" alt="Logo" class="w-8 h-8 mr-2" />
+# Кодировка
+AddDefaultCharset UTF-8
+
+# SPA Routing — все запросы на index.html
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+  
+  # Не перезаписывать существующие файлы и директории
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  
+  # Все остальные запросы → index.html
+  RewriteRule ^(.*)$ /index.html [L,QSA]
+</IfModule>
+
+# Кэширование статики
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType text/css "access plus 1 year"
+  ExpiresByType application/javascript "access plus 1 year"
+  ExpiresByType image/webp "access plus 1 year"
+  ExpiresByType image/svg+xml "access plus 1 year"
+</IfModule>
+
+# Gzip сжатие
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css application/javascript application/json image/svg+xml
+</IfModule>
 ```
 
 ---
 
-### Файл 2: `js/components/productComponent.js`
+## Почему PageSpeed конфликтует с Vite
 
-**Строки 208 и 229** — заменить:
-```javascript
-// Было (в 2 местах):
-<img src="https://giftboxopt.ru/assets/logo-B0ADOiza.svg" alt="Logo" class="w-8 h-8 mr-2" />
-
-// Станет:
-<img src="/images/logo.svg" alt="Logo" class="w-8 h-8 mr-2" />
-```
-
----
-
-### Файл 3: `js/components/contactsComponent.js`
-
-**Строки 35 и 56** — заменить:
-```javascript
-// Было (в 2 местах):
-<img src="https://giftboxopt.ru/assets/logo-B0ADOiza.svg" alt="Logo" class="w-8 h-8 mr-2" />
-
-// Станет:
-<img src="/images/logo.svg" alt="Logo" class="w-8 h-8 mr-2" />
-```
-
----
-
-### Файл 4: `js/components/orderComponent.js`
-
-**Строки 138 и 159** — заменить:
-```javascript
-// Было (в 2 местах):
-<img src="https://giftboxopt.ru/assets/logo-B0ADOiza.svg" alt="Logo" class="w-8 h-8 mr-2" />
-
-// Станет:
-<img src="/images/logo.svg" alt="Logo" class="w-8 h-8 mr-2" />
-```
-
----
-
-## Почему это работает
-
-1. Файл `public/images/logo.svg` уже существует в проекте
-2. Vite копирует содержимое `public/` в корень `dist/` при сборке
-3. Путь `/images/logo.svg` будет работать везде: dev, preview, Netlify, TimeWeb
+| Vite | PageSpeed | Конфликт |
+|------|-----------|----------|
+| Генерирует файлы с хешем: `main-C2YBo3W3.css` | Добавляет свой суффикс: `.pagespeed.cf.XXX.css` | URL меняется, но файл не существует |
+| Файлы статичные, неизменные | Пытается "оптимизировать" на лету | Кэширование ломается |
+| Работает с Content-Type: text/css | Возвращает 404.html при ошибке | MIME type = text/html |
 
 ---
 
 ## После исправления
 
 1. Пересобрать проект: `npm run build`
-2. Загрузить `dist/` на TimeWeb
-3. Проверить что логотип отображается в навигации на всех страницах
+2. Загрузить **всю папку `dist/`** на TimeWeb (включая обновлённый `.htaccess`)
+3. Очистить кэш браузера (Ctrl+Shift+R)
+4. Проверить что стили применяются на `prod.giftboxop.ru`
+
+---
+
+## Проверка успешности
+
+В DevTools → Network → Filter: CSS:
+- URL должен быть `assets/index-XXXXX.css` (без `.pagespeed`)
+- Статус: `200 OK`
+- Content-Type: `text/css`
 
 ---
 
 ## Сводка изменений
 
-| Файл | Количество замен |
-|------|------------------|
-| `js/components/homeComponent.js` | 2 |
-| `js/components/productComponent.js` | 2 |
-| `js/components/contactsComponent.js` | 2 |
-| `js/components/orderComponent.js` | 2 |
-| **Всего** | **8 замен** |
-
+| Файл | Изменение |
+|------|-----------|
+| `public/.htaccess` | Добавить директивы `ModPagespeed off` в начало файла |
