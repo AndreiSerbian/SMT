@@ -1,3 +1,11 @@
+# ОТКЛЮЧЕНИЕ PageSpeed (критично для Vite-сборок)
+<IfModule pagespeed_module>
+  ModPagespeed off
+</IfModule>
+<IfModule mod_pagespeed.c>
+  ModPagespeed off
+</IfModule>
+
 # MIME Types (критично для CSS/JS)
 AddType text/css .css
 AddType application/javascript .js
