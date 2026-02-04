@@ -109,7 +109,7 @@ const HomeComponent = {
         <div class="container mx-auto px-6 py-3">
           <div class="flex justify-between items-center">
             <a href="#" class="flex items-center text-xl font-bold text-gray-800">
-              <img src="https://giftboxopt.ru/assets/logo-B0ADOiza.svg" alt="Logo" class="w-8 h-8 mr-2" />
+              <img src="/images/logo.svg" alt="Logo" class="w-8 h-8 mr-2" />
               <span>SMT Premium Box</span>
             </a>
             
@@ -130,7 +130,7 @@ const HomeComponent = {
         <div id="mobile-menu" class="fixed inset-0 bg-white z-50 hidden md:hidden">
           <div class="flex justify-between items-center p-6 border-b">
             <a href="#" class="flex items-center text-xl font-bold text-gray-800">
-              <img src="https://giftboxopt.ru/assets/logo-B0ADOiza.svg" alt="Logo" class="w-8 h-8 mr-2" />
+              <img src="/images/logo.svg" alt="Logo" class="w-8 h-8 mr-2" />
               <span>SMT Premium Box</span>
             </a>
             <button class="text-2xl text-gray-800" id="mobile-menu-close">✕</button>
