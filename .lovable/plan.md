@@ -1,164 +1,99 @@
 
 
-# План исправления стилей на TimeWeb (prod.giftboxop.ru)
+# План исправления логотипа
 
-## Найденная проблема
+## Проблема
 
-Проект работает на Netlify и локально, но на TimeWeb стили не применяются. Проверено:
-- Font Awesome CSS загружается корректно (`Content-Type: text/css`)
-- Товары загружаются (`Товары загружены: 46`)
-- Приложение работает (`Products catalog loaded successfully`)
+Логотип не загружается потому что во всех навигационных компонентах используется **внешняя ссылка на устаревший домен**:
+```
+https://giftboxopt.ru/assets/logo-B0ADOiza.svg
+```
 
-**Причина**: TimeWeb — это Apache-хостинг, который требует `.htaccess` для:
-1. Правильной раздачи SPA (все роуты → index.html)
-2. Правильных MIME-типов для CSS/JS файлов
-
-В проекте есть `netlify.toml` и `vercel.json`, но **нет `.htaccess`** для Apache-хостингов.
+Файл логотипа при этом **есть в проекте**: `public/images/logo.svg`
 
 ---
 
-## Шаг 1: Создать `.htaccess` для TimeWeb
+## Решение
 
-Создать файл `.htaccess` в корне проекта (рядом с `index.html`):
+Заменить все внешние ссылки на локальный путь `/images/logo.svg` в 4 файлах:
 
-```apache
-# MIME Types (критично для CSS/JS)
-AddType text/css .css
-AddType application/javascript .js
-AddType application/json .json
-AddType image/svg+xml .svg
-AddType image/webp .webp
-AddType font/woff2 .woff2
-AddType font/woff .woff
+---
 
-# Кодировка
-AddDefaultCharset UTF-8
+### Файл 1: `js/components/homeComponent.js`
 
-# SPA Routing — все запросы на index.html
-<IfModule mod_rewrite.c>
-  RewriteEngine On
-  RewriteBase /
-  
-  # Не перезаписывать существующие файлы и директории
-  RewriteCond %{REQUEST_FILENAME} !-f
-  RewriteCond %{REQUEST_FILENAME} !-d
-  
-  # Все остальные запросы → index.html
-  RewriteRule ^(.*)$ /index.html [L,QSA]
-</IfModule>
+**Строки 112 и 133** — заменить:
+```javascript
+// Было (в 2 местах):
+<img src="https://giftboxopt.ru/assets/logo-B0ADOiza.svg" alt="Logo" class="w-8 h-8 mr-2" />
 
-# Кэширование статики
-<IfModule mod_expires.c>
-  ExpiresActive On
-  ExpiresByType text/css "access plus 1 year"
-  ExpiresByType application/javascript "access plus 1 year"
-  ExpiresByType image/webp "access plus 1 year"
-  ExpiresByType image/svg+xml "access plus 1 year"
-</IfModule>
-
-# Gzip сжатие
-<IfModule mod_deflate.c>
-  AddOutputFilterByType DEFLATE text/html text/css application/javascript application/json image/svg+xml
-</IfModule>
+// Станет:
+<img src="/images/logo.svg" alt="Logo" class="w-8 h-8 mr-2" />
 ```
 
 ---
 
-## Шаг 2: Добавить `.htaccess` в сборку Vite
+### Файл 2: `js/components/productComponent.js`
 
-Файл `.htaccess` должен автоматически копироваться в `dist/` при сборке.
+**Строки 208 и 229** — заменить:
+```javascript
+// Было (в 2 местах):
+<img src="https://giftboxopt.ru/assets/logo-B0ADOiza.svg" alt="Logo" class="w-8 h-8 mr-2" />
 
-Изменить `vite.config.ts`:
-
-```typescript
-import { defineConfig, loadEnv } from "vite";
-import react from "@vitejs/plugin-react-swc";
-import path from "path";
-import { componentTagger } from "lovable-tagger";
-
-export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd());
-
-  return {
-    server: {
-      host: "::",
-      port: 8080,
-    },
-    plugins: [
-      react(),
-      mode === 'development' && componentTagger(),
-    ].filter(Boolean),
-    resolve: {
-      alias: {
-        "@": path.resolve(__dirname, "./src"),
-      },
-    },
-    css: {
-      postcss: './postcss.config.js',
-    },
-    build: {
-      outDir: 'dist',
-      rollupOptions: {
-        input: {
-          main: path.resolve(__dirname, 'index.html'),
-        },
-      },
-    },
-    // НОВОЕ: Копировать .htaccess в dist
-    publicDir: 'public',
-  };
-});
+// Станет:
+<img src="/images/logo.svg" alt="Logo" class="w-8 h-8 mr-2" />
 ```
 
-**Альтернатива**: Положить `.htaccess` в папку `public/` — Vite автоматически скопирует его в `dist/`.
+---
+
+### Файл 3: `js/components/contactsComponent.js`
+
+**Строки 35 и 56** — заменить:
+```javascript
+// Было (в 2 местах):
+<img src="https://giftboxopt.ru/assets/logo-B0ADOiza.svg" alt="Logo" class="w-8 h-8 mr-2" />
+
+// Станет:
+<img src="/images/logo.svg" alt="Logo" class="w-8 h-8 mr-2" />
+```
 
 ---
 
-## Шаг 3: Пересобрать и загрузить на TimeWeb
+### Файл 4: `js/components/orderComponent.js`
 
-1. Положить `.htaccess` в папку `public/`
-2. Запустить `npm run build`
-3. Загрузить **всю папку `dist/`** на TimeWeb
-4. Очистить кэш браузера (Ctrl+Shift+R)
+**Строки 138 и 159** — заменить:
+```javascript
+// Было (в 2 местах):
+<img src="https://giftboxopt.ru/assets/logo-B0ADOiza.svg" alt="Logo" class="w-8 h-8 mr-2" />
 
----
-
-## Шаг 4: Проверка на TimeWeb
-
-После загрузки открыть DevTools → Network:
-
-1. Найти CSS файл Vite (например `assets/index-XXXXX.css`)
-2. Проверить заголовок `Content-Type: text/css`
-3. Убедиться что статус `200 OK`
+// Станет:
+<img src="/images/logo.svg" alt="Logo" class="w-8 h-8 mr-2" />
+```
 
 ---
 
-## Дополнительно: Диагностика
+## Почему это работает
 
-Если стили всё ещё не работают, проверь в DevTools на prod.giftboxop.ru:
+1. Файл `public/images/logo.svg` уже существует в проекте
+2. Vite копирует содержимое `public/` в корень `dist/` при сборке
+3. Путь `/images/logo.svg` будет работать везде: dev, preview, Netlify, TimeWeb
 
-**Network → Filter: CSS:**
-- Какие CSS файлы загружаются?
-- Какой статус (200/404)?
-- Какой Content-Type?
+---
 
-**Console:**
-- Есть ли ошибка `Refused to apply style from '...' because its MIME type ('text/plain') is not a supported stylesheet MIME type`?
+## После исправления
+
+1. Пересобрать проект: `npm run build`
+2. Загрузить `dist/` на TimeWeb
+3. Проверить что логотип отображается в навигации на всех страницах
 
 ---
 
 ## Сводка изменений
 
-| Файл | Действие |
-|------|----------|
-| `public/.htaccess` | Создать — MIME types + SPA routing для TimeWeb |
-
----
-
-## Ожидаемый результат
-
-После добавления `.htaccess`:
-1. CSS файлы Vite будут раздаваться с правильным `Content-Type: text/css`
-2. SPA роутинг будет работать (refresh страницы не даст 404)
-3. Стили будут применяться корректно
+| Файл | Количество замен |
+|------|------------------|
+| `js/components/homeComponent.js` | 2 |
+| `js/components/productComponent.js` | 2 |
+| `js/components/contactsComponent.js` | 2 |
+| `js/components/orderComponent.js` | 2 |
+| **Всего** | **8 замен** |
 
