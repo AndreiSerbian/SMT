@@ -10,6 +10,13 @@ const MediaMethods = {
     }
 
     try {
+      // Set admin context before reading (needed for inactive products)
+      if (this.adminLogin) {
+        await this.supabase.rpc('set_admin_login_context', {
+          admin_login: this.adminLogin
+        });
+      }
+
       const { data: product, error } = await this.supabase
         .from('products')
         .select('photos, videos')
@@ -39,7 +46,7 @@ const MediaMethods = {
 
   // Handle image upload via media-manager
   async handleImageUpload(event) {
-    const files = Array.from(event.target.files);
+    const files = event.target?.files ? Array.from(event.target.files) : Array.from(event.files || []);
     if (!files.length) return;
 
     const product = this.currentEditingProduct;
@@ -71,8 +78,14 @@ const MediaMethods = {
 
       if (error) throw error;
 
+      // Use response data directly if available, otherwise refetch
+      if (data && data.photos) {
+        this.currentProductImages = data.photos;
+      } else {
+        await this.loadProductMedia(product.id || product.artikul);
+      }
+
       alert(`Загружено ${files.length} изображений`);
-      await this.loadProductMedia(product.id || product.artikul);
       this.updatePhotosGrid();
       this.updateVideosGrid();
       
@@ -81,7 +94,7 @@ const MediaMethods = {
       alert('Ошибка загрузки изображений: ' + error.message);
     } finally {
       this.uploadingImage = false;
-      event.target.value = '';
+      if (event.target) event.target.value = '';
     }
   },
 
@@ -278,10 +291,17 @@ const MediaMethods = {
 
   // Get image URL helper
   getImageUrl(photo) {
+    let url;
     if (photo.startsWith('http')) {
-      return photo;
+      url = photo;
+    } else {
+      url = `https://bsndismiessofvhglzrv.supabase.co/storage/v1/object/public/product-media/${photo}`;
     }
-    return `https://bsndismiessofvhglzrv.supabase.co/storage/v1/object/public/product-media/${photo}`;
+    // Add cache-busting for freshly loaded images
+    if (url.indexOf('?') === -1) {
+      url += '?t=' + Date.now();
+    }
+    return url;
   },
 
   // Render photos grid

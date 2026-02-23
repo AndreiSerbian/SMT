@@ -624,6 +624,7 @@ export const AdminProductsComponent = {
 
       this.showNotification(`Загружено ${files.length} изображений`, 'success');
       await this.loadProductMedia(product.id || product.artikul);
+      this.rerender(); // Explicitly rerender with fresh media data
       
     } catch (error) {
       console.error('Error uploading images:', error);
@@ -1057,6 +1058,14 @@ export const AdminProductsComponent = {
   // Загрузка медиа продукта из таблицы products
   async loadProductMedia(productId) {
     try {
+      // Set admin context before the call
+      const adminLogin = sessionStorage.getItem('adminLogin');
+      if (adminLogin) {
+        await window.supabase.rpc('set_admin_login_context', {
+          admin_login: adminLogin
+        });
+      }
+
       const { data, error } = await window.supabase.functions.invoke('media-manager', {
         body: {
           action: 'get_media',
