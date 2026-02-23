@@ -1,108 +1,197 @@
 
-# План отключения PageSpeed на TimeWeb
 
-## Найденная проблема
+# Fix: Images Not Updating After Upload in Admin Panel
 
-Ошибка:
+## Root Cause Analysis (Ranked by Likelihood)
+
+### 1. Missing Admin Context in `loadProductMedia` (HIGH)
+In `modernAdminComponent_media.js`, `loadProductMedia()` queries the `products` table using the anon key **without setting admin context first**. The `loadPage()` method in `modernAdminComponent.js` (line 511-518) correctly calls `set_admin_login_context` before reading, but `loadProductMedia` does not.
+
+For **inactive products**, the RLS policy only allows reading `is_active = true` products for anon users. Without admin context, the query returns empty/error for inactive products, so photos appear blank.
+
+### 2. Missing `rerender` After Upload in ModernAdmin Media Flow (HIGH)
+In `modernAdminComponent_media.js` `handleImageUpload()` (lines 75-76):
+```javascript
+await this.loadProductMedia(product.id || product.artikul);
+this.updatePhotosGrid();
 ```
-Refused to apply style from 'https://www.giftboxopt.ru/assets/A.main-C2YBo3W3.css.pagespeed.cf.RdKhIsWaK7.css' because its MIME type ('text/html') is not a supported stylesheet MIME type
-```
+`updatePhotosGrid()` only updates the `#photosGrid` DOM element. But if the dialog HTML structure has been re-rendered or the element doesn't exist at that moment, the update is lost silently.
 
-**Причина**: На хостинге TimeWeb включён модуль **Google PageSpeed** (`mod_pagespeed`), который:
-1. Перехватывает CSS файлы Vite (`main-C2YBo3W3.css`)
-2. Переименовывает их (`A.main-C2YBo3W3.css.pagespeed.cf.RdKhIsWaK7.css`)
-3. При ошибке возвращает HTML страницу (404) вместо CSS
-4. Браузер отказывается применять стили из-за неправильного MIME type
+### 3. No Cache-Busting on Images (MEDIUM)
+Browser may cache old image responses. When new images are uploaded with similar paths, the browser serves stale cached content.
 
 ---
 
-## Решение
+## Changes
 
-Добавить директивы отключения PageSpeed в `.htaccess`:
+### File 1: `js/components/modernAdminComponent_media.js`
 
-### Изменения в `public/.htaccess`
+**Change A**: Add admin context before reading products in `loadProductMedia()`:
 
-```apache
-# ОТКЛЮЧЕНИЕ PageSpeed (критично для Vite-сборок)
-<IfModule pagespeed_module>
-  ModPagespeed off
-</IfModule>
-<IfModule mod_pagespeed.c>
-  ModPagespeed off
-</IfModule>
+```javascript
+// Load product media from database
+async loadProductMedia(productId) {
+    if (!productId) {
+      this.currentProductImages = [];
+      this.currentProductVideos = [];
+      return;
+    }
 
-# MIME Types (критично для CSS/JS)
-AddType text/css .css
-AddType application/javascript .js
-AddType application/json .json
-AddType image/svg+xml .svg
-AddType image/webp .webp
-AddType font/woff2 .woff2
-AddType font/woff .woff
+    try {
+      // Set admin context before reading (needed for inactive products)
+      if (this.adminLogin) {
+        await this.supabase.rpc('set_admin_login_context', {
+          admin_login: this.adminLogin
+        });
+      }
 
-# Кодировка
-AddDefaultCharset UTF-8
+      const { data: product, error } = await this.supabase
+        .from('products')
+        .select('photos, videos')
+        .eq('id', productId)
+        .single();
 
-# SPA Routing — все запросы на index.html
-<IfModule mod_rewrite.c>
-  RewriteEngine On
-  RewriteBase /
-  
-  # Не перезаписывать существующие файлы и директории
-  RewriteCond %{REQUEST_FILENAME} !-f
-  RewriteCond %{REQUEST_FILENAME} !-d
-  
-  # Все остальные запросы → index.html
-  RewriteRule ^(.*)$ /index.html [L,QSA]
-</IfModule>
+      if (error) throw error;
 
-# Кэширование статики
-<IfModule mod_expires.c>
-  ExpiresActive On
-  ExpiresByType text/css "access plus 1 year"
-  ExpiresByType application/javascript "access plus 1 year"
-  ExpiresByType image/webp "access plus 1 year"
-  ExpiresByType image/svg+xml "access plus 1 year"
-</IfModule>
-
-# Gzip сжатие
-<IfModule mod_deflate.c>
-  AddOutputFilterByType DEFLATE text/html text/css application/javascript application/json image/svg+xml
-</IfModule>
+      this.currentProductImages = product.photos || [];
+      this.currentProductVideos = product.videos || [];
+    } catch (error) {
+      console.error('Error loading product media:', error);
+      this.currentProductImages = [];
+      this.currentProductVideos = [];
+    }
+  },
 ```
 
+**Change B**: In `handleImageUpload()`, use the response data directly from the edge function instead of relying on a refetch, and add cache-busting:
+
+```javascript
+async handleImageUpload(event) {
+    const files = event.target?.files ? Array.from(event.target.files) : Array.from(event.files || []);
+    if (!files.length) return;
+
+    const product = this.currentEditingProduct;
+    if (!product?.id && !product?.artikul) {
+      alert('Сначала создайте товар');
+      return;
+    }
+
+    this.uploadingImage = true;
+
+    try {
+      const base64Files = await Promise.all(files.map(async (file) => {
+        const base64 = await this.fileToBase64(file);
+        return {
+          name: file.name,
+          content: base64,
+          content_type: file.type
+        };
+      }));
+
+      const { data, error } = await this.supabase.functions.invoke('media-manager', {
+        body: {
+          action: 'upload_images',
+          product_id: product.id || product.artikul,
+          files: base64Files
+        }
+      });
+
+      if (error) throw error;
+
+      // Use response data directly if available, otherwise refetch
+      if (data && data.photos) {
+        this.currentProductImages = data.photos;
+      } else {
+        await this.loadProductMedia(product.id || product.artikul);
+      }
+
+      alert(`Загружено ${files.length} изображений`);
+      this.updatePhotosGrid();
+      this.updateVideosGrid();
+      
+    } catch (error) {
+      console.error('Error uploading images:', error);
+      alert('Ошибка загрузки изображений: ' + error.message);
+    } finally {
+      this.uploadingImage = false;
+      if (event.target) event.target.value = '';
+    }
+  },
+```
+
+**Change C**: Add cache-busting to `getImageUrl()`:
+
+```javascript
+getImageUrl(photo) {
+    let url;
+    if (photo.startsWith('http')) {
+      url = photo;
+    } else {
+      url = `https://bsndismiessofvhglzrv.supabase.co/storage/v1/object/public/product-media/${photo}`;
+    }
+    // Add cache-busting for freshly loaded images
+    if (url.indexOf('?') === -1) {
+      url += '?t=' + Date.now();
+    }
+    return url;
+  },
+```
+
+### File 2: `js/components/adminProductsComponent.js`
+
+**Change D**: Same fix in `loadProductMedia()` -- add admin context before querying:
+
+```javascript
+async loadProductMedia(productId) {
+    try {
+      // Set admin context before the call
+      const adminLogin = sessionStorage.getItem('adminLogin');
+      if (adminLogin) {
+        await window.supabase.rpc('set_admin_login_context', {
+          admin_login: adminLogin
+        });
+      }
+
+      const { data, error } = await window.supabase.functions.invoke('media-manager', {
+        body: {
+          action: 'get_media',
+          product_id: productId
+        }
+      });
+
+      if (error) throw error;
+
+      if (this.data.editingProduct) {
+        this.data.editingProduct.photos = data.photos || [];
+        this.data.editingProduct.videos = data.videos || [];
+      }
+
+      console.log('Loaded product media:', data);
+    } catch (error) {
+      console.error('Error loading product media:', error);
+      this.showNotification('Ошибка загрузки медиа: ' + error.message, 'error');
+    }
+  },
+```
+
+**Change E**: In `handleImageUpload()`, add `this.rerender()` after loading media (currently missing -- the `rerender` in `finally` only runs after `uploadingImage` is reset, but the media data might not be reflected):
+
+At line 626, after `loadProductMedia`, add explicit `rerender`:
+```javascript
+this.showNotification(`Загружено ${files.length} изображений`, 'success');
+await this.loadProductMedia(product.id || product.artikul);
+this.rerender(); // Explicitly rerender with fresh media data
+```
+
 ---
 
-## Почему PageSpeed конфликтует с Vite
+## Summary
 
-| Vite | PageSpeed | Конфликт |
-|------|-----------|----------|
-| Генерирует файлы с хешем: `main-C2YBo3W3.css` | Добавляет свой суффикс: `.pagespeed.cf.XXX.css` | URL меняется, но файл не существует |
-| Файлы статичные, неизменные | Пытается "оптимизировать" на лету | Кэширование ломается |
-| Работает с Content-Type: text/css | Возвращает 404.html при ошибке | MIME type = text/html |
+| Issue | File | Fix |
+|-------|------|-----|
+| No admin context in media read | `modernAdminComponent_media.js` | Add `set_admin_login_context` before DB query |
+| Upload response data ignored | `modernAdminComponent_media.js` | Use `data.photos` from edge function response |
+| Browser cache stale images | `modernAdminComponent_media.js` | Add `?t=timestamp` to image URLs |
+| No admin context in media read | `adminProductsComponent.js` | Add `set_admin_login_context` before edge function call |
+| Missing rerender after upload | `adminProductsComponent.js` | Add explicit `rerender()` after `loadProductMedia` |
 
----
-
-## После исправления
-
-1. Пересобрать проект: `npm run build`
-2. Загрузить **всю папку `dist/`** на TimeWeb (включая обновлённый `.htaccess`)
-3. Очистить кэш браузера (Ctrl+Shift+R)
-4. Проверить что стили применяются на `prod.giftboxop.ru`
-
----
-
-## Проверка успешности
-
-В DevTools → Network → Filter: CSS:
-- URL должен быть `assets/index-XXXXX.css` (без `.pagespeed`)
-- Статус: `200 OK`
-- Content-Type: `text/css`
-
----
-
-## Сводка изменений
-
-| Файл | Изменение |
-|------|-----------|
-| `public/.htaccess` | Добавить директивы `ModPagespeed off` в начало файла |
