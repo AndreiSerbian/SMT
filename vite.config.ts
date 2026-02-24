@@ -33,6 +33,7 @@ export default defineConfig(({ mode }) => {
       rollupOptions: {
         input: {
           main: path.resolve(__dirname, 'index.html'),
+          customizer: path.resolve(__dirname, 'customizer.html'),
         },
       },
     },

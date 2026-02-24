@@ -182,6 +182,51 @@ export type Database = {
         }
         Relationships: []
       }
+      designs: {
+        Row: {
+          comment: string | null
+          created_at: string | null
+          id: string
+          objects_mm: Json | null
+          options: Json | null
+          preview_urls: Json | null
+          product_id: string
+          production_pdf_url: string | null
+          qty: number
+          sku: string
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string | null
+          id?: string
+          objects_mm?: Json | null
+          options?: Json | null
+          preview_urls?: Json | null
+          product_id: string
+          production_pdf_url?: string | null
+          qty?: number
+          sku: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string | null
+          id?: string
+          objects_mm?: Json | null
+          options?: Json | null
+          preview_urls?: Json | null
+          product_id?: string
+          production_pdf_url?: string | null
+          qty?: number
+          sku?: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       orders: {
         Row: {
           cart_items: Json
