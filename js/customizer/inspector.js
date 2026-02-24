@@ -88,6 +88,7 @@ export class Inspector {
       el.addEventListener('change', () => {
         if (!this.currentObject) return;
         setter(parseFloat(el.value));
+        this.currentObject.setCoords();
         this.cc.getCanvas().renderAll();
       });
     };
@@ -128,12 +129,14 @@ export class Inspector {
     this.els.font?.addEventListener('change', () => {
       if (!this.currentObject) return;
       this.currentObject.set('fontFamily', this.els.font.value);
+      this.currentObject.setCoords();
       this.cc.getCanvas().renderAll();
     });
 
     this.els.fontSize?.addEventListener('change', () => {
       if (!this.currentObject) return;
       this.currentObject.set('fontSize', parseInt(this.els.fontSize.value));
+      this.currentObject.setCoords();
       this.cc.getCanvas().renderAll();
     });
 
