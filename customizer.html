@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Кастомизация упаковки — GiftBoxOpt</title>
+  <meta name="description" content="Создайте уникальный дизайн для вашей подарочной коробки">
+  
+  <!-- Fabric.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+  
+  <!-- Google Fonts for editor -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@400;500;600;700&family=Playfair+Display:wght@400;700&family=Roboto:wght@400;500;700&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gray-100 overflow-hidden">
+  <div id="customizer-app" class="h-screen flex flex-col">
+    
+    <!-- Top Bar -->
+    <div id="topbar" class="bg-white border-b border-gray-200 px-4 py-2 flex items-center justify-between shrink-0">
+      <div class="flex items-center gap-2">
+        <button id="btn-back" class="text-gray-600 hover:text-gray-900 flex items-center gap-1 text-sm" title="Назад к товару">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+          Назад
+        </button>
+        <div class="w-px h-6 bg-gray-300 mx-2"></div>
+        <button id="btn-undo" class="p-2 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded" title="Отменить (Ctrl+Z)" disabled>
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a5 5 0 015 5v2M3 10l4-4M3 10l4 4"/></svg>
+        </button>
+        <button id="btn-redo" class="p-2 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded" title="Вернуть (Ctrl+Y)" disabled>
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 10H11a5 5 0 00-5 5v2M21 10l-4-4M21 10l-4 4"/></svg>
+        </button>
+        <div class="w-px h-6 bg-gray-300 mx-1"></div>
+        <div class="flex items-center gap-1">
+          <button id="btn-zoom-out" class="p-1 text-gray-500 hover:text-gray-900 rounded" title="Уменьшить">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/></svg>
+          </button>
+          <span id="zoom-level" class="text-sm text-gray-600 min-w-[3rem] text-center">100%</span>
+          <button id="btn-zoom-in" class="p-1 text-gray-500 hover:text-gray-900 rounded" title="Увеличить">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          </button>
+        </div>
+        <div class="w-px h-6 bg-gray-300 mx-1"></div>
+        <button id="btn-grid" class="p-2 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded" title="Сетка">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4h16v16H4zM4 12h16M12 4v16"/></svg>
+        </button>
+        <button id="btn-snap" class="p-2 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded" title="Привязка к сетке">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4h4v4H4zM16 4h4v4h-4zM4 16h4v4H4zM16 16h4v4h-4z"/></svg>
+        </button>
+      </div>
+      
+      <div class="flex items-center gap-2">
+        <span id="product-name" class="text-sm text-gray-500 hidden md:inline"></span>
+        <button id="btn-save" class="px-4 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition">
+          Сохранить
+        </button>
+        <button id="btn-confirm" class="px-4 py-1.5 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">
+          Подтвердить кастомизацию
+        </button>
+      </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="flex flex-1 overflow-hidden">
+      
+      <!-- Left Toolbar -->
+      <div id="left-toolbar" class="w-14 md:w-16 bg-white border-r border-gray-200 flex flex-col items-center py-3 gap-1 shrink-0 overflow-y-auto">
+        <button data-tool="select" class="toolbar-btn active p-2.5 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition" title="Выбор">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"/></svg>
+        </button>
+        <button data-tool="upload" class="toolbar-btn p-2.5 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition" title="Загрузить изображение">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        </button>
+        <button data-tool="text" class="toolbar-btn p-2.5 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition" title="Текст">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+        </button>
+        <button data-tool="pattern" class="toolbar-btn p-2.5 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition" title="Паттерн">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/></svg>
+        </button>
+        <button data-tool="stickers" class="toolbar-btn p-2.5 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition" title="Стикеры">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </button>
+        <button data-tool="templates" class="toolbar-btn p-2.5 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition" title="Шаблоны">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zM14 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"/></svg>
+        </button>
+        <div class="w-8 h-px bg-gray-200 my-1"></div>
+        <button data-tool="align" class="toolbar-btn p-2.5 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition" title="Выравнивание">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h10M4 18h16"/></svg>
+        </button>
+        <button id="btn-delete" class="toolbar-btn p-2.5 rounded-lg text-red-400 hover:bg-red-50 hover:text-red-600 transition" title="Удалить выбранное">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+        </button>
+      </div>
+      
+      <!-- Tool Panel (slides out from left toolbar) -->
+      <div id="tool-panel" class="w-64 bg-white border-r border-gray-200 hidden overflow-y-auto shrink-0">
+        <div class="p-4">
+          <div class="flex items-center justify-between mb-3">
+            <h3 id="tool-panel-title" class="font-semibold text-gray-800"></h3>
+            <button id="tool-panel-close" class="text-gray-400 hover:text-gray-600">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+          </div>
+          <div id="tool-panel-content"></div>
+        </div>
+      </div>
+      
+      <!-- Canvas Area -->
+      <div class="flex-1 flex flex-col overflow-hidden bg-gray-200">
+        <!-- Side Tabs -->
+        <div id="side-tabs" class="bg-white border-b border-gray-200 px-4 py-1.5 flex items-center gap-1 overflow-x-auto shrink-0">
+          <button data-side="front" class="side-tab active px-3 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-700">Перед</button>
+          <button data-side="back" class="side-tab px-3 py-1 text-xs font-medium rounded-full text-gray-500 hover:bg-gray-100">Зад</button>
+          <button data-side="left" class="side-tab px-3 py-1 text-xs font-medium rounded-full text-gray-500 hover:bg-gray-100">Лево</button>
+          <button data-side="right" class="side-tab px-3 py-1 text-xs font-medium rounded-full text-gray-500 hover:bg-gray-100">Право</button>
+          <button data-side="top" class="side-tab px-3 py-1 text-xs font-medium rounded-full text-gray-500 hover:bg-gray-100">Верх</button>
+          <button data-side="bottom" class="side-tab px-3 py-1 text-xs font-medium rounded-full text-gray-500 hover:bg-gray-100">Низ</button>
+          <button data-side="inside" class="side-tab px-3 py-1 text-xs font-medium rounded-full text-gray-500 hover:bg-gray-100">Внутри</button>
+          <span id="side-dimensions" class="ml-auto text-xs text-gray-400"></span>
+        </div>
+        
+        <!-- Canvas Container -->
+        <div id="canvas-container" class="flex-1 flex items-center justify-center p-4 overflow-hidden relative">
+          <div id="canvas-wrapper" class="relative bg-white shadow-lg">
+            <canvas id="fabric-canvas"></canvas>
+          </div>
+          <!-- Loading overlay -->
+          <div id="canvas-loading" class="absolute inset-0 bg-white/80 flex items-center justify-center">
+            <div class="text-center">
+              <div class="w-10 h-10 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin mx-auto mb-3"></div>
+              <p class="text-sm text-gray-500">Загрузка товара...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Right Inspector Panel -->
+      <div id="inspector" class="w-56 bg-white border-l border-gray-200 overflow-y-auto shrink-0 hidden md:block">
+        <div class="p-4">
+          <h3 class="font-semibold text-gray-800 text-sm mb-3">Инспектор</h3>
+          
+          <div id="inspector-empty" class="text-xs text-gray-400 text-center py-8">
+            Выберите объект на холсте
+          </div>
+          
+          <div id="inspector-props" class="hidden space-y-3">
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="text-xs text-gray-500">X (мм)</label>
+                <input id="prop-x" type="number" step="0.1" class="w-full text-xs border border-gray-200 rounded px-2 py-1.5 focus:border-purple-400 focus:ring-1 focus:ring-purple-200 outline-none">
+              </div>
+              <div>
+                <label class="text-xs text-gray-500">Y (мм)</label>
+                <input id="prop-y" type="number" step="0.1" class="w-full text-xs border border-gray-200 rounded px-2 py-1.5 focus:border-purple-400 focus:ring-1 focus:ring-purple-200 outline-none">
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="text-xs text-gray-500">Ш (мм)</label>
+                <input id="prop-w" type="number" step="0.1" min="1" class="w-full text-xs border border-gray-200 rounded px-2 py-1.5 focus:border-purple-400 focus:ring-1 focus:ring-purple-200 outline-none">
+              </div>
+              <div>
+                <label class="text-xs text-gray-500">В (мм)</label>
+                <input id="prop-h" type="number" step="0.1" min="1" class="w-full text-xs border border-gray-200 rounded px-2 py-1.5 focus:border-purple-400 focus:ring-1 focus:ring-purple-200 outline-none">
+              </div>
+            </div>
+            <div>
+              <label class="text-xs text-gray-500">Поворот (°)</label>
+              <input id="prop-rotation" type="number" step="1" class="w-full text-xs border border-gray-200 rounded px-2 py-1.5 focus:border-purple-400 focus:ring-1 focus:ring-purple-200 outline-none">
+            </div>
+            <div>
+              <label class="text-xs text-gray-500">Прозрачность</label>
+              <input id="prop-opacity" type="range" min="0" max="1" step="0.05" value="1" class="w-full h-1.5 accent-purple-600">
+            </div>
+            <div class="flex gap-2">
+              <button id="prop-flip-h" class="flex-1 text-xs border border-gray-200 rounded px-2 py-1.5 hover:bg-gray-50" title="Отразить горизонтально">↔ Гориз.</button>
+              <button id="prop-flip-v" class="flex-1 text-xs border border-gray-200 rounded px-2 py-1.5 hover:bg-gray-50" title="Отразить вертикально">↕ Верт.</button>
+            </div>
+            
+            <!-- Text-specific controls -->
+            <div id="text-controls" class="hidden border-t border-gray-100 pt-3 space-y-2">
+              <div>
+                <label class="text-xs text-gray-500">Шрифт</label>
+                <select id="prop-font" class="w-full text-xs border border-gray-200 rounded px-2 py-1.5 outline-none">
+                  <option value="Inter">Inter</option>
+                  <option value="Montserrat">Montserrat</option>
+                  <option value="Playfair Display">Playfair Display</option>
+                  <option value="Roboto">Roboto</option>
+                  <option value="Open Sans">Open Sans</option>
+                  <option value="Arial">Arial</option>
+                  <option value="Georgia">Georgia</option>
+                </select>
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="text-xs text-gray-500">Размер</label>
+                  <input id="prop-font-size" type="number" min="6" max="200" class="w-full text-xs border border-gray-200 rounded px-2 py-1.5 outline-none">
+                </div>
+                <div>
+                  <label class="text-xs text-gray-500">Цвет</label>
+                  <input id="prop-font-color" type="color" value="#000000" class="w-full h-7 rounded cursor-pointer">
+                </div>
+              </div>
+              <div class="flex gap-1">
+                <button id="prop-bold" class="flex-1 text-xs font-bold border border-gray-200 rounded px-2 py-1.5 hover:bg-gray-50">B</button>
+                <button id="prop-italic" class="flex-1 text-xs italic border border-gray-200 rounded px-2 py-1.5 hover:bg-gray-50">I</button>
+                <button id="prop-align-left" class="flex-1 text-xs border border-gray-200 rounded px-2 py-1.5 hover:bg-gray-50">≡←</button>
+                <button id="prop-align-center" class="flex-1 text-xs border border-gray-200 rounded px-2 py-1.5 hover:bg-gray-50">≡↔</button>
+                <button id="prop-align-right" class="flex-1 text-xs border border-gray-200 rounded px-2 py-1.5 hover:bg-gray-50">≡→</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Confirm Panel (hidden by default) -->
+    <div id="confirm-panel" class="bg-white border-t border-gray-200 px-6 py-4 hidden shrink-0">
+      <div class="max-w-4xl mx-auto flex flex-wrap items-center gap-4">
+        <div class="flex-1 min-w-[200px]">
+          <p class="text-sm text-gray-500">Товар: <span id="confirm-product" class="text-gray-800 font-medium"></span></p>
+          <p class="text-sm text-gray-500">Артикул: <span id="confirm-sku" class="text-gray-800 font-medium"></span></p>
+        </div>
+        
+        <div class="flex items-center gap-2">
+          <label class="text-sm text-gray-600">Тираж:</label>
+          <div class="flex items-center border border-gray-200 rounded-lg">
+            <button id="qty-minus" class="px-3 py-1.5 text-gray-600 hover:bg-gray-50 rounded-l-lg">−</button>
+            <input id="qty-input" type="number" value="1" min="1" class="w-16 text-center text-sm border-x border-gray-200 py-1.5 outline-none">
+            <button id="qty-plus" class="px-3 py-1.5 text-gray-600 hover:bg-gray-50 rounded-r-lg">+</button>
+          </div>
+        </div>
+        
+        <div>
+          <label class="text-sm text-gray-600">Тип печати:</label>
+          <select id="print-type" class="ml-2 text-sm border border-gray-200 rounded-lg px-3 py-1.5 outline-none">
+            <option value="color">Цветная</option>
+            <option value="foil_gold">Фольга золото</option>
+            <option value="foil_silver">Фольга серебро</option>
+          </select>
+        </div>
+        
+        <button id="btn-add-to-cart" class="px-6 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+          <span id="btn-cart-text">Добавить в корзину</span>
+          <span id="btn-cart-loading" class="hidden">
+            <svg class="w-5 h-5 animate-spin inline-block" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+            Генерация PDF...
+          </span>
+        </button>
+      </div>
+    </div>
+    
+  </div>
+  
+  <!-- Hidden file input -->
+  <input type="file" id="file-input" accept="image/png,image/webp,image/svg+xml,image/jpeg" class="hidden" multiple>
+  
+  <script type="module" src="/js/customizer/app.js"></script>
+</body>
+</html>

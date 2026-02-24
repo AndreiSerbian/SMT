@@ -18,3 +18,6 @@ verify_jwt = false
 
 [functions.media-manager]
 verify_jwt = false
+
+[functions.generate-design-pdf]
+verify_jwt = false
