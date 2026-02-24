@@ -193,21 +193,38 @@ async function handleAddToCart({ qty, print_type }) {
       print_type,
     });
 
-    // Add to cart using cartService pattern (via localStorage)
-    const cartKey = 'shopping_cart';
-    const cart = JSON.parse(localStorage.getItem(cartKey) || '[]');
+    // Add to cart using the same 'cart' key as cartService
+    const cart = JSON.parse(localStorage.getItem('cart') || '[]');
     
-    // Add custom design item
-    cart.push({
-      id: product.artikul,
-      quantity: qty,
-      design_id: designId,
-      preview_urls: previewUrls,
-      production_pdf_url: pdfUrl,
-      options: { print_type },
-    });
+    // Check if product already in cart (without design) and update, or add new entry
+    const existingIndex = cart.findIndex(item => item.id === product.artikul && !item.design_id);
     
-    localStorage.setItem(cartKey, JSON.stringify(cart));
+    if (existingIndex >= 0) {
+      // Update existing item with design info
+      cart[existingIndex].quantity += qty;
+      cart[existingIndex].design_id = designId;
+      cart[existingIndex].preview_urls = previewUrls;
+      cart[existingIndex].production_pdf_url = pdfUrl;
+      cart[existingIndex].options = { print_type };
+    } else {
+      // Add new custom design item
+      cart.push({
+        id: product.artikul,
+        quantity: qty,
+        design_id: designId,
+        preview_urls: previewUrls,
+        production_pdf_url: pdfUrl,
+        options: { print_type },
+      });
+    }
+    
+    localStorage.setItem('cart', JSON.stringify(cart));
+    
+    // Emit event so cart UI updates
+    try {
+      const { eventBus } = await import('../utils/eventBus.js');
+      eventBus.emit('cart-updated', cart);
+    } catch (_) {}
 
     // Clear draft
     sceneManager.clearDraft();
@@ -218,7 +235,7 @@ async function handleAddToCart({ qty, print_type }) {
 
   } catch (err) {
     console.error('Add to cart error:', err);
-    alert('Ошибка: ' + err.message);
+    alert('Ошибка: ' + (err?.message || 'Неизвестная ошибка'));
     confirmPanel?.setLoading(false);
   }
 }
