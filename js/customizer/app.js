@@ -3,7 +3,7 @@
  * Loads product by product_id, initializes canvas, scene manager, and UI panels.
  */
 
-import '../styles/tailwind.css';
+import '../../src/styles/tailwind.css';
 import { supabase } from '../utils/supabase.js';
 import { getSideDimensions } from './geometry.js';
 import { SceneManager, SIDES, SIDE_LABELS } from './sceneManager.js';
