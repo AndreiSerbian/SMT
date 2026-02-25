@@ -22,7 +22,10 @@ export class ExportPipeline {
     const designId = crypto.randomUUID();
     const currentSide = this.sm.getCurrentSide();
 
-    // 1. Generate preview PNGs for all 7 sides
+    // 1. Normalize text objects (fix 'alphabetical' → 'alphabetic')
+    this._normalizeTextBaselines();
+
+    // 2. Generate preview PNGs for all 7 sides
     const previewDataUrls = {};
     for (const side of SIDES) {
       this.sm.switchSide(side);
@@ -50,7 +53,7 @@ export class ExportPipeline {
       await StorageService.uploadScene(designId, allSidesData);
     } catch (err) {
       console.error('Scene upload failed:', err);
-      throw new Error('Ошибка загрузки сцены: ' + (err?.message || JSON.stringify(err)));
+      throw new Error('Ошибка сохранения сцены: ' + (err?.message || JSON.stringify(err)));
     }
 
     // 4. Build objects_mm
@@ -122,5 +125,19 @@ export class ExportPipeline {
       previewUrls,
       pdfUrl,
     };
+  }
+
+  /**
+   * Fix invalid textBaseline values in all canvas objects.
+   * Fabric.js may serialize 'alphabetical' which is not a valid CanvasTextBaseline enum.
+   */
+  _normalizeTextBaselines() {
+    const canvas = this.cc.canvas;
+    if (!canvas) return;
+    canvas.getObjects().forEach(obj => {
+      if (obj.textBaseline === 'alphabetical') {
+        obj.textBaseline = 'alphabetic';
+      }
+    });
   }
 }
