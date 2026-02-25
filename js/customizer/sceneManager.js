@@ -127,6 +127,27 @@ export class SceneManager {
     // Import dynamically avoided — caller should pass conversion fn
     return null; // handled externally
   }
+
+  /**
+   * Load scene JSON from a public URL (e.g. Supabase Storage).
+   * Uses res.text() + JSON.parse() so it works regardless of Content-Type header.
+   *
+   * Manual test checklist:
+   * 1. Upload scene.json → verify Storage metadata is application/json
+   * 2. Load scene.json from public URL with octet-stream header → still parses OK
+   * 3. Add to cart completes without error, previews/PDF exported
+   */
+  static async loadSceneFromUrl(sceneUrl) {
+    const res = await fetch(sceneUrl, { cache: 'no-store' });
+    if (!res.ok) throw new Error('Сцена недоступна. Код: ' + res.status);
+
+    const text = await res.text();
+    try {
+      return JSON.parse(text);
+    } catch (e) {
+      throw new Error('Сцена повреждена или недоступна. Повторите попытку.');
+    }
+  }
 }
 
 export { SIDES, SIDE_LABELS };

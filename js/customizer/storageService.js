@@ -51,14 +51,16 @@ export const StorageService = {
    * Upload scene.json
    */
   async uploadScene(designId, sceneData) {
-    const blob = new Blob([JSON.stringify(sceneData)], { type: 'application/octet-stream' });
-    const path = `designs/${designId}/scene/scene.bin`;
+    const jsonString = JSON.stringify(sceneData);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const path = `designs/${designId}/scene/scene.json`;
 
     const { error } = await supabase.storage
       .from(BUCKET)
       .upload(path, blob, {
-        contentType: 'application/octet-stream',
+        contentType: 'application/json',
         upsert: true,
+        cacheControl: '3600',
       });
 
     if (error) throw error;
