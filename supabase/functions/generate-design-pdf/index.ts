@@ -18,16 +18,24 @@ serve(async (req) => {
   }
 
   try {
-    const { design_id, preview_urls, product_dimensions, options } = await req.json();
+    const { design_id, product_id, preview_urls, product_dimensions_mm, customized_sides, pdf_filename } = await req.json();
 
     if (!design_id || !preview_urls) {
       return new Response(
-        JSON.stringify({ error: 'Missing design_id or preview_urls' }),
+        JSON.stringify({ ok: false, error: 'Missing design_id or preview_urls' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const dims = product_dimensions || { length: 200, width: 150, height: 100 };
+    // If no customized sides, return early
+    if (!customized_sides || customized_sides.length === 0) {
+      return new Response(
+        JSON.stringify({ ok: false, message: 'Нет кастомизации — PDF не требуется' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const dims = product_dimensions_mm || { length: 200, width: 150, height: 100 };
     const l = parseFloat(dims.length) || 200;
     const w = parseFloat(dims.width) || 150;
     const h = parseFloat(dims.height) || 100;
@@ -43,10 +51,15 @@ serve(async (req) => {
       inside: { width: l, height: w },
     };
 
+    // Filter PAGE_ORDER to only customized sides
+    const filteredSides = PAGE_ORDER.filter(s => customized_sides.includes(s));
+
     // Create PDF
     const pdfDoc = await PDFDocument.create();
+    const pages: Array<{ side: string; page: number; width_mm: number; height_mm: number }> = [];
+    let pageNum = 0;
 
-    for (const side of PAGE_ORDER) {
+    for (const side of filteredSides) {
       const url = preview_urls[side];
       if (!url) continue;
 
@@ -73,6 +86,14 @@ serve(async (req) => {
         width: pageWidth,
         height: pageHeight,
       });
+
+      pageNum++;
+      pages.push({
+        side,
+        page: pageNum,
+        width_mm: sideDims.width,
+        height_mm: sideDims.height,
+      });
     }
 
     // Save PDF
@@ -83,7 +104,8 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const pdfPath = `designs/${design_id}/production/production.pdf`;
+    const filename = pdf_filename || 'production.pdf';
+    const pdfPath = `designs/${design_id}/production/${filename}`;
     const { error: uploadError } = await supabase.storage
       .from('product-media')
       .upload(pdfPath, pdfBytes, {
@@ -104,18 +126,27 @@ serve(async (req) => {
     // Update design record
     await supabase
       .from('designs')
-      .update({ production_pdf_url: pdfUrl })
+      .update({
+        production_pdf_url: pdfUrl,
+        production_pdf_filename: filename,
+        customized_sides: customized_sides,
+      })
       .eq('id', design_id);
 
     return new Response(
-      JSON.stringify({ pdf_url: pdfUrl, design_id }),
+      JSON.stringify({
+        ok: true,
+        production_pdf_url: pdfUrl,
+        design_id,
+        pages,
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
     console.error('PDF generation error:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ ok: false, error: error.message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

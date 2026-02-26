@@ -25,26 +25,43 @@ const TELEGRAM_BOT_TOKEN = Deno.env.get("TELEGRAM_TOKEN") || "";
 const TELEGRAM_CHAT_ID = Deno.env.get("TELEGRAM_CHAT_ID") || "";
 console.log("Telegram config:", TELEGRAM_BOT_TOKEN ? "Token provided" : "No token", TELEGRAM_CHAT_ID ? "Chat ID provided" : "No chat ID");
 
+const ALL_SIDES = ['top', 'bottom', 'left', 'right', 'front', 'back', 'inside'];
+const SIDE_LABELS_RU: Record<string, string> = {
+  top: 'Верх', bottom: 'Низ', left: 'Лево', right: 'Право',
+  front: 'Перед', back: 'Зад', inside: 'Внутри',
+};
+
 // Генерация содержимого email для подтверждения заказа
 function generateOrderConfirmationEmail(order: any) {
   const { id, name, cart_items, subtotal, discount, total } = order;
   
-  // Формирование HTML строк для товаров в корзине
-  const cartItemsHtml = cart_items.map((item: any) => `
+  const cartItemsHtml = cart_items.map((item: any) => {
+    let designInfo = '';
+    if (item.design_id) {
+      const customized = item.customized_sides || [];
+      const nonCustomized = ALL_SIDES.filter(s => !customized.includes(s));
+      designInfo = `<br><small>🎨 Кастомизация: ${customized.map((s: string) => SIDE_LABELS_RU[s] || s).join(', ') || 'нет'}</small>`;
+      if (nonCustomized.length > 0 && customized.length > 0) {
+        designInfo += `<br><small>Без кастомизации: ${nonCustomized.map(s => SIDE_LABELS_RU[s] || s).join(', ')}</small>`;
+      }
+      if (item.production_pdf_url) {
+        designInfo += `<br><small><a href="${item.production_pdf_url}">📄 Скачать PDF макет</a></small>`;
+      }
+    }
+    return `
     <tr>
-      <td style="padding: 10px; border: 1px solid #ddd;">${item.name}</td>
+      <td style="padding: 10px; border: 1px solid #ddd;">${item.name}${designInfo}</td>
       <td style="padding: 10px; border: 1px solid #ddd;">${item.artikul || 'Н/Д'}</td>
       <td style="padding: 10px; border: 1px solid #ddd;">${item.quantity}</td>
       <td style="padding: 10px; border: 1px solid #ddd;">${item.price} ₽</td>
       <td style="padding: 10px; border: 1px solid #ddd;">${item.quantity * item.price} ₽</td>
     </tr>
-  `).join('');
+  `;
+  }).join('');
 
-  // ИСПРАВЛЕНО: Используем правильный URL для Edge Function
   const confirmationUrl = `${supabaseUrl}/functions/v1/order-confirmation?order_id=${id}`;
   console.log("Формируем ссылку подтверждения:", confirmationUrl);
 
-  // Формирование HTML для всего письма
   return `
     <!DOCTYPE html>
     <html>
@@ -142,10 +159,45 @@ async function sendTelegramNotification(message: string) {
   }
 }
 
+// Send PDF as Telegram document
+async function sendTelegramDocument(pdfUrl: string, filename: string, caption: string) {
+  try {
+    if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
+      console.log("Telegram document skipped: Missing token or chat ID");
+      return { skipped: true, reason: "Missing token or chat ID" };
+    }
+
+    console.log("Fetching PDF from:", pdfUrl);
+    const pdfResponse = await fetch(pdfUrl);
+    if (!pdfResponse.ok) {
+      console.warn("Failed to fetch PDF:", pdfResponse.status);
+      return { skipped: true, reason: "Failed to fetch PDF" };
+    }
+    const pdfBytes = await pdfResponse.arrayBuffer();
+
+    const formData = new FormData();
+    formData.append('chat_id', TELEGRAM_CHAT_ID);
+    formData.append('document', new Blob([pdfBytes], { type: 'application/pdf' }), filename);
+    formData.append('caption', caption);
+    formData.append('parse_mode', 'Markdown');
+
+    const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendDocument`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    const result = await response.json();
+    console.log("Telegram document sent:", result);
+    return result;
+  } catch (error) {
+    console.error("Error sending Telegram document:", error);
+    throw error;
+  }
+}
+
 // Обновление данных в Google Sheets
 async function updateGoogleSheets(order: any) {
   try {
-    // Формирование данных для отправки в Sheets API
     const sheetValues = [
       order.id,
       order.name,
@@ -211,16 +263,68 @@ async function sendOrderConfirmationEmail(order: any) {
   }
 }
 
-// Нормализация значения доставки в соответствии с ограничениями базы данных
+// Нормализация значения доставки
 function normalizeDeliveryValue(delivery: string | undefined): string {
-  // Приводим к стандартным значениям, которые соответствуют ограничениям в базе
-  if (!delivery) return 'delivery'; // значение по умолчанию
-  
+  if (!delivery) return 'delivery';
   if (delivery === 'pickup_moscow' || delivery === 'pickup_ershovo') {
-    return 'pickup'; // обобщаем до просто "самовывоз"
+    return 'pickup';
   }
+  return delivery;
+}
+
+// Send design PDFs + partial customization messages to Telegram
+async function sendDesignNotifications(order: any) {
+  const cartItems = order.cart_items || [];
   
-  return delivery; // оставляем как есть, если это уже стандартное значение
+  // Group items with design_id by product_id to assign castIndex
+  const designItems = cartItems.filter((item: any) => item.design_id);
+  if (designItems.length === 0) return;
+
+  // Assign castIndex per product_id
+  const productCounters: Record<string, number> = {};
+  
+  for (const item of designItems) {
+    const productId = item.id || item.artikul || 'unknown';
+    productCounters[productId] = (productCounters[productId] || 0) + 1;
+    const castIndex = productCounters[productId];
+    const filename = `${productId}_${castIndex}.pdf`;
+
+    const customizedSides: string[] = item.customized_sides || [];
+    const nonCustomizedSides = ALL_SIDES.filter(s => !customizedSides.includes(s));
+
+    // Send PDF as document if available
+    if (item.production_pdf_url) {
+      const caption = `🎨 *Макет:* ${productId}\n📦 Арт: ${item.artikul || productId}\n🔢 Кол-во: ${item.quantity}\n✅ Стороны: ${customizedSides.map(s => SIDE_LABELS_RU[s] || s).join(', ')}`;
+      
+      try {
+        await sendTelegramDocument(item.production_pdf_url, filename, caption);
+      } catch (err) {
+        console.warn('Failed to send Telegram document:', err);
+      }
+
+      // Update design record with final filename
+      if (item.design_id) {
+        try {
+          await supabase
+            .from('designs')
+            .update({ production_pdf_filename: filename })
+            .eq('id', item.design_id);
+        } catch (err) {
+          console.warn('Failed to update design filename:', err);
+        }
+      }
+    }
+
+    // Send non-customized sides message
+    if (nonCustomizedSides.length > 0 && customizedSides.length > 0) {
+      const msg = `📋 ID ${productId} кастомизация частичная.\nБез кастомизации: ${nonCustomizedSides.map(s => SIDE_LABELS_RU[s] || s).join(', ')}`;
+      try {
+        await sendTelegramNotification(msg);
+      } catch (err) {
+        console.warn('Failed to send partial customization message:', err);
+      }
+    }
+  }
 }
 
 // Обработчик запросов
@@ -230,15 +334,12 @@ serve(async (req) => {
   console.log(`URL: ${req.url}`);
   console.log(`============================================`);
   
-  // Обработка CORS preflight запросов
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Маршрутизация запросов
   const url = new URL(req.url);
   
-  // Обработка создания нового заказа
   if (url.pathname === "/order-processing" && req.method === "POST") {
     try {
       const requestBody = await req.json();
@@ -246,7 +347,6 @@ serve(async (req) => {
       
       console.log("Получены данные заказа:", orderData);
       
-      // Проверяем, что cart_items - это массив объектов, а не строка
       if (typeof orderData.cart_items === 'string') {
         console.warn("Warning: cart_items is a string, converting to JSON");
         try {
@@ -257,24 +357,20 @@ serve(async (req) => {
         }
       }
       
-      // Убедимся, что cart_items - это массив
       if (!Array.isArray(orderData.cart_items)) {
         console.error("cart_items is not an array:", orderData.cart_items);
         throw new Error("cart_items must be an array");
       }
       
-      // Нормализуем значение доставки
       orderData.delivery = normalizeDeliveryValue(orderData.delivery);
       console.log("Normalized delivery value:", orderData.delivery);
 
       // === B2B CLIENT MANAGEMENT ===
-      // Normalize email and phone for consistent comparison
       const normalizedEmail = orderData.email.toLowerCase().trim();
-      const normalizedPhone = orderData.phone.replace(/\D/g, ''); // Only digits
+      const normalizedPhone = orderData.phone.replace(/\D/g, '');
       
       console.log('Searching for client with email:', normalizedEmail, 'phone:', normalizedPhone);
       
-      // Step 1: Check if client exists by email
       const { data: clientByEmail, error: emailError } = await supabase
         .from('b2b_clients')
         .select('*')
@@ -288,7 +384,6 @@ serve(async (req) => {
       let client = clientByEmail;
       let foundBy = client ? 'email' : null;
       
-      // Step 2: If not found by email, search by phone (last 10 digits)
       if (!client && normalizedPhone.length >= 10) {
         const phoneSearchPattern = normalizedPhone.slice(-10);
         console.log('Client not found by email, searching by phone pattern:', phoneSearchPattern);
@@ -300,8 +395,7 @@ serve(async (req) => {
         if (phoneError) {
           console.error('Error checking for existing client by phone:', phoneError);
         } else if (allClients) {
-          // Find client with matching phone (last 10 digits)
-          client = allClients.find(c => {
+          client = allClients.find((c: any) => {
             if (!c.phone) return false;
             const clientPhone = c.phone.replace(/\D/g, '');
             return clientPhone.slice(-10) === phoneSearchPattern;
@@ -320,7 +414,6 @@ serve(async (req) => {
         clientId = client.id;
         console.log('Found existing client by', foundBy, ':', clientId);
         
-        // Update email if found by phone and email differs (client corrected typo)
         if (foundBy === 'phone' && client.email?.toLowerCase() !== normalizedEmail) {
           console.log('Updating client email from', client.email, 'to', normalizedEmail);
           const { error: updateError } = await supabase
@@ -333,23 +426,13 @@ serve(async (req) => {
           
           if (updateError) {
             console.error('Error updating client email:', updateError);
-          } else {
-            console.log('Successfully updated client email');
           }
         }
         
-        // Soft update: only update fields that are currently empty
         const updates: any = {};
+        if (!client.phone && orderData.phone) updates.phone = orderData.phone;
+        if (!client.contact_name && orderData.name) updates.contact_name = orderData.name;
         
-        if (!client.phone && orderData.phone) {
-          updates.phone = orderData.phone;
-        }
-        
-        if (!client.contact_name && orderData.name) {
-          updates.contact_name = orderData.name;
-        }
-        
-        // Only update if there are fields to update
         if (Object.keys(updates).length > 0) {
           const { error: updateError } = await supabase
             .from('b2b_clients')
@@ -358,12 +441,9 @@ serve(async (req) => {
           
           if (updateError) {
             console.error('Error updating client:', updateError);
-          } else {
-            console.log('Updated existing client with new data:', updates);
           }
         }
       } else {
-        // Create new client
         console.log('No existing client found, creating new one');
         const { data: newClient, error: createError } = await supabase
           .from('b2b_clients')
@@ -384,7 +464,7 @@ serve(async (req) => {
         }
       }
 
-      // Сохраняем заказ в базе данных Supabase с client_id
+      // Сохраняем заказ
       const { data: order, error } = await supabase
         .from('orders')
         .insert({
@@ -404,13 +484,16 @@ serve(async (req) => {
       
       console.log("Заказ создан успешно, начинаем отправку уведомлений...");
       
-      // Формируем детальный список товаров для Telegram с суммами
+      // Формируем детальный список товаров для Telegram
       const cartItemsDetails = order.cart_items.map((item: any) => {
         const itemTotal = item.price * item.quantity;
-        return `- ${item.name} (${item.color || 'Н/Д'}) Арт. ${item.artikul || 'Н/Д'} × ${item.quantity} = ${itemTotal} ₽`;
+        let line = `- ${item.name} (${item.color || 'Н/Д'}) Арт. ${item.artikul || 'Н/Д'} × ${item.quantity} = ${itemTotal} ₽`;
+        if (item.design_id) {
+          line += ` 🎨`;
+        }
+        return line;
       }).join('\n');
       
-      // Отправляем уведомление в Telegram с информацией о клиенте
       const telegramMessage = `
 📦 *Новый заказ!*
 ${clientId ? `🏢 *Клиент ID:* \`${clientId}\`` : ''}
@@ -430,7 +513,6 @@ ${cartItemsDetails}
 ${order.comment ? `📝 *Комментарий:* ${order.comment}` : ''}
       `;
       
-      // Отправляем все уведомления асинхронно и параллельно
       const notificationPromises = [];
       
       try {
@@ -454,10 +536,17 @@ ${order.comment ? `📝 *Комментарий:* ${order.comment}` : ''}
         console.error("Failed to queue confirmation email:", emailError);
       }
       
-      // Ждем завершения всех уведомлений
+      // Wait for main notifications
       const results = await Promise.allSettled(notificationPromises);
       console.log("Результаты уведомлений:", 
         results.map((r, i) => `${i}: ${r.status === 'fulfilled' ? 'успех' : r.reason}`));
+      
+      // Send design PDFs to Telegram (after main notification)
+      try {
+        await sendDesignNotifications(order);
+      } catch (err) {
+        console.warn('Design notifications failed (non-blocking):', err);
+      }
       
       return new Response(
         JSON.stringify({ 
@@ -490,7 +579,6 @@ ${order.comment ? `📝 *Комментарий:* ${order.comment}` : ''}
     }
   }
   
-  // Неизвестный маршрут
   return new Response(
     JSON.stringify({ 
       error: "Unknown route" 

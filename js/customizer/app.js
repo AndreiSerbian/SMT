@@ -188,7 +188,7 @@ async function handleAddToCart({ qty, print_type }) {
   confirmPanel?.setLoading(true);
 
   try {
-    const { designId, previewUrls, pdfUrl } = await exportPipeline.execute(product, {
+    const { designId, previewUrls, pdfUrl, customizedSides } = await exportPipeline.execute(product, {
       qty,
       print_type,
     });
@@ -205,6 +205,7 @@ async function handleAddToCart({ qty, print_type }) {
       cart[existingIndex].design_id = designId;
       cart[existingIndex].preview_urls = previewUrls;
       cart[existingIndex].production_pdf_url = pdfUrl;
+      cart[existingIndex].customized_sides = customizedSides;
       cart[existingIndex].options = { print_type };
     } else {
       // Add new custom design item
@@ -214,6 +215,7 @@ async function handleAddToCart({ qty, print_type }) {
         design_id: designId,
         preview_urls: previewUrls,
         production_pdf_url: pdfUrl,
+        customized_sides: customizedSides,
         options: { print_type },
       });
     }
