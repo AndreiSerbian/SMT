@@ -137,6 +137,18 @@ export class SceneManager {
    * 2. Load scene.json from public URL with octet-stream header → still parses OK
    * 3. Add to cart completes without error, previews/PDF exported
    */
+  /**
+   * Detect which sides have user-created objects (not system overlays).
+   * Returns array of side names, e.g. ['front', 'top']
+   */
+  static detectCustomizedSides(sidesData) {
+    return SIDES.filter(side => {
+      const sideInfo = sidesData[side];
+      if (!sideInfo?.fabricJSON?.objects) return false;
+      return sideInfo.fabricJSON.objects.some(o => !o.data?.isSystem);
+    });
+  }
+
   static async loadSceneFromUrl(sceneUrl) {
     const res = await fetch(sceneUrl, { cache: 'no-store' });
     if (!res.ok) throw new Error('Сцена недоступна. Код: ' + res.status);

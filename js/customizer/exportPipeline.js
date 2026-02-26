@@ -5,7 +5,7 @@
 import { supabase } from '../utils/supabase.js';
 import { StorageService } from './storageService.js';
 import { DesignService } from './designService.js';
-import { SIDES } from './sceneManager.js';
+import { SIDES, SceneManager } from './sceneManager.js';
 
 export class ExportPipeline {
   constructor(canvasController, sceneManager, sideDimensions) {
@@ -16,7 +16,7 @@ export class ExportPipeline {
 
   /**
    * Full export: generate PNGs, upload, generate PDF, save design
-   * Returns { designId, previewUrls, pdfUrl }
+   * Returns { designId, previewUrls, pdfUrl, customizedSides }
    */
   async execute(product, options = {}) {
     const designId = crypto.randomUUID();
@@ -25,7 +25,7 @@ export class ExportPipeline {
     // 1. Normalize text objects (fix 'alphabetical' → 'alphabetic')
     this._normalizeTextBaselines();
 
-    // 2. Generate preview PNGs for all 7 sides
+    // 2. Generate preview PNGs for ALL 7 sides, upload to storage
     const previewDataUrls = {};
     for (const side of SIDES) {
       this.sm.switchSide(side);
@@ -38,7 +38,7 @@ export class ExportPipeline {
     this.sm.switchSide(currentSide);
     this.cc.resizeForSide(this.sideDimensions[currentSide]);
 
-    // 2. Upload previews to Supabase Storage
+    // 3. Upload previews to Supabase Storage
     let previewUrls;
     try {
       previewUrls = await StorageService.uploadPreviews(designId, previewDataUrls);
@@ -47,7 +47,7 @@ export class ExportPipeline {
       throw new Error('Ошибка загрузки превью: ' + (err?.message || JSON.stringify(err)));
     }
 
-    // 3. Upload scene.json
+    // 4. Upload scene.json
     const allSidesData = this.sm.getAllSidesData();
     try {
       await StorageService.uploadScene(designId, allSidesData);
@@ -56,7 +56,11 @@ export class ExportPipeline {
       throw new Error('Ошибка сохранения сцены: ' + (err?.message || JSON.stringify(err)));
     }
 
-    // 4. Build objects_mm
+    // 5. Detect customized sides
+    const customizedSides = SceneManager.detectCustomizedSides(allSidesData);
+    console.log('Customized sides:', customizedSides);
+
+    // 6. Build objects_mm
     const objectsMM = {};
     for (const side of SIDES) {
       this.sm.switchSide(side);
@@ -66,7 +70,7 @@ export class ExportPipeline {
     this.sm.switchSide(currentSide);
     this.cc.resizeForSide(this.sideDimensions[currentSide]);
 
-    // 5. Create design record
+    // 7. Create design record
     let design;
     try {
       design = await DesignService.create({
@@ -81,6 +85,7 @@ export class ExportPipeline {
         },
         objects_mm: objectsMM,
         preview_urls: previewUrls,
+        customized_sides: customizedSides,
         status: 'saved',
       });
     } catch (err) {
@@ -88,29 +93,38 @@ export class ExportPipeline {
       throw new Error('Ошибка сохранения дизайна: ' + (err?.message || JSON.stringify(err)));
     }
 
-    // 6. Call edge function to generate PDF
+    // 8. Call edge function to generate PDF (only if there are customized sides)
     let pdfUrl = null;
-    try {
-      const productDimensions = product.dimensions || {};
-      const { data: pdfResult, error: pdfError } = await supabase.functions.invoke('generate-design-pdf', {
-        body: {
-          design_id: designId,
-          preview_urls: previewUrls,
-          product_dimensions: productDimensions,
-          options: design?.options || {},
-        },
-      });
+    if (customizedSides.length > 0) {
+      try {
+        const productDimensions = product.dimensions || {};
+        const { data: pdfResult, error: pdfError } = await supabase.functions.invoke('generate-design-pdf', {
+          body: {
+            design_id: designId,
+            product_id: product.artikul || product.id,
+            preview_urls: previewUrls,
+            product_dimensions_mm: productDimensions,
+            customized_sides: customizedSides,
+            pdf_filename: 'production.pdf',
+            options: design?.options || {},
+          },
+        });
 
-      if (pdfError) {
-        console.warn('PDF generation failed (non-blocking):', pdfError);
-      } else {
-        pdfUrl = pdfResult?.pdf_url || null;
+        if (pdfError) {
+          console.warn('PDF generation failed (non-blocking):', pdfError);
+        } else if (pdfResult?.ok === false) {
+          console.log('PDF not generated:', pdfResult.message);
+        } else {
+          pdfUrl = pdfResult?.production_pdf_url || null;
+        }
+      } catch (err) {
+        console.warn('PDF generation error (non-blocking):', err);
       }
-    } catch (err) {
-      console.warn('PDF generation error (non-blocking):', err);
+    } else {
+      console.log('No customized sides — skipping PDF generation');
     }
 
-    // 7. Update design with PDF URL and status
+    // 9. Update design with PDF URL and status
     try {
       await DesignService.update(designId, {
         production_pdf_url: pdfUrl,
@@ -124,12 +138,12 @@ export class ExportPipeline {
       designId,
       previewUrls,
       pdfUrl,
+      customizedSides,
     };
   }
 
   /**
    * Fix invalid textBaseline values in all canvas objects.
-   * Fabric.js may serialize 'alphabetical' which is not a valid CanvasTextBaseline enum.
    */
   _normalizeTextBaselines() {
     const canvas = this.cc.canvas;

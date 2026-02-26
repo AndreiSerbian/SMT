@@ -186,11 +186,13 @@ export type Database = {
         Row: {
           comment: string | null
           created_at: string | null
+          customized_sides: Json | null
           id: string
           objects_mm: Json | null
           options: Json | null
           preview_urls: Json | null
           product_id: string
+          production_pdf_filename: string | null
           production_pdf_url: string | null
           qty: number
           sku: string
@@ -200,11 +202,13 @@ export type Database = {
         Insert: {
           comment?: string | null
           created_at?: string | null
+          customized_sides?: Json | null
           id?: string
           objects_mm?: Json | null
           options?: Json | null
           preview_urls?: Json | null
           product_id: string
+          production_pdf_filename?: string | null
           production_pdf_url?: string | null
           qty?: number
           sku: string
@@ -214,11 +218,13 @@ export type Database = {
         Update: {
           comment?: string | null
           created_at?: string | null
+          customized_sides?: Json | null
           id?: string
           objects_mm?: Json | null
           options?: Json | null
           preview_urls?: Json | null
           product_id?: string
+          production_pdf_filename?: string | null
           production_pdf_url?: string | null
           qty?: number
           sku?: string
