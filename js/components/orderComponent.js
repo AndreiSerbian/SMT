@@ -490,7 +490,7 @@ const OrderComponent = {
           console.error("Продукт не найден:", item.id);
           return null;
         }
-        return {
+        const cartItem = {
           id: item.id,
           quantity: item.quantity,
           name: product.name,
@@ -498,6 +498,13 @@ const OrderComponent = {
           color: product.color,
           price: product.price || 0,
         };
+        // Preserve design/customization fields if present
+        if (item.design_id) cartItem.design_id = item.design_id;
+        if (item.production_pdf_url) cartItem.production_pdf_url = item.production_pdf_url;
+        if (item.customized_sides) cartItem.customized_sides = item.customized_sides;
+        if (item.preview_urls) cartItem.preview_urls = item.preview_urls;
+        if (item.options) cartItem.options = item.options;
+        return cartItem;
       })
       .filter((item) => item !== null);
 
