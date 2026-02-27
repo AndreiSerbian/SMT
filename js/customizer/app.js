@@ -5,7 +5,8 @@
 
 import '../../src/styles/tailwind.css';
 import { supabase } from '../utils/supabase.js';
-import { getSideDimensions } from './geometry.js';
+import { getSideDimensions, parseProductDimensions } from './geometry.js';
+import { DimensionsOverlay } from './dimensionsOverlay.js';
 import { SceneManager, SIDES, SIDE_LABELS } from './sceneManager.js';
 import { CanvasController } from './canvasController.js';
 import { Inspector } from './inspector.js';
@@ -23,6 +24,7 @@ let toolbar = null;
 let topbar = null;
 let confirmPanel = null;
 let exportPipeline = null;
+let dimensionsOverlay = null;
 let autoSaveInterval = null;
 
 async function init() {
@@ -49,13 +51,12 @@ async function init() {
 
     product = data;
     
-    // Parse dimensions
-    const dims = product.dimensions;
-    const productDims = {
-      length: parseFloat(dims?.length) || 200,
-      width: parseFloat(dims?.width) || 150,
-      height: parseFloat(dims?.height) || 100,
-    };
+    // Parse dimensions (DB stores in cm, convert to mm)
+    const productDims = parseProductDimensions(product.dimensions);
+    // Fallback for missing dimensions
+    if (!productDims.length) productDims.length = 200;
+    if (!productDims.width) productDims.width = 150;
+    if (!productDims.height) productDims.height = 100;
 
     sideDimensions = getSideDimensions(productDims);
 
@@ -111,8 +112,12 @@ async function init() {
     // Init Export Pipeline
     exportPipeline = new ExportPipeline(canvasController, sceneManager, sideDimensions);
 
+    // Init Dimensions Overlay
+    dimensionsOverlay = new DimensionsOverlay(canvasController);
+
     // Setup side tab switching
     setupSideTabs();
+    setupDimensionsToggle();
 
     // Update dimensions display
     updateSideDimensionsDisplay(initialSide);
@@ -151,7 +156,18 @@ function setupSideTabs() {
       inspector?.updateSideMM(sideDimensions[side]);
       inspector?.hide();
       updateSideDimensionsDisplay(side);
+      dimensionsOverlay?.rebuild();
     });
+  });
+}
+
+function setupDimensionsToggle() {
+  const btn = document.getElementById('btn-dimensions');
+  if (!btn) return;
+  btn.addEventListener('click', () => {
+    const on = dimensionsOverlay?.toggle();
+    btn.classList.toggle('bg-purple-100', on);
+    btn.classList.toggle('text-purple-700', on);
   });
 }
 
@@ -247,6 +263,7 @@ window.addEventListener('resize', () => {
   if (canvasController && sceneManager && sideDimensions) {
     const side = sceneManager.getCurrentSide();
     canvasController.resizeForSide(sideDimensions[side]);
+    dimensionsOverlay?.rebuild();
   }
 });
 
