@@ -19,6 +19,39 @@ export function pxToMm(px, dpi = SCREEN_DPI) {
  * Given product dimensions {length, width, height} in mm,
  * return the dimensions for each box side in mm.
  */
+/**
+ * Parse a single dimension value from DB.
+ * DB stores values in cm (e.g. 23 meaning 23cm).
+ * If string contains unit suffix, parse accordingly.
+ * Returns value in mm.
+ */
+export function parseDimensionToMM(raw) {
+  if (raw == null) return 0;
+  const str = String(raw).trim().toLowerCase();
+  const num = parseFloat(str);
+  if (isNaN(num)) return 0;
+
+  // Explicit mm
+  if (str.includes('мм') || str.includes('mm')) {
+    return num;
+  }
+  // Explicit cm — or bare number (DB convention: cm)
+  // Strings with 'см' or 'cm', or plain numbers
+  return num * 10;
+}
+
+/**
+ * Parse product dimensions object from DB → mm values.
+ * DB stores length/width/height in cm (bare numbers).
+ */
+export function parseProductDimensions(dims) {
+  return {
+    length: parseDimensionToMM(dims?.length),
+    width: parseDimensionToMM(dims?.width),
+    height: parseDimensionToMM(dims?.height),
+  };
+}
+
 export function getSideDimensions(productDimensions) {
   const { length: l, width: w, height: h } = productDimensions;
   return {

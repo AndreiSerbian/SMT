@@ -6,6 +6,7 @@ import { supabase } from '../utils/supabase.js';
 import { StorageService } from './storageService.js';
 import { DesignService } from './designService.js';
 import { SIDES, SceneManager } from './sceneManager.js';
+import { stabilizeCanvasText } from './textStabilizer.js';
 
 export class ExportPipeline {
   constructor(canvasController, sceneManager, sideDimensions) {
@@ -22,19 +23,30 @@ export class ExportPipeline {
     const designId = crypto.randomUUID();
     const currentSide = this.sm.getCurrentSide();
 
-    // 1. Normalize text objects (fix 'alphabetical' → 'alphabetic')
-    this._normalizeTextBaselines();
+    // 1. Stabilize text: load fonts, normalize baselines, freeze metrics
+    await stabilizeCanvasText(this.cc.canvas);
 
-    // 2. Generate preview PNGs for ALL 7 sides, upload to storage
+    // 2. Save stable viewport transform and set identity for export
+    const savedVPT = this.cc.canvas.viewportTransform
+      ? [...this.cc.canvas.viewportTransform]
+      : [1, 0, 0, 1, 0, 0];
+    this.cc.canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
+
+    // 3. Generate preview PNGs for ALL 7 sides, upload to storage
     const previewDataUrls = {};
     for (const side of SIDES) {
       this.sm.switchSide(side);
       this.cc.resizeForSide(this.sideDimensions[side]);
+
+      // Re-stabilize text on each side after load
+      await stabilizeCanvasText(this.cc.canvas);
       await new Promise(r => setTimeout(r, 50));
+
       previewDataUrls[side] = this.cc.exportToPNG(2);
     }
 
-    // Restore the side we were on
+    // Restore viewport transform and side
+    this.cc.canvas.setViewportTransform(savedVPT);
     this.sm.switchSide(currentSide);
     this.cc.resizeForSide(this.sideDimensions[currentSide]);
 
@@ -47,7 +59,7 @@ export class ExportPipeline {
       throw new Error('Ошибка загрузки превью: ' + (err?.message || JSON.stringify(err)));
     }
 
-    // 4. Upload scene.json
+    // 5. Upload scene.json
     const allSidesData = this.sm.getAllSidesData();
     try {
       await StorageService.uploadScene(designId, allSidesData);
@@ -56,15 +68,16 @@ export class ExportPipeline {
       throw new Error('Ошибка сохранения сцены: ' + (err?.message || JSON.stringify(err)));
     }
 
-    // 5. Detect customized sides
+    // 6. Detect customized sides
     const customizedSides = SceneManager.detectCustomizedSides(allSidesData);
     console.log('Customized sides:', customizedSides);
 
-    // 6. Build objects_mm
+    // 7. Build objects_mm
     const objectsMM = {};
     for (const side of SIDES) {
       this.sm.switchSide(side);
       this.cc.resizeForSide(this.sideDimensions[side]);
+      await stabilizeCanvasText(this.cc.canvas);
       objectsMM[side] = this.cc.getUserObjectsMM();
     }
     this.sm.switchSide(currentSide);
