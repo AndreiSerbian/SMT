@@ -139,7 +139,7 @@ async function init() {
 
 function setupSideTabs() {
   document.querySelectorAll('.side-tab').forEach(tab => {
-    tab.addEventListener('click', () => {
+    tab.addEventListener('click', async () => {
       const side = tab.dataset.side;
       
       // Update active tab
@@ -151,7 +151,7 @@ function setupSideTabs() {
       tab.classList.remove('text-gray-500');
 
       // Switch side
-      sceneManager.switchSide(side);
+      await sceneManager.switchSide(side);
       canvasController.resizeForSide(sideDimensions[side]);
       inspector?.updateSideMM(sideDimensions[side]);
       inspector?.hide();
