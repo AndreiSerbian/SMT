@@ -35,7 +35,7 @@ export class ExportPipeline {
     // 3. Generate preview PNGs for ALL 7 sides, upload to storage
     const previewDataUrls = {};
     for (const side of SIDES) {
-      this.sm.switchSide(side);
+      await this.sm.switchSide(side);
       this.cc.resizeForSide(this.sideDimensions[side]);
 
       // Re-stabilize text on each side after load
@@ -47,7 +47,7 @@ export class ExportPipeline {
 
     // Restore viewport transform and side
     this.cc.canvas.setViewportTransform(savedVPT);
-    this.sm.switchSide(currentSide);
+    await this.sm.switchSide(currentSide);
     this.cc.resizeForSide(this.sideDimensions[currentSide]);
 
     // 3. Upload previews to Supabase Storage
@@ -75,12 +75,12 @@ export class ExportPipeline {
     // 7. Build objects_mm
     const objectsMM = {};
     for (const side of SIDES) {
-      this.sm.switchSide(side);
+      await this.sm.switchSide(side);
       this.cc.resizeForSide(this.sideDimensions[side]);
       await stabilizeCanvasText(this.cc.canvas);
       objectsMM[side] = this.cc.getUserObjectsMM();
     }
-    this.sm.switchSide(currentSide);
+    await this.sm.switchSide(currentSide);
     this.cc.resizeForSide(this.sideDimensions[currentSide]);
 
     // 7. Create design record

@@ -43,7 +43,7 @@ export class SceneManager {
    * Switch to a different side.
    * Serializes the current canvas state, then loads the target side.
    */
-  switchSide(targetSide) {
+  async switchSide(targetSide) {
     if (targetSide === this.currentSide) return;
     if (!SIDES.includes(targetSide)) return;
 
@@ -53,7 +53,7 @@ export class SceneManager {
     this.currentSide = targetSide;
 
     // Load target side state
-    this._restoreSide(targetSide);
+    await this._restoreSide(targetSide);
   }
 
   _serializeCurrent() {
@@ -65,7 +65,7 @@ export class SceneManager {
   }
 
   _restoreSide(side) {
-    if (!this.canvas) return;
+    if (!this.canvas) return Promise.resolve();
     const sideData = this.sides[side];
     
     // Clear only user objects
@@ -73,13 +73,16 @@ export class SceneManager {
     userObjects.forEach(o => this.canvas.remove(o));
 
     if (sideData.fabricJSON && sideData.fabricJSON.objects?.length > 0) {
-      // Use enlivening to restore objects
-      fabric.util.enlivenObjects(sideData.fabricJSON.objects, (objects) => {
-        objects.forEach(obj => this.canvas.add(obj));
-        this.canvas.renderAll();
+      return new Promise((resolve) => {
+        fabric.util.enlivenObjects(sideData.fabricJSON.objects, (objects) => {
+          objects.forEach(obj => this.canvas.add(obj));
+          this.canvas.renderAll();
+          resolve();
+        });
       });
     } else {
       this.canvas.renderAll();
+      return Promise.resolve();
     }
   }
 
