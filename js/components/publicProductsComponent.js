@@ -185,14 +185,7 @@ export const PublicProductsComponent = {
     }
 
     // Иначе показываем карточки категорий
-    const html = this.renderCategoryCards();
-    
-    // Инициализируем слайдеры после рендера (без setTimeout)
-    requestAnimationFrame(() => {
-      this.initCategorySliders();
-    });
-    
-    return html;
+    return this.renderCategoryCards();
   },
 
   /**
