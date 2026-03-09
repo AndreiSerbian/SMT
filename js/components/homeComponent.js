@@ -144,17 +144,33 @@ const HomeComponent = {
 
 
 <!-- Hero Section -->
-<section class="relative overflow-hidden bg-gradient-to-b from-rose-50 to-white">
-  <div class="max-w-7xl mx-auto px-4 py-16 md:py-24 flex flex-col md:flex-row items-center gap-8 md:gap-12">
-    <div class="flex-1 text-center md:text-left z-10">
-      <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-4 leading-tight">SMT Premium Box</h1>
-      <p class="text-lg md:text-xl text-gray-600 mb-8 max-w-lg">Оптовые продажи подарочных упаковок для бизнеса — самосборные коробки с бантом, на магнитах</p>
-      <a href="#catalog" class="inline-block bg-gray-900 hover:bg-gray-700 text-white font-semibold py-3.5 px-8 rounded-xl transition shadow-lg shadow-gray-900/20">
-        Перейти в каталог коробок
-      </a>
-    </div>
-    <div class="flex-1 max-w-xl">
-      <img src="/images/hero.jpg" alt="Подарочные коробки с бантом — розовая и белая" class="w-full h-auto rounded-2xl shadow-2xl" loading="eager" />
+<section class="bg-white">
+  <div class="max-w-6xl mx-auto px-4 py-14 md:py-20">
+    <div class="grid md:grid-cols-2 gap-10 md:items-center">
+      <div>
+        <h1 class="text-4xl md:text-5xl font-bold text-gray-900 leading-tight">
+          Подарочные коробки оптом для&nbsp;бизнеса
+        </h1>
+        <p class="text-lg md:text-xl text-gray-500 mt-5 max-w-lg leading-relaxed">
+          Премиальная упаковка для магазинов, флористов, корпоративных подарков и&nbsp;брендированных наборов.
+        </p>
+        <div class="mt-8 flex flex-wrap gap-3">
+          <a href="#catalog"
+             class="inline-flex items-center justify-center bg-gray-900 hover:bg-gray-700 text-white font-semibold py-3 px-7 rounded-xl transition shadow-lg shadow-gray-900/10">
+            Перейти в каталог
+          </a>
+          <a href="#contacts"
+             class="inline-flex items-center justify-center border border-gray-300 hover:border-gray-400 text-gray-700 font-semibold py-3 px-7 rounded-xl transition">
+            Оставить заявку
+          </a>
+        </div>
+      </div>
+      <div class="flex justify-center">
+        <img src="/images/hero.jpg"
+             alt="Подарочные коробки с бантом — розовая и белая"
+             class="w-full max-w-lg h-auto rounded-2xl shadow-xl"
+             loading="eager" />
+      </div>
     </div>
   </div>
 </section>
