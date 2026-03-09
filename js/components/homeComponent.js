@@ -144,12 +144,19 @@ const HomeComponent = {
 
 
 <!-- Hero Section -->
-<section class="bg-white py-12 px-4 text-center">
-  <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4">SMT Premium Box</h1>
-  <p class="text-lg md:text-xl text-gray-600 mb-6">Оптовые продажи подарочных упаковок</p>
-  <a href="#catalog" class="inline-block bg-blue-900 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg transition">
-    Перейти в каталог коробок
-  </a>
+<section class="relative overflow-hidden bg-gradient-to-b from-rose-50 to-white">
+  <div class="max-w-7xl mx-auto px-4 py-16 md:py-24 flex flex-col md:flex-row items-center gap-8 md:gap-12">
+    <div class="flex-1 text-center md:text-left z-10">
+      <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-4 leading-tight">SMT Premium Box</h1>
+      <p class="text-lg md:text-xl text-gray-600 mb-8 max-w-lg">Оптовые продажи подарочных упаковок для бизнеса — самосборные коробки с бантом, на магнитах</p>
+      <a href="#catalog" class="inline-block bg-gray-900 hover:bg-gray-700 text-white font-semibold py-3.5 px-8 rounded-xl transition shadow-lg shadow-gray-900/20">
+        Перейти в каталог коробок
+      </a>
+    </div>
+    <div class="flex-1 max-w-xl">
+      <img src="/images/hero.jpg" alt="Подарочные коробки с бантом — розовая и белая" class="w-full h-auto rounded-2xl shadow-2xl" loading="eager" />
+    </div>
+  </div>
 </section>
 
 <!-- Что мы продаём -->
@@ -159,16 +166,13 @@ const HomeComponent = {
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
 
       <!-- 1. Самосборные подарочные коробки -->
-      <article class="bg-gray-50 rounded-xl p-6 shadow-sm hover:shadow transition">
+      <article class="bg-gray-50 rounded-xl p-6 shadow-sm hover:shadow-md transition">
         <div class="flex items-start gap-4">
-          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 32 32" class="flex-shrink-0">
-            <g fill="#2563eb">
-              <path d="M20.44 11C18.14 11 15 11 15 8.83 15 7.44 19.49 2 22.67 2c5.1 0 7.24 9-2.22 9zM17 9c.67.27 2.68 0 3.44 0 6.64 0 4.81-5 2.22-5-1.74 0-4.99 3.73-5.67 5z"/>
-              <path d="M11.56 11c-9.54 0-7.28-9-2.23-9C12.51 2 17 7.44 17 8.83 17 11 13.85 11 11.56 11zM9.34 4C8.05 4 7.01 5.12 7.01 6.5c0 2.26 3.19 2.5 4.56 2.5.77 0 2.77.27 3.44 0-.68-1.27-3.93-5-5.67-5zM27 14H5c-.55 0-1 .45-1 1v12c0 1.65 1.35 3 3 3h18c1.65 0 3-1.35 3-3V15c0-.55-.45-1-1-1z"/>
-              <rect width="28" height="7" x="2" y="9" rx="1"/>
-            </g>
-            <path fill="#1e3a8a" d="M4 16h24v1H4z"/>
-            <path fill="#1e3a8a" d="M13 9h6v21h-6z"/>
+          <svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#be185d" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0">
+            <path d="m7.5 4.27 9 5.15"/>
+            <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/>
+            <path d="m3.3 7 8.7 5 8.7-5"/>
+            <path d="M12 22V12"/>
           </svg>
           <div>
             <h3 class="text-xl font-semibold text-gray-800">Самосборные подарочные коробки</h3>
@@ -178,10 +182,9 @@ const HomeComponent = {
       </article>
 
       <!-- 2. Удобная упаковка -->
-      <article class="bg-gray-50 rounded-xl p-6 shadow-sm hover:shadow transition">
+      <article class="bg-gray-50 rounded-xl p-6 shadow-sm hover:shadow-md transition">
         <div class="flex items-start gap-4">
-          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0">
-            <path d="m7.5 4.27 9 5.15"/>
+          <svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#be185d" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0">
             <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/>
             <path d="m3.3 7 8.7 5 8.7-5"/>
             <path d="M12 22V12"/>
@@ -194,16 +197,14 @@ const HomeComponent = {
       </article>
 
       <!-- 3. Конструкция на магнитах и лентах -->
-      <article class="bg-gray-50 rounded-xl p-6 shadow-sm hover:shadow transition">
+      <article class="bg-gray-50 rounded-xl p-6 shadow-sm hover:shadow-md transition">
         <div class="flex items-start gap-4">
-          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" class="flex-shrink-0">
-            <path d="M6 15V9a6 6 0 0 1 12 0v6" stroke="#2563eb" stroke-width="2" stroke-linecap="round"/>
-            <path d="M6 15a3 3 0 0 1-3-3V9" stroke="#2563eb" stroke-width="2" stroke-linecap="round"/>
-            <path d="M18 15a3 3 0 0 0 3-3V9" stroke="#2563eb" stroke-width="2" stroke-linecap="round"/>
-            <rect x="3" y="15" width="6" height="4" rx="1" fill="#2563eb"/>
-            <rect x="15" y="15" width="6" height="4" rx="1" fill="#2563eb"/>
-            <path d="M9 21h6" stroke="#1e3a8a" stroke-width="2" stroke-linecap="round"/>
-            <path d="M12 19v2" stroke="#1e3a8a" stroke-width="2" stroke-linecap="round"/>
+          <svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#be185d" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0">
+            <path d="M6 15V9a6 6 0 0 1 12 0v6"/>
+            <rect x="3" y="15" width="6" height="4" rx="1" fill="#fce7f3" stroke="#be185d"/>
+            <rect x="15" y="15" width="6" height="4" rx="1" fill="#fce7f3" stroke="#be185d"/>
+            <path d="M9 21h6"/>
+            <path d="M12 19v2"/>
           </svg>
           <div>
             <h3 class="text-xl font-semibold text-gray-800">Конструкция на магнитах и лентах</h3>
@@ -213,11 +214,11 @@ const HomeComponent = {
       </article>
 
       <!-- 4. B2B / B2C -->
-      <article class="bg-gray-50 rounded-xl p-6 shadow-sm hover:shadow transition">
+      <article class="bg-gray-50 rounded-xl p-6 shadow-sm hover:shadow-md transition">
         <div class="flex items-start gap-4">
           <div class="flex-shrink-0 flex flex-col items-center gap-1">
-            <span class="inline-block bg-blue-100 text-blue-800 font-bold text-sm px-3 py-1 rounded-full">B2B</span>
-            <span class="inline-block bg-blue-50 text-blue-600 font-bold text-sm px-3 py-1 rounded-full">B2C</span>
+            <span class="inline-block bg-rose-100 text-rose-700 font-bold text-sm px-3 py-1 rounded-full">B2B</span>
+            <span class="inline-block bg-rose-50 text-rose-500 font-bold text-sm px-3 py-1 rounded-full">B2C</span>
           </div>
           <div>
             <h3 class="text-xl font-semibold text-gray-800">Для корпоративных подарков, мероприятий и продаж в розницу</h3>
@@ -227,9 +228,9 @@ const HomeComponent = {
       </article>
 
       <!-- 5. Оптовые заказы -->
-      <article class="bg-gray-50 rounded-xl p-6 shadow-sm hover:shadow transition md:col-span-2 lg:col-span-1">
+      <article class="bg-gray-50 rounded-xl p-6 shadow-sm hover:shadow-md transition md:col-span-2 lg:col-span-1">
         <div class="flex items-start gap-4">
-          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0">
+          <svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#be185d" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0">
             <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/>
             <path d="M3 6h18"/>
             <path d="M16 10a4 4 0 0 1-8 0"/>
@@ -249,11 +250,11 @@ const HomeComponent = {
 <section class="bg-gray-50 py-16 px-4">
   <div class="max-w-6xl mx-auto">
     <h2 class="text-3xl md:text-4xl font-bold text-center text-gray-900 mb-12">Наши преимущества</h2>
-    <div class="grid md:grid-cols-2 lg:grid-cols-2 gap-8">
+    <div class="grid md:grid-cols-2 gap-8">
 
       <!-- 1. Удобна при работе с партиями -->
-      <div class="bg-white rounded-xl shadow p-6 flex items-start gap-4">
-        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#1e3a8a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0">
+      <div class="bg-white rounded-xl shadow-sm hover:shadow-md transition p-6 flex items-start gap-4">
+        <svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#9f1239" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0">
           <rect x="1" y="6" width="22" height="12" rx="2"/>
           <path d="M1 10h22"/>
           <path d="M7 6v12"/>
@@ -266,8 +267,8 @@ const HomeComponent = {
       </div>
 
       <!-- 2. Кастомизация -->
-      <div class="bg-white rounded-xl shadow p-6 flex items-start gap-4">
-        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#1e3a8a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0">
+      <div class="bg-white rounded-xl shadow-sm hover:shadow-md transition p-6 flex items-start gap-4">
+        <svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#9f1239" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0">
           <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
           <path d="m15 5 4 4"/>
         </svg>
@@ -278,10 +279,10 @@ const HomeComponent = {
       </div>
 
       <!-- 3. Надежная конструкция -->
-      <div class="bg-white rounded-xl shadow p-6 flex items-start gap-4">
-        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#1e3a8a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0">
+      <div class="bg-white rounded-xl shadow-sm hover:shadow-md transition p-6 flex items-start gap-4">
+        <svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#9f1239" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0">
           <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-          <path d="m9 12 2 2 4-4" stroke="#2563eb" stroke-width="2"/>
+          <path d="m9 12 2 2 4-4" stroke="#be185d" stroke-width="1.5"/>
         </svg>
         <div>
           <h3 class="text-xl font-semibold text-gray-800">Надежная конструкция и впечатляющий внешний вид</h3>
@@ -290,8 +291,8 @@ const HomeComponent = {
       </div>
 
       <!-- 4. Забота о доставке -->
-      <div class="bg-white rounded-xl shadow p-6 flex items-start gap-4">
-        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#1e3a8a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0">
+      <div class="bg-white rounded-xl shadow-sm hover:shadow-md transition p-6 flex items-start gap-4">
+        <svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#9f1239" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0">
           <path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/>
           <path d="M15 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 13.52 8H14"/>
           <circle cx="17" cy="18" r="2"/>
