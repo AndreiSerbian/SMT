@@ -541,6 +541,11 @@ const HomeComponent = {
     // Инициализируем все слайдеры
     const timeoutId = setTimeout(() => {
       SwiperService.initSwipers();
+      // Defensive fallback: re-init category sliders if they weren't initialized yet
+      const uninitialized = container.querySelectorAll('.category-slider-container .swiper:not(.swiper-initialized)');
+      if (uninitialized.length > 0) {
+        PublicProductsComponent.initCategorySliders();
+      }
 
       // Добавляем обработчики для кнопок цветов
       container.querySelectorAll(".color-button").forEach((button) => {
