@@ -77,6 +77,8 @@ const HomeComponent = {
 
         const catalogHTML = await PublicProductsComponent.render();
         catalogContainer.innerHTML = catalogHTML;
+        // Initialize Swiper AFTER DOM insertion to avoid race condition
+        PublicProductsComponent.initCategorySliders();
         console.log("Products catalog loaded successfully");
       } catch (error) {
         console.error("Error loading products catalog:", error);
