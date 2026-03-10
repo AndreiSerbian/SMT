@@ -399,7 +399,7 @@ export const PublicProductsComponent = {
   },
 
   renderProductCard(product) {
-    const mainPhoto = product.photos && product.photos[0] ? product.photos[0] : '';
+    const mainPhoto = product.photos && product.photos[0] ? this.getImageUrl(product.photos[0]) : '';
     const colorStyle = product.colorData?.hex_code ? 
       `style="border-left: 4px solid ${product.colorData.hex_code}"` : '';
 
