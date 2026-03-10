@@ -22,13 +22,14 @@ const SwiperService = {
       
       const slidesCount = swiperEl.querySelectorAll('.swiper-slide').length;
       
-      // null-safe для pagination и navigation
       const pagEl = swiperEl.querySelector('.swiper-pagination');
       const nextEl = swiperEl.querySelector('.swiper-button-next');
       const prevEl = swiperEl.querySelector('.swiper-button-prev');
       
       const swiperInstance = new Swiper(swiperEl, {
         loop: slidesCount > 1,
+        observer: true,
+        observeParents: true,
         pagination: pagEl ? { el: pagEl, clickable: true } : undefined,
         navigation: nextEl && prevEl ? { nextEl, prevEl } : undefined,
       });
