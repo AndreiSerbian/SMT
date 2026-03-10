@@ -40,32 +40,30 @@ const SwiperService = {
   
   // КАТЕГОРИИ: только .category-slider-container .swiper
   initCategorySliders() {
-    requestAnimationFrame(() => {
-      const categorySliders = document.querySelectorAll('.category-slider-container .swiper');
+    const categorySliders = document.querySelectorAll('.category-slider-container .swiper');
+    
+    categorySliders.forEach(sliderEl => {
+      if (sliderEl.swiper) {
+        sliderEl.swiper.destroy(true, true);
+      }
       
-      categorySliders.forEach(sliderEl => {
-        if (sliderEl.swiper) {
-          sliderEl.swiper.destroy(true, true);
-        }
-        
-        const slidesCount = sliderEl.querySelectorAll('.swiper-slide').length;
-        
-        // null-safe
-        const pagEl = sliderEl.querySelector('.swiper-pagination');
-        const nextEl = sliderEl.querySelector('.swiper-button-next');
-        const prevEl = sliderEl.querySelector('.swiper-button-prev');
-        
-        const swiper = new Swiper(sliderEl, {
-          loop: slidesCount > 1,
-          pagination: pagEl ? { el: pagEl, clickable: true } : undefined,
-          navigation: nextEl && prevEl ? { nextEl, prevEl } : undefined,
-        });
-        
-        // Сохраняем ссылку по ID для обновления при смене цвета
-        if (sliderEl.id) {
-          this.categorySwipersById[sliderEl.id] = swiper;
-        }
+      const slidesCount = sliderEl.querySelectorAll('.swiper-slide').length;
+      
+      const pagEl = sliderEl.querySelector('.swiper-pagination');
+      const nextEl = sliderEl.querySelector('.swiper-button-next');
+      const prevEl = sliderEl.querySelector('.swiper-button-prev');
+      
+      const swiper = new Swiper(sliderEl, {
+        loop: slidesCount > 1,
+        observer: true,
+        observeParents: true,
+        pagination: pagEl ? { el: pagEl, clickable: true } : undefined,
+        navigation: nextEl && prevEl ? { nextEl, prevEl } : undefined,
       });
+      
+      if (sliderEl.id) {
+        this.categorySwipersById[sliderEl.id] = swiper;
+      }
     });
   },
   
