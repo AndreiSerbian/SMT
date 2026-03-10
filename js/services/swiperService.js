@@ -22,13 +22,14 @@ const SwiperService = {
       
       const slidesCount = swiperEl.querySelectorAll('.swiper-slide').length;
       
-      // null-safe для pagination и navigation
       const pagEl = swiperEl.querySelector('.swiper-pagination');
       const nextEl = swiperEl.querySelector('.swiper-button-next');
       const prevEl = swiperEl.querySelector('.swiper-button-prev');
       
       const swiperInstance = new Swiper(swiperEl, {
         loop: slidesCount > 1,
+        observer: true,
+        observeParents: true,
         pagination: pagEl ? { el: pagEl, clickable: true } : undefined,
         navigation: nextEl && prevEl ? { nextEl, prevEl } : undefined,
       });
@@ -39,32 +40,30 @@ const SwiperService = {
   
   // КАТЕГОРИИ: только .category-slider-container .swiper
   initCategorySliders() {
-    requestAnimationFrame(() => {
-      const categorySliders = document.querySelectorAll('.category-slider-container .swiper');
+    const categorySliders = document.querySelectorAll('.category-slider-container .swiper');
+    
+    categorySliders.forEach(sliderEl => {
+      if (sliderEl.swiper) {
+        sliderEl.swiper.destroy(true, true);
+      }
       
-      categorySliders.forEach(sliderEl => {
-        if (sliderEl.swiper) {
-          sliderEl.swiper.destroy(true, true);
-        }
-        
-        const slidesCount = sliderEl.querySelectorAll('.swiper-slide').length;
-        
-        // null-safe
-        const pagEl = sliderEl.querySelector('.swiper-pagination');
-        const nextEl = sliderEl.querySelector('.swiper-button-next');
-        const prevEl = sliderEl.querySelector('.swiper-button-prev');
-        
-        const swiper = new Swiper(sliderEl, {
-          loop: slidesCount > 1,
-          pagination: pagEl ? { el: pagEl, clickable: true } : undefined,
-          navigation: nextEl && prevEl ? { nextEl, prevEl } : undefined,
-        });
-        
-        // Сохраняем ссылку по ID для обновления при смене цвета
-        if (sliderEl.id) {
-          this.categorySwipersById[sliderEl.id] = swiper;
-        }
+      const slidesCount = sliderEl.querySelectorAll('.swiper-slide').length;
+      
+      const pagEl = sliderEl.querySelector('.swiper-pagination');
+      const nextEl = sliderEl.querySelector('.swiper-button-next');
+      const prevEl = sliderEl.querySelector('.swiper-button-prev');
+      
+      const swiper = new Swiper(sliderEl, {
+        loop: slidesCount > 1,
+        observer: true,
+        observeParents: true,
+        pagination: pagEl ? { el: pagEl, clickable: true } : undefined,
+        navigation: nextEl && prevEl ? { nextEl, prevEl } : undefined,
       });
+      
+      if (sliderEl.id) {
+        this.categorySwipersById[sliderEl.id] = swiper;
+      }
     });
   },
   
@@ -91,6 +90,8 @@ const SwiperService = {
         this.modalSwiper = new Swiper(el2, {
           loop: totalSlides > 1,
           initialSlide: startIndex,
+          observer: true,
+          observeParents: true,
           navigation: {
             nextEl: '.modal-swiper .swiper-button-next',
             prevEl: '.modal-swiper .swiper-button-prev',
