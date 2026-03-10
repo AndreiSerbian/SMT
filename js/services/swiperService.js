@@ -90,6 +90,8 @@ const SwiperService = {
         this.modalSwiper = new Swiper(el2, {
           loop: totalSlides > 1,
           initialSlide: startIndex,
+          observer: true,
+          observeParents: true,
           navigation: {
             nextEl: '.modal-swiper .swiper-button-next',
             prevEl: '.modal-swiper .swiper-button-prev',
