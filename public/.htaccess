@@ -18,14 +18,10 @@ AddType font/woff .woff
 # Кодировка
 AddDefaultCharset UTF-8
 
-# 301: force https + non-www (canonical host)
+# SPA Routing — все запросы на index.html
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
-
-  RewriteCond %{HTTPS} !=on [OR]
-  RewriteCond %{HTTP_HOST} ^www\.giftboxopt\.ru$ [NC]
-  RewriteRule ^ https://giftboxopt.ru%{REQUEST_URI} [R=301,L]
   
   # Не перезаписывать существующие файлы и директории
   RewriteCond %{REQUEST_FILENAME} !-f
@@ -33,15 +29,6 @@ AddDefaultCharset UTF-8
   
   # Все остальные запросы → index.html
   RewriteRule ^(.*)$ /index.html [L,QSA]
-</IfModule>
-
-# HTML — never cache (ensures fresh hashed asset references)
-<IfModule mod_headers.c>
-  <FilesMatch "\.(html)$">
-    Header set Cache-Control "no-cache, no-store, must-revalidate"
-    Header set Pragma "no-cache"
-    Header set Expires "0"
-  </FilesMatch>
 </IfModule>
 
 # Кэширование статики
