@@ -1,42 +1,27 @@
 
 
-# SEO Fixes Implementation Plan
+# Swiper Lifecycle Hardening — Implementation Plan
 
 ## Changes
 
-### 1. `index.html` — Full rewrite of HEAD + static fallback in body
+### 1. `js/services/swiperService.js`
 
-Replace the entire file with the user's provided HTML: enriched `<head>` (title, description, canonical, robots, OG, Twitter cards, yandex-verification preserved, favicon preserved, Font Awesome preserved) and static semantic fallback content inside `<div id="app">` that JS replaces on load.
+**`initCategorySliders()` (lines 41-69):** Remove `requestAnimationFrame` wrapper. Make synchronous. Add `observer: true, observeParents: true` to config. Keep destroy-before-reinit.
 
-Key details:
-- Keep existing: `lang="ru"`, charset, viewport, favicon, Font Awesome, yandex-verification, gptengineer script
-- Add: canonical, robots meta, OG tags, Twitter card tags
-- Add: inline `<style>` for fallback readability
-- Add: static `<main>` with h1, h2s, paragraphs, cards, noscript block
-- JS app replaces innerHTML of `#app` on load — no conflict
+**`initSwipers()` (lines 30-34):** Add `observer: true, observeParents: true` to product slider config.
 
-### 2. `public/robots.txt` — New file
+**`initModalSwiper()` (lines 91-108):** Add `observer: true, observeParents: true` to modal swiper config. Keep the `requestAnimationFrame` here since modal DOM may still be animating in.
 
-```
-User-agent: *
-Allow: /
-Sitemap: https://giftboxopt.ru/sitemap.xml
-```
+### 2. `js/components/homeComponent.js`
 
-### 3. `public/sitemap.xml` — New file
+**Lines 544-548:** Remove the defensive fallback block (checks for `.swiper:not(.swiper-initialized)` and calls `initCategorySliders`). This runs at t=100ms before catalog loads at t=300ms+, so it never finds anything.
 
-Minimal sitemap with homepage only.
+## Verification Checklist
 
-### 4. `public/.htaccess` — Add 301 redirects before SPA routing
-
-Insert `www→non-www` + `http→https` rewrite rules at the top of the existing `<IfModule mod_rewrite.c>` block, before the SPA fallback rules.
-
-## Files changed
-
-| File | Action |
-|---|---|
-| `index.html` | Rewrite HEAD + add fallback body |
-| `public/robots.txt` | Create |
-| `public/sitemap.xml` | Create |
-| `public/.htaccess` | Add 301 redirect rules |
+- Homepage category cards display horizontally in slider layout
+- Swiper navigation arrows work on category sliders
+- Color dot clicks update slider photos
+- Product page modal Swiper works
+- No Swiper-related console errors
+- Works on dev, production, hard refresh, and mobile
 
