@@ -1,10 +1,10 @@
-import 'swiper/swiper-bundle.css';
-
-
-// 2) Tailwind CSS
+// 1) Tailwind CSS (base resets first — lowest priority)
 import '@/styles/tailwind.css';
 
-// 3) Кастомные стили (ПОСЛЕДНИМИ — побеждают по каскаду)
+// 2) Swiper CSS (after Tailwind so Swiper layout rules take precedence)
+import 'swiper/swiper-bundle.css';
+
+// 3) Custom styles (last — highest priority, can override both)
 import '@/styles/grouped-products.css';
 import '@/styles/product-modal.css';
 

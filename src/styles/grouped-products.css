@@ -1,3 +1,35 @@
+/* Defensive Swiper layout — prevents vertical stacking if Swiper CSS is overridden */
+.category-slider-container .swiper-wrapper {
+  display: flex !important;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  box-sizing: content-box;
+}
+
+.category-slider-container .swiper-slide {
+  flex-shrink: 0;
+  width: 100% !important;
+  height: 100%;
+  position: relative;
+}
+
+.product-slider .swiper-wrapper {
+  display: flex !important;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  box-sizing: content-box;
+}
+
+.product-slider .swiper-slide {
+  flex-shrink: 0;
+  width: 100% !important;
+  height: 100%;
+  position: relative;
+}
+
 /* Стили для сгруппированных карточек товаров */
 
 .products-grid {
