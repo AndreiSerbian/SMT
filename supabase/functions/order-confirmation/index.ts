@@ -665,7 +665,8 @@ serve(async (req) => {
       // Отправляем уведомления асинхронно
       Promise.allSettled([
         sendTelegramConfirmation(updatedOrder),
-        updateGoogleSheets(updatedOrder)
+        updateGoogleSheets(updatedOrder),
+        sendAdminConfirmedOrderEmail(updatedOrder)
       ]).then(results => {
         console.log("POST: Результаты уведомлений:", 
           results.map((r, i) => `${i}: ${r.status === 'fulfilled' ? 'успех' : r.reason}`));
