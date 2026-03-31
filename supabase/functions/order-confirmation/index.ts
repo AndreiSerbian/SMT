@@ -509,7 +509,8 @@ serve(async (req) => {
       console.log("Начинаем отправку уведомлений...");
       Promise.allSettled([
         sendTelegramConfirmation(updatedOrder),
-        updateGoogleSheets(updatedOrder)
+        updateGoogleSheets(updatedOrder),
+        sendAdminConfirmedOrderEmail(updatedOrder)
       ]).then(results => {
         console.log("=== РЕЗУЛЬТАТЫ УВЕДОМЛЕНИЙ ===");
         results.forEach((result, index) => {
