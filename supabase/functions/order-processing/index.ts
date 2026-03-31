@@ -263,6 +263,124 @@ async function sendOrderConfirmationEmail(order: any) {
   }
 }
 
+// === ADMIN EMAIL NOTIFICATIONS ===
+
+// TODO: extract parseAdminEmails to shared module when Deno Edge Functions support shared imports
+function parseAdminEmails(): string[] {
+  const raw = Deno.env.get("ADMIN_EMAIL") || "";
+  return [...new Set(
+    raw
+      .split(",")
+      .map((e) => e.trim().toLowerCase())
+      .filter(Boolean)
+  )];
+}
+
+function generateAdminNewOrderHtml(order: any): string {
+  const orderNumber = order.order_number || order.id;
+  const cartItemsHtml = (order.cart_items || []).map((item: any) => {
+    const lineTotal = (item.price || 0) * (item.quantity || 0);
+    return `<tr>
+      <td style="padding:8px;border:1px solid #ddd;">${item.name || 'Н/Д'}</td>
+      <td style="padding:8px;border:1px solid #ddd;">${item.artikul || 'Н/Д'}</td>
+      <td style="padding:8px;border:1px solid #ddd;">${item.quantity || 0}</td>
+      <td style="padding:8px;border:1px solid #ddd;">${item.price || 0} ₽</td>
+      <td style="padding:8px;border:1px solid #ddd;">${lineTotal} ₽</td>
+    </tr>`;
+  }).join('');
+
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Новый заказ</title></head><body style="font-family:Arial,sans-serif;color:#333;">
+<div style="max-width:600px;margin:0 auto;padding:20px;">
+  <h1 style="color:#e53e3e;">📦 Новый заказ #${orderNumber}</h1>
+  <p><strong>Дата:</strong> ${order.created_at ? new Date(order.created_at).toLocaleString('ru-RU') : new Date().toLocaleString('ru-RU')}</p>
+  <h3>Клиент</h3>
+  <p>👤 ${order.name || 'Не указано'}<br>📞 ${order.phone || 'Не указан'}<br>✉️ ${order.email || 'Не указан'}<br>🏠 ${order.yandex_address || 'Не указан'}</p>
+  <h3>Товары</h3>
+  <table style="width:100%;border-collapse:collapse;">
+    <thead><tr style="background:#f2f2f2;">
+      <th style="padding:8px;border:1px solid #ddd;text-align:left;">Наименование</th>
+      <th style="padding:8px;border:1px solid #ddd;">Артикул</th>
+      <th style="padding:8px;border:1px solid #ddd;">Кол-во</th>
+      <th style="padding:8px;border:1px solid #ddd;">Цена</th>
+      <th style="padding:8px;border:1px solid #ddd;">Итого</th>
+    </tr></thead>
+    <tbody>${cartItemsHtml}</tbody>
+  </table>
+  <p style="margin-top:15px;"><strong>Подытог:</strong> ${order.subtotal || 0} ₽<br><strong>Скидка:</strong> ${order.discount || 0} ₽<br><strong>Итого:</strong> ${order.total || 0} ₽</p>
+  <p><strong>Оплата:</strong> ${order.payment === 'cash' ? 'Наличными' : 'Перевод'}<br><strong>Доставка:</strong> ${order.delivery === 'delivery' ? 'Курьер' : 'Самовывоз'}</p>
+  ${order.comment ? `<p><strong>Комментарий:</strong> ${order.comment}</p>` : ''}
+</div></body></html>`;
+}
+
+function generateAdminNewOrderText(order: any): string {
+  const orderNumber = order.order_number || order.id;
+  const items = (order.cart_items || []).map((item: any) => {
+    const lineTotal = (item.price || 0) * (item.quantity || 0);
+    return `- ${item.name || 'Н/Д'} (Арт. ${item.artikul || 'Н/Д'}) x${item.quantity || 0} = ${lineTotal} ₽`;
+  }).join('\n');
+
+  return `Новый заказ #${orderNumber}
+Дата: ${order.created_at ? new Date(order.created_at).toLocaleString('ru-RU') : new Date().toLocaleString('ru-RU')}
+
+Клиент: ${order.name || 'Не указано'}
+Телефон: ${order.phone || 'Не указан'}
+Email: ${order.email || 'Не указан'}
+Адрес: ${order.yandex_address || 'Не указан'}
+
+Товары:
+${items}
+
+Подытог: ${order.subtotal || 0} ₽
+Скидка: ${order.discount || 0} ₽
+Итого: ${order.total || 0} ₽
+Оплата: ${order.payment === 'cash' ? 'Наличными' : 'Перевод'}
+Доставка: ${order.delivery === 'delivery' ? 'Курьер' : 'Самовывоз'}
+${order.comment ? `Комментарий: ${order.comment}` : ''}`;
+}
+
+async function sendAdminNewOrderEmail(order: any) {
+  const resendKey = Deno.env.get("RESEND_API_KEY");
+  if (!resendKey) {
+    console.log("Admin email skipped: RESEND_API_KEY not configured");
+    return { skipped: true, reason: "RESEND_API_KEY not configured" };
+  }
+
+  const recipients = parseAdminEmails();
+  if (recipients.length === 0) {
+    console.log("Admin email skipped: no recipients in ADMIN_EMAIL");
+    return { skipped: true, reason: "No admin email recipients" };
+  }
+
+  const orderNumber = order.order_number || order.id;
+  try {
+    const result = await resend.emails.send({
+      from: 'SMT Premium Box <noreply@giftboxopt.ru>',
+      to: recipients,
+      subject: `Новый заказ #${orderNumber}`,
+      html: generateAdminNewOrderHtml(order),
+      text: generateAdminNewOrderText(order),
+    });
+
+    console.log(JSON.stringify({
+      event: "admin_new_order_email",
+      orderId: order.id,
+      recipientCount: recipients.length,
+      resendId: result?.data?.id,
+      status: "success"
+    }));
+    return result;
+  } catch (error) {
+    console.error(JSON.stringify({
+      event: "admin_new_order_email",
+      orderId: order.id,
+      recipientCount: recipients.length,
+      status: "failure",
+      errorMessage: error instanceof Error ? error.message : String(error)
+    }));
+    throw error;
+  }
+}
+
 // Нормализация значения доставки
 function normalizeDeliveryValue(delivery: string | undefined): string {
   if (!delivery) return 'delivery';
@@ -534,6 +652,13 @@ ${order.comment ? `📝 *Комментарий:* ${order.comment}` : ''}
         notificationPromises.push(sendOrderConfirmationEmail(order));
       } catch (emailError) {
         console.error("Failed to queue confirmation email:", emailError);
+      }
+      
+      try {
+        console.log("Добавляем в очередь admin email уведомление...");
+        notificationPromises.push(sendAdminNewOrderEmail(order));
+      } catch (adminEmailError) {
+        console.error("Failed to queue admin email:", adminEmailError);
       }
       
       // Wait for main notifications
