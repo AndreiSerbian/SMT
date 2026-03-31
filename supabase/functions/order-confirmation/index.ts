@@ -310,6 +310,88 @@ async function updateGoogleSheets(order: any) {
   }
 }
 
+// === ADMIN EMAIL NOTIFICATIONS ===
+
+// TODO: extract parseAdminEmails to shared module when Deno Edge Functions support shared imports
+function parseAdminEmails(): string[] {
+  const raw = Deno.env.get("ADMIN_EMAIL") || "";
+  return [...new Set(
+    raw
+      .split(",")
+      .map((e) => e.trim().toLowerCase())
+      .filter(Boolean)
+  )];
+}
+
+function generateAdminConfirmedOrderHtml(order: any): string {
+  const orderNumber = order.order_number || order.id;
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Заказ подтверждён</title></head><body style="font-family:Arial,sans-serif;color:#333;">
+<div style="max-width:600px;margin:0 auto;padding:20px;">
+  <h1 style="color:#38a169;">✅ Заказ подтверждён #${orderNumber}</h1>
+  <p><strong>Подтверждено:</strong> ${order.confirmed_at ? new Date(order.confirmed_at).toLocaleString('ru-RU') : new Date().toLocaleString('ru-RU')}</p>
+  <h3>Клиент</h3>
+  <p>👤 ${order.name || 'Не указано'}<br>📞 ${order.phone || 'Не указан'}<br>✉️ ${order.email || 'Не указан'}</p>
+  <p><strong>Итого:</strong> ${order.total || 0} ₽</p>
+  <p><strong>Статус:</strong> ${order.order_status || 'confirmed'}</p>
+</div></body></html>`;
+}
+
+function generateAdminConfirmedOrderText(order: any): string {
+  const orderNumber = order.order_number || order.id;
+  return `Заказ подтверждён #${orderNumber}
+Подтверждено: ${order.confirmed_at ? new Date(order.confirmed_at).toLocaleString('ru-RU') : new Date().toLocaleString('ru-RU')}
+
+Клиент: ${order.name || 'Не указано'}
+Телефон: ${order.phone || 'Не указан'}
+Email: ${order.email || 'Не указан'}
+Итого: ${order.total || 0} ₽
+Статус: ${order.order_status || 'confirmed'}`;
+}
+
+async function sendAdminConfirmedOrderEmail(order: any) {
+  const resendKey = Deno.env.get("RESEND_API_KEY");
+  if (!resendKey) {
+    console.log("Admin confirmed email skipped: RESEND_API_KEY not configured");
+    return { skipped: true, reason: "RESEND_API_KEY not configured" };
+  }
+
+  const recipients = parseAdminEmails();
+  if (recipients.length === 0) {
+    console.log("Admin confirmed email skipped: no recipients in ADMIN_EMAIL");
+    return { skipped: true, reason: "No admin email recipients" };
+  }
+
+  const resend = new Resend(resendKey);
+  const orderNumber = order.order_number || order.id;
+  try {
+    const result = await resend.emails.send({
+      from: 'SMT Premium Box <noreply@giftboxopt.ru>',
+      to: recipients,
+      subject: `Заказ подтвержден #${orderNumber}`,
+      html: generateAdminConfirmedOrderHtml(order),
+      text: generateAdminConfirmedOrderText(order),
+    });
+
+    console.log(JSON.stringify({
+      event: "admin_confirmed_order_email",
+      orderId: order.id,
+      recipientCount: recipients.length,
+      resendId: result?.data?.id,
+      status: "success"
+    }));
+    return result;
+  } catch (error) {
+    console.error(JSON.stringify({
+      event: "admin_confirmed_order_email",
+      orderId: order.id,
+      recipientCount: recipients.length,
+      status: "failure",
+      errorMessage: error instanceof Error ? error.message : String(error)
+    }));
+    throw error;
+  }
+}
+
 // Основной обработчик HTTP запросов
 serve(async (req) => {
   console.log(`========== НОВЫЙ ЗАПРОС ==========`);

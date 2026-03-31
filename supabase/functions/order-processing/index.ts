@@ -654,6 +654,13 @@ ${order.comment ? `📝 *Комментарий:* ${order.comment}` : ''}
         console.error("Failed to queue confirmation email:", emailError);
       }
       
+      try {
+        console.log("Добавляем в очередь admin email уведомление...");
+        notificationPromises.push(sendAdminNewOrderEmail(order));
+      } catch (adminEmailError) {
+        console.error("Failed to queue admin email:", adminEmailError);
+      }
+      
       // Wait for main notifications
       const results = await Promise.allSettled(notificationPromises);
       console.log("Результаты уведомлений:", 
