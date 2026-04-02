@@ -855,14 +855,28 @@ export class ModernAdminComponent {
     const formData = new FormData(e.target);
     const productId = formData.get('id');
     
-    // Получаем категорию напрямую
-    const categoryId = formData.get('category_id')?.trim();
-    if (!categoryId) {
-      alert('Пожалуйста, выберите категорию');
+    // Derive category_id from box_type + size via explicit mapping
+    const boxType = formData.get('box_type')?.trim();
+    const sizeValue = formData.get('size')?.trim();
+    
+    if (!boxType) { alert('Пожалуйста, выберите тип коробки'); return; }
+    if (!sizeValue) { alert('Пожалуйста, выберите размер'); return; }
+    
+    const CATEGORY_SLUG_MAP = {
+      'bow-small': 'bow-box-small',
+      'bow-medium': 'bow-box-medium',
+      'bow-big': 'bow-box-big',
+      'handle-small': 'handle-box-small',
+      'magnetic-small': 'full-cover-small-box',
+    };
+    const mapKey = `${boxType}-${sizeValue}`;
+    const expectedSlug = CATEGORY_SLUG_MAP[mapKey];
+    const category = expectedSlug ? this.categories.find(c => c.slug === expectedSlug) : null;
+    if (!category) {
+      alert('Для выбранной комбинации типа коробки и размера не найдена категория');
       return;
     }
-    
-    const sizeValue = formData.get('size')?.trim();
+    const categoryId = category.id;
     
     const produktArtikul = formData.get('artikul').trim();
     
