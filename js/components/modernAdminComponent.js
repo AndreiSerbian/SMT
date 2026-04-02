@@ -760,14 +760,9 @@ export class ModernAdminComponent {
       form.artikul.value = product.artikul || '';
       form.id_wb.value = product.id_wb || '';
       
-      // Определяем тип коробки из category_id
+      // Устанавливаем категорию напрямую
       if (product.category_id) {
-        const category = this.categories.find(c => c.id === product.category_id);
-        if (category) {
-          // Парсим slug категории (например: "bow-box-small" → "bow")
-          const boxTypeSlug = category.slug.split('-')[0];
-          boxTypeSelect.value = boxTypeSlug;
-        }
+        categorySelect.value = product.category_id;
       }
       
       // Устанавливаем размер
