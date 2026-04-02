@@ -540,14 +540,10 @@ export class ModernAdminComponent {
       query = query.or(`name.ilike.%${searchTerm}%,artikul.ilike.%${searchTerm}%`);
     }
 
-    // Apply category filter by size
-    const categoryFilter = document.getElementById('filterCategory').value;
+    // Apply category filter by category_id
+    const categoryFilter = document.getElementById('filterCategory')?.value;
     if (categoryFilter) {
-      if (categoryFilter === 'with_handle') {
-        query = query.ilike('name', '%ручк%');
-      } else {
-        query = query.eq('size', categoryFilter);
-      }
+      query = query.eq('category_id', categoryFilter);
     }
     const statusFilter = document.getElementById('filterStatus').value;
     if (statusFilter === 'active') {
