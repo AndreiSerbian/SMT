@@ -708,6 +708,10 @@ export class ModernAdminComponent {
       this.boxTypes.map(type => 
         `<option value="${type.slug}">${type.name}</option>`
       ).join('');
+    // Добавляем "На магнитах" если отсутствует в box_types
+    if (!this.boxTypes.find(t => t.slug === 'magnetic')) {
+      boxTypeSelect.innerHTML += '<option value="magnetic">На магнитах</option>';
+    }
     
     const sizeSelect = form.querySelector('select[name="size"]');
     sizeSelect.innerHTML = '<option value="">Выберите размер</option>' +
