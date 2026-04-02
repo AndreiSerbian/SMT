@@ -119,10 +119,6 @@ export class ModernAdminComponent {
               <div class="flex flex-wrap gap-2 items-center">
                 <select id="filterCategory" class="flex-1 min-w-[140px] px-3 py-2 rounded-xl border bg-white">
                   <option value="">Все категории</option>
-                  <option value="small">Малая коробка</option>
-                  <option value="medium">Средняя коробка</option>
-                  <option value="big">Большая коробка</option>
-                  <option value="with_handle">Коробка с ручками</option>
                 </select>
                 <select id="filterStatus" class="px-3 py-2 rounded-xl border bg-white">
                   <option value="">Все</option>
@@ -216,6 +212,12 @@ export class ModernAdminComponent {
               </label>
 
               <label class="block">
+                <span class="text-sm font-medium">Категория *</span>
+                <select name="category_id" required class="mt-1 w-full px-3 py-2 rounded-xl border">
+                  <option value="">Выберите категорию</option>
+                </select>
+              </label>
+
                 <span class="text-sm font-medium">Тип коробки *</span>
                 <select name="box_type" required class="mt-1 w-full px-3 py-2 rounded-xl border">
                   <option value="">Выберите тип</option>
@@ -467,8 +469,7 @@ export class ModernAdminComponent {
       // Load categories
       const { data: categories } = await this.supabase
         .from('categories')
-        .select('id,name,slug')
-        .eq('is_active', true)
+        .select('id,name,slug,is_active,sort_order')
         .order('sort_order', { ascending: true });
       this.categories = categories || [];
       
@@ -495,6 +496,16 @@ export class ModernAdminComponent {
         .eq('is_active', true)
         .order('sort_order', { ascending: true });
       this.colors = colors || [];
+      
+      // Populate filter dropdown dynamically
+      const filterSelect = document.getElementById('filterCategory');
+      if (filterSelect) {
+        const sorted = [...this.categories].sort((a, b) =>
+          (a.sort_order ?? 999999) - (b.sort_order ?? 999999) || (a.name || '').localeCompare(b.name || '', 'ru')
+        );
+        filterSelect.innerHTML = '<option value="">Все категории</option>' +
+          sorted.map(c => `<option value="${c.id}">${c.name}${c.is_active ? '' : ' (неактивна)'}</option>`).join('');
+      }
     } catch (error) {
       console.error('Error loading meta:', error);
     }
@@ -522,7 +533,7 @@ export class ModernAdminComponent {
 
     let query = this.supabase
       .from('products')
-      .select('id, name, artikul, size, price_rub, weight, dimensions, color_hex, is_active, photos, videos, id_wb');
+      .select('id, name, artikul, size, price_rub, weight, dimensions, color_hex, is_active, photos, videos, id_wb, category_id');
 
     // Apply sorting
     if (this.sortField) {
@@ -539,14 +550,10 @@ export class ModernAdminComponent {
       query = query.or(`name.ilike.%${searchTerm}%,artikul.ilike.%${searchTerm}%`);
     }
 
-    // Apply category filter by size
-    const categoryFilter = document.getElementById('filterCategory').value;
+    // Apply category filter by category_id
+    const categoryFilter = document.getElementById('filterCategory')?.value;
     if (categoryFilter) {
-      if (categoryFilter === 'with_handle') {
-        query = query.ilike('name', '%ручк%');
-      } else {
-        query = query.eq('size', categoryFilter);
-      }
+      query = query.eq('category_id', categoryFilter);
     }
     const statusFilter = document.getElementById('filterStatus').value;
     if (statusFilter === 'active') {
@@ -714,6 +721,14 @@ export class ModernAdminComponent {
         `<option value="${size.value}">${size.name}</option>`
       ).join('');
     
+    // Заполняем dropdown категорий
+    const categorySelect = form.querySelector('select[name="category_id"]');
+    const sortedCats = [...this.categories].sort((a, b) =>
+      (a.sort_order ?? 999999) - (b.sort_order ?? 999999) || (a.name || '').localeCompare(b.name || '', 'ru')
+    );
+    categorySelect.innerHTML = '<option value="">Выберите категорию</option>' +
+      sortedCats.map(c => `<option value="${c.id}">${c.name}${c.is_active ? '' : ' (неактивна)'}</option>`).join('');
+    
     // Заполняем dropdown цветов
     const colorSelect = form.querySelector('select[name="color_select"]');
     if (colorSelect) {
@@ -745,14 +760,9 @@ export class ModernAdminComponent {
       form.artikul.value = product.artikul || '';
       form.id_wb.value = product.id_wb || '';
       
-      // Определяем тип коробки из category_id
+      // Устанавливаем категорию напрямую
       if (product.category_id) {
-        const category = this.categories.find(c => c.id === product.category_id);
-        if (category) {
-          // Парсим slug категории (например: "bow-box-small" → "bow")
-          const boxTypeSlug = category.slug.split('-')[0];
-          boxTypeSelect.value = boxTypeSlug;
-        }
+        categorySelect.value = product.category_id;
       }
       
       // Устанавливаем размер
@@ -845,24 +855,14 @@ export class ModernAdminComponent {
     const formData = new FormData(e.target);
     const productId = formData.get('id');
     
-    // Получаем тип коробки и размер
-    const boxTypeSlug = formData.get('box_type')?.trim();
+    // Получаем категорию напрямую
+    const categoryId = formData.get('category_id')?.trim();
+    if (!categoryId) {
+      alert('Пожалуйста, выберите категорию');
+      return;
+    }
+    
     const sizeValue = formData.get('size')?.trim();
-    
-    if (!boxTypeSlug || !sizeValue) {
-      alert('Пожалуйста, выберите тип коробки и размер');
-      return;
-    }
-    
-    // Ищем соответствующую категорию
-    // Например: "bow" + "medium" → ищем категорию со slug "bow-box-medium"
-    const categorySlug = `${boxTypeSlug}-box-${sizeValue}`;
-    const category = this.categories.find(c => c.slug === categorySlug);
-    
-    if (!category) {
-      alert(`Категория для типа "${boxTypeSlug}" и размера "${sizeValue}" не найдена! Slug: ${categorySlug}`);
-      return;
-    }
     
     const produktArtikul = formData.get('artikul').trim();
     
@@ -895,8 +895,8 @@ export class ModernAdminComponent {
       name: formData.get('name').trim(),
       artikul: produktArtikul,
       id_wb: formData.get('id_wb')?.trim() || null,
-      category_id: category.id,
-      size: sizeValue,
+      category_id: categoryId,
+      size: sizeValue || 'small',
       price_rub: parseFloat(formData.get('price_rub')) || 0,
       weight: parseFloat(formData.get('weight')) || null,
       color_hex: (formData.get('color_hex_text') || formData.get('color_hex')).toUpperCase(),
