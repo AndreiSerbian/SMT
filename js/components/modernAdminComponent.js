@@ -212,6 +212,12 @@ export class ModernAdminComponent {
               </label>
 
               <label class="block">
+                <span class="text-sm font-medium">Категория *</span>
+                <select name="category_id" required class="mt-1 w-full px-3 py-2 rounded-xl border">
+                  <option value="">Выберите категорию</option>
+                </select>
+              </label>
+
                 <span class="text-sm font-medium">Тип коробки *</span>
                 <select name="box_type" required class="mt-1 w-full px-3 py-2 rounded-xl border">
                   <option value="">Выберите тип</option>
