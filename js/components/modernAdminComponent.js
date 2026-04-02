@@ -469,8 +469,7 @@ export class ModernAdminComponent {
       // Load categories
       const { data: categories } = await this.supabase
         .from('categories')
-        .select('id,name,slug')
-        .eq('is_active', true)
+        .select('id,name,slug,is_active,sort_order')
         .order('sort_order', { ascending: true });
       this.categories = categories || [];
       
