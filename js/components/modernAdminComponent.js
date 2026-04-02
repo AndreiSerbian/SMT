@@ -750,9 +750,19 @@ export class ModernAdminComponent {
       form.artikul.value = product.artikul || '';
       form.id_wb.value = product.id_wb || '';
       
-      // Устанавливаем категорию напрямую
+      // Derive box_type from category_id via explicit mapping (safe fallback)
       if (product.category_id) {
-        categorySelect.value = product.category_id;
+        const cat = this.categories.find(c => c.id === product.category_id);
+        if (cat) {
+          const SLUG_TO_BOX_TYPE = {
+            'bow-box-small': 'bow', 'bow-box-medium': 'bow', 'bow-box-big': 'bow',
+            'handle-box-small': 'handle',
+            'full-cover-small-box': 'magnetic',
+          };
+          const derivedType = SLUG_TO_BOX_TYPE[cat.slug];
+          if (derivedType) boxTypeSelect.value = derivedType;
+          // If slug not in map — leave box_type empty (safe fallback)
+        }
       }
       
       // Устанавливаем размер
