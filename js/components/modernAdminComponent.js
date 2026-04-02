@@ -119,10 +119,6 @@ export class ModernAdminComponent {
               <div class="flex flex-wrap gap-2 items-center">
                 <select id="filterCategory" class="flex-1 min-w-[140px] px-3 py-2 rounded-xl border bg-white">
                   <option value="">Все категории</option>
-                  <option value="small">Малая коробка</option>
-                  <option value="medium">Средняя коробка</option>
-                  <option value="big">Большая коробка</option>
-                  <option value="with_handle">Коробка с ручками</option>
                 </select>
                 <select id="filterStatus" class="px-3 py-2 rounded-xl border bg-white">
                   <option value="">Все</option>
