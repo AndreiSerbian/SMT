@@ -721,6 +721,14 @@ export class ModernAdminComponent {
         `<option value="${size.value}">${size.name}</option>`
       ).join('');
     
+    // Заполняем dropdown категорий
+    const categorySelect = form.querySelector('select[name="category_id"]');
+    const sortedCats = [...this.categories].sort((a, b) =>
+      (a.sort_order ?? 999999) - (b.sort_order ?? 999999) || (a.name || '').localeCompare(b.name || '', 'ru')
+    );
+    categorySelect.innerHTML = '<option value="">Выберите категорию</option>' +
+      sortedCats.map(c => `<option value="${c.id}">${c.name}${c.is_active ? '' : ' (неактивна)'}</option>`).join('');
+    
     // Заполняем dropdown цветов
     const colorSelect = form.querySelector('select[name="color_select"]');
     if (colorSelect) {
