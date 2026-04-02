@@ -496,6 +496,16 @@ export class ModernAdminComponent {
         .eq('is_active', true)
         .order('sort_order', { ascending: true });
       this.colors = colors || [];
+      
+      // Populate filter dropdown dynamically
+      const filterSelect = document.getElementById('filterCategory');
+      if (filterSelect) {
+        const sorted = [...this.categories].sort((a, b) =>
+          (a.sort_order ?? 999999) - (b.sort_order ?? 999999) || (a.name || '').localeCompare(b.name || '', 'ru')
+        );
+        filterSelect.innerHTML = '<option value="">Все категории</option>' +
+          sorted.map(c => `<option value="${c.id}">${c.name}${c.is_active ? '' : ' (неактивна)'}</option>`).join('');
+      }
     } catch (error) {
       console.error('Error loading meta:', error);
     }
