@@ -523,7 +523,7 @@ export class ModernAdminComponent {
 
     let query = this.supabase
       .from('products')
-      .select('id, name, artikul, size, price_rub, weight, dimensions, color_hex, is_active, photos, videos, id_wb');
+      .select('id, name, artikul, size, price_rub, weight, dimensions, color_hex, is_active, photos, videos, id_wb, category_id');
 
     // Apply sorting
     if (this.sortField) {
