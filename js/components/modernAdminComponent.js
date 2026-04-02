@@ -212,12 +212,6 @@ export class ModernAdminComponent {
               </label>
 
               <label class="block">
-                <span class="text-sm font-medium">Категория *</span>
-                <select name="category_id" required class="mt-1 w-full px-3 py-2 rounded-xl border">
-                  <option value="">Выберите категорию</option>
-                </select>
-              </label>
-
                 <span class="text-sm font-medium">Тип коробки *</span>
                 <select name="box_type" required class="mt-1 w-full px-3 py-2 rounded-xl border">
                   <option value="">Выберите тип</option>
@@ -714,20 +708,16 @@ export class ModernAdminComponent {
       this.boxTypes.map(type => 
         `<option value="${type.slug}">${type.name}</option>`
       ).join('');
+    // Добавляем "На магнитах" если отсутствует в box_types
+    if (!this.boxTypes.find(t => t.slug === 'magnetic')) {
+      boxTypeSelect.innerHTML += '<option value="magnetic">На магнитах</option>';
+    }
     
     const sizeSelect = form.querySelector('select[name="size"]');
     sizeSelect.innerHTML = '<option value="">Выберите размер</option>' +
       this.sizes.map(size => 
         `<option value="${size.value}">${size.name}</option>`
       ).join('');
-    
-    // Заполняем dropdown категорий
-    const categorySelect = form.querySelector('select[name="category_id"]');
-    const sortedCats = [...this.categories].sort((a, b) =>
-      (a.sort_order ?? 999999) - (b.sort_order ?? 999999) || (a.name || '').localeCompare(b.name || '', 'ru')
-    );
-    categorySelect.innerHTML = '<option value="">Выберите категорию</option>' +
-      sortedCats.map(c => `<option value="${c.id}">${c.name}${c.is_active ? '' : ' (неактивна)'}</option>`).join('');
     
     // Заполняем dropdown цветов
     const colorSelect = form.querySelector('select[name="color_select"]');
@@ -760,9 +750,19 @@ export class ModernAdminComponent {
       form.artikul.value = product.artikul || '';
       form.id_wb.value = product.id_wb || '';
       
-      // Устанавливаем категорию напрямую
+      // Derive box_type from category_id via explicit mapping (safe fallback)
       if (product.category_id) {
-        categorySelect.value = product.category_id;
+        const cat = this.categories.find(c => c.id === product.category_id);
+        if (cat) {
+          const SLUG_TO_BOX_TYPE = {
+            'bow-box-small': 'bow', 'bow-box-medium': 'bow', 'bow-box-big': 'bow',
+            'handle-box-small': 'handle',
+            'full-cover-small-box': 'magnetic',
+          };
+          const derivedType = SLUG_TO_BOX_TYPE[cat.slug];
+          if (derivedType) boxTypeSelect.value = derivedType;
+          // If slug not in map — leave box_type empty (safe fallback)
+        }
       }
       
       // Устанавливаем размер
@@ -855,14 +855,28 @@ export class ModernAdminComponent {
     const formData = new FormData(e.target);
     const productId = formData.get('id');
     
-    // Получаем категорию напрямую
-    const categoryId = formData.get('category_id')?.trim();
-    if (!categoryId) {
-      alert('Пожалуйста, выберите категорию');
+    // Derive category_id from box_type + size via explicit mapping
+    const boxType = formData.get('box_type')?.trim();
+    const sizeValue = formData.get('size')?.trim();
+    
+    if (!boxType) { alert('Пожалуйста, выберите тип коробки'); return; }
+    if (!sizeValue) { alert('Пожалуйста, выберите размер'); return; }
+    
+    const CATEGORY_SLUG_MAP = {
+      'bow-small': 'bow-box-small',
+      'bow-medium': 'bow-box-medium',
+      'bow-big': 'bow-box-big',
+      'handle-small': 'handle-box-small',
+      'magnetic-small': 'full-cover-small-box',
+    };
+    const mapKey = `${boxType}-${sizeValue}`;
+    const expectedSlug = CATEGORY_SLUG_MAP[mapKey];
+    const category = expectedSlug ? this.categories.find(c => c.slug === expectedSlug) : null;
+    if (!category) {
+      alert('Для выбранной комбинации типа коробки и размера не найдена категория');
       return;
     }
-    
-    const sizeValue = formData.get('size')?.trim();
+    const categoryId = category.id;
     
     const produktArtikul = formData.get('artikul').trim();
     
