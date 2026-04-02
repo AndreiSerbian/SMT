@@ -1,122 +1,98 @@
-# Simple Category-to-Product Binding — Implementation Plan
+
+
+# Box Type + Size as Visible Inputs, Derived category_id
 
 ## Summary
 
-Single-file update to `js/components/modernAdminComponent.js`. Replace compound `box_type + size → slug` category lookup with direct `category_id` dropdown. Make admin filter dynamic.
+Update `js/components/modernAdminComponent.js` to remove the visible "Категория" dropdown, add "На магнитах" to box types, and derive `category_id` automatically from box_type + size on save using an explicit mapping.
 
-## Changes
+## Changes — Single file: `js/components/modernAdminComponent.js`
 
-### 1. `loadMeta()` (lines 468-473) — Load all categories
+### 1. Remove visible "Категория" dropdown from form HTML (lines 214-219)
 
-- Remove `.eq('is_active', true)` filter
-- Change select to `'id,name,slug,is_active,sort_order'`
-- Keep `.order('sort_order', { ascending: true })`
+Delete the `<label>` block with `select[name="category_id"]`.
 
-### 2. End of `loadMeta()` (after line 497) — Populate filter dynamically
+### 2. Add "На магнитах" to box_type dropdown in `openProduct()` (lines 712-716)
 
-After all meta loads, populate `#filterCategory`:
+After populating from `this.boxTypes`, append if missing:
 
 ```js
-const filterSelect = document.getElementById('filterCategory');
-if (filterSelect) {
-  const sorted = [...this.categories].sort((a, b) =>
-    (a.sort_order ?? 999999) - (b.sort_order ?? 999999) || (a.name || '').localeCompare(b.name || '', 'ru')
-  );
-  filterSelect.innerHTML = '<option value="">Все категории</option>' +
-    sorted.map(c => `<option value="${c.id}">${c.name}${c.is_active ? '' : ' (неактивна)'}</option>`).join('');
+if (!this.boxTypes.find(t => t.slug === 'magnetic')) {
+  boxTypeSelect.innerHTML += '<option value="magnetic">На магнитах</option>';
 }
 ```
 
-### 3. Filter dropdown HTML (lines 120-126) — Remove hardcoded options
+### 3. Replace `onSaveProduct()` category logic (lines 858-863)
 
-Replace with only placeholder:
-
-```html
-<select id="filterCategory" class="flex-1 min-w-[140px] px-3 py-2 rounded-xl border bg-white">
-  <option value="">Все категории</option>
-</select>
-```
-
-### 4. Product form HTML (after line 211) — Add category dropdown
-
-Insert before the box_type label (line 213):
-
-```html
-<label class="block">
-  <span class="text-sm font-medium">Категория *</span>
-  <select name="category_id" required class="mt-1 w-full px-3 py-2 rounded-xl border">
-    <option value="">Выберите категорию</option>
-  </select>
-</label>
-```
-
-Keep box_type and size fields unchanged.
-
-### 5. `openProduct()` (lines 704-716) — Populate category dropdown
-
-After existing dropdown population, add:
+Derive `category_id` via explicit mapping:
 
 ```js
-const categorySelect = form.querySelector('select[name="category_id"]');
-const sortedCats = [...this.categories].sort((a, b) =>
-  (a.sort_order ?? 999999) - (b.sort_order ?? 999999) || (a.name || '').localeCompare(b.name || '', 'ru')
-);
-categorySelect.innerHTML = '<option value="">Выберите категорию</option>' +
-  sortedCats.map(c => `<option value="${c.id}">${c.name}${c.is_active ? '' : ' (неактивна)'}</option>`).join('');
-```
-
-### 6. `openProduct()` edit mode (lines 748-756) — Direct preselection
-
-Replace slug-parsing block with:
-
-```js
-if (product.category_id) {
-  categorySelect.value = product.category_id;
-}
-```
-
-### 7. `loadPage()` select query (line 525) — Add `category_id`
-
-Add `category_id` to the select string.
-
-### 8. `loadPage()` filter logic (lines 542-550) — Direct category_id filter
-
-Replace size/name-based filtering:
-
-```js
-const categoryFilter = document.getElementById('filterCategory')?.value;
-if (categoryFilter) {
-  query = query.eq('category_id', categoryFilter);
-}
-```
-
-### 9. `onSaveProduct()` (lines 848-865) — Direct category_id save
-
-Replace compound slug lookup with:
-
-```js
-const categoryId = formData.get('category_id')?.trim();
-if (!categoryId) {
-  alert('Пожалуйста, выберите категорию');
+const CATEGORY_SLUG_MAP = {
+  'bow-small': 'bow-box-small',
+  'bow-medium': 'bow-box-medium',
+  'bow-big': 'bow-box-big',
+  'handle-small': 'handle-box-small',
+  'magnetic-small': 'full-cover-small-box',
+};
+const mapKey = `${boxType}-${sizeValue}`;
+const expectedSlug = CATEGORY_SLUG_MAP[mapKey];
+const category = expectedSlug ? this.categories.find(c => c.slug === expectedSlug) : null;
+if (!category) {
+  alert('Для выбранной комбинации типа коробки и размера не найдена категория');
   return;
 }
 ```
 
-Keep `sizeValue` read for the `size` field. Remove `boxTypeSlug`, `categorySlug`, `category` variables. Change line 898 to `category_id: categoryId`.
+### 4. Remove category dropdown population in `openProduct()` (lines 724-730)
+
+Delete `categorySelect` population block.
+
+### 5. Fix edit mode: derive box_type from category (lines 763-766)
+
+Replace `categorySelect.value` with reverse derivation + safe fallback:
+
+```js
+if (product.category_id) {
+  const cat = this.categories.find(c => c.id === product.category_id);
+  if (cat) {
+    const SLUG_TO_BOX_TYPE = {
+      'bow-box-small': 'bow', 'bow-box-medium': 'bow', 'bow-box-big': 'bow',
+      'handle-box-small': 'handle',
+      'full-cover-small-box': 'magnetic',
+    };
+    const derivedType = SLUG_TO_BOX_TYPE[cat.slug];
+    if (derivedType) boxTypeSelect.value = derivedType;
+    // If slug not in map — leave box_type empty (safe fallback)
+  }
+}
+sizeSelect.value = product.size || '';
+```
+
+### 6. Keep filter dropdown as-is
+
+Dynamic category filter stays — it's a filter, not a form input.
+
+## Critical Rules
+
+- **`category_id` must only be resolved through `CATEGORY_SLUG_MAP` in this task.** Remove all remaining category reconstruction logic based on visible category dropdowns or slug-parsing.
+- **Safe fallback in edit mode:** if `product.category_id` exists but slug is not found in `SLUG_TO_BOX_TYPE`, leave `box_type` empty — do not crash the form.
 
 ## No Changes To
 
-- DB schema / RLS / migrations
+- DB schema / migrations / RLS / `box_types` table
 - `adminCategoriesComponent.js`
-- Public storefront components
+- Public storefront / homepage
 - Storage/media logic
-- `box_type` and `size` form fields (preserved as-is)
+- `size` field behavior
 
 ## Verification
 
-1. Create category in admin → appears in product form dropdown
-2. Dropdown sorted by `sort_order`
-3. Inactive categories marked with `(неактивна)`
-4. Select category → save → `category_id` correct
-5. Edit product → correct category preselected
-6. Filter by category → works via category_id
+1. Product form → no visible "Категория" dropdown
+2. Box type dropdown includes "На магнитах"
+3. Save С лентой + Малая → correct `category_id`
+4. Save На магнитах + Малая → magnetic category resolved
+5. Save На магнитах + Большая → blocked with error
+6. Edit existing product → correct box_type and size restored
+7. Edit product with unknown category slug → form opens safely, box_type empty
+8. Homepage category cards still work
+
