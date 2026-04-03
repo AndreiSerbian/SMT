@@ -63,56 +63,27 @@ export const PublicProductsComponent = {
    */
   async createCategoryCards() {
     const allProducts = await productsService.getActiveProducts();
+    const categories = await productsService.getActiveCategories();
     const colorMap = await this.getColorMap();
-    
-    const categories = [
-      {
-        slug: 'small',
-        name: 'Малая коробка',
-        description: 'Идеальна для небольших подарков и украшений'
-      },
-      {
-        slug: 'medium', 
-        name: 'Средняя коробка',
-        description: 'Универсальный размер для большинства подарков'
-      },
-      {
-        slug: 'big',
-        name: 'Большая коробка', 
-        description: 'Для объемных подарков и особых случаев'
-      },
-      {
-        slug: 'with_handle',
-        name: 'Коробка с ручками',
-        description: 'Удобно носить, стильно дарить'
-      }
-    ];
+
+    this.cachedCategories = categories;
 
     return categories.map(category => {
-      const categoryProducts = this.filterProductsByCategory(allProducts, category.slug);
-      
+      const categoryProducts = allProducts.filter(p => p.category_id === category.id);
       if (categoryProducts.length === 0) return null;
 
-      // Получаем уникальные цвета для категории
       const categoryColors = [...new Set(categoryProducts.map(p => p.color_hex))];
-      
-      // Диапазон цен
       const prices = categoryProducts.map(p => p.price_rub);
-      const priceRange = {
-        min: Math.min(...prices),
-        max: Math.max(...prices)
-      };
-
-      // Главное изображение
-      const mainImage = categoryProducts[0]?.photos?.[0] || '';
 
       return {
-        ...category,
+        slug: category.slug,
+        name: category.name,
+        description: '',
         products: categoryProducts,
         colors: categoryColors,
         colorMap,
-        priceRange,
-        mainImage,
+        priceRange: { min: Math.min(...prices), max: Math.max(...prices) },
+        mainImage: categoryProducts[0]?.photos?.[0] || '',
         totalProducts: categoryProducts.length
       };
     }).filter(Boolean);
