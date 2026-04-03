@@ -48,19 +48,14 @@ export const PublicProductsComponent = {
    */
   async getProductsByCategory(categorySlug) {
     const allProducts = await productsService.getActiveProducts();
-    
-    switch(categorySlug) {
-      case 'small':
-        return allProducts.filter(product => product.size === 'small' && !product.name.toLowerCase().includes('ручк'));
-      case 'medium':
-        return allProducts.filter(product => product.size === 'medium');
-      case 'big':
-        return allProducts.filter(product => product.size === 'big');
-      case 'with_handle':
-        return allProducts.filter(product => product.name.toLowerCase().includes('ручк'));
-      default:
-        return allProducts;
+    if (!this.cachedCategories) {
+      this.cachedCategories = await productsService.getActiveCategories();
     }
+    const category = this.cachedCategories.find(c => c.slug === categorySlug);
+    if (category) {
+      return allProducts.filter(p => p.category_id === category.id);
+    }
+    return allProducts;
   },
 
   /**
@@ -68,56 +63,27 @@ export const PublicProductsComponent = {
    */
   async createCategoryCards() {
     const allProducts = await productsService.getActiveProducts();
+    const categories = await productsService.getActiveCategories();
     const colorMap = await this.getColorMap();
-    
-    const categories = [
-      {
-        slug: 'small',
-        name: 'Малая коробка',
-        description: 'Идеальна для небольших подарков и украшений'
-      },
-      {
-        slug: 'medium', 
-        name: 'Средняя коробка',
-        description: 'Универсальный размер для большинства подарков'
-      },
-      {
-        slug: 'big',
-        name: 'Большая коробка', 
-        description: 'Для объемных подарков и особых случаев'
-      },
-      {
-        slug: 'with_handle',
-        name: 'Коробка с ручками',
-        description: 'Удобно носить, стильно дарить'
-      }
-    ];
+
+    this.cachedCategories = categories;
 
     return categories.map(category => {
-      const categoryProducts = this.filterProductsByCategory(allProducts, category.slug);
-      
+      const categoryProducts = allProducts.filter(p => p.category_id === category.id);
       if (categoryProducts.length === 0) return null;
 
-      // Получаем уникальные цвета для категории
       const categoryColors = [...new Set(categoryProducts.map(p => p.color_hex))];
-      
-      // Диапазон цен
       const prices = categoryProducts.map(p => p.price_rub);
-      const priceRange = {
-        min: Math.min(...prices),
-        max: Math.max(...prices)
-      };
-
-      // Главное изображение
-      const mainImage = categoryProducts[0]?.photos?.[0] || '';
 
       return {
-        ...category,
+        slug: category.slug,
+        name: category.name,
+        description: '',
         products: categoryProducts,
         colors: categoryColors,
         colorMap,
-        priceRange,
-        mainImage,
+        priceRange: { min: Math.min(...prices), max: Math.max(...prices) },
+        mainImage: categoryProducts[0]?.photos?.[0] || '',
         totalProducts: categoryProducts.length
       };
     }).filter(Boolean);
@@ -127,18 +93,11 @@ export const PublicProductsComponent = {
    * Фильтрация товаров по категории
    */
   filterProductsByCategory(products, categorySlug) {
-    switch(categorySlug) {
-      case 'small':
-        return products.filter(product => product.size === 'small' && !product.name.toLowerCase().includes('ручк'));
-      case 'medium':
-        return products.filter(product => product.size === 'medium');
-      case 'big':
-        return products.filter(product => product.size === 'big');
-      case 'with_handle':
-        return products.filter(product => product.name.toLowerCase().includes('ручк'));
-      default:
-        return products;
+    const category = this.cachedCategories?.find(c => c.slug === categorySlug);
+    if (category) {
+      return products.filter(p => p.category_id === category.id);
     }
+    return products;
   },
 
   /**
