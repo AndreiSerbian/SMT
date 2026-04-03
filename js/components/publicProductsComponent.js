@@ -93,18 +93,11 @@ export const PublicProductsComponent = {
    * Фильтрация товаров по категории
    */
   filterProductsByCategory(products, categorySlug) {
-    switch(categorySlug) {
-      case 'small':
-        return products.filter(product => product.size === 'small' && !product.name.toLowerCase().includes('ручк'));
-      case 'medium':
-        return products.filter(product => product.size === 'medium');
-      case 'big':
-        return products.filter(product => product.size === 'big');
-      case 'with_handle':
-        return products.filter(product => product.name.toLowerCase().includes('ручк'));
-      default:
-        return products;
+    const category = this.cachedCategories?.find(c => c.slug === categorySlug);
+    if (category) {
+      return products.filter(p => p.category_id === category.id);
     }
+    return products;
   },
 
   /**
