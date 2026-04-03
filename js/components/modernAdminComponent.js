@@ -757,7 +757,7 @@ export class ModernAdminComponent {
           const SLUG_TO_BOX_TYPE = {
             'bow-box-small': 'bow', 'bow-box-medium': 'bow', 'bow-box-big': 'bow',
             'handle-box-small': 'handle',
-            'full-cover-small-box': 'magnetic',
+            'full-cover-small': 'magnetic',
           };
           const derivedType = SLUG_TO_BOX_TYPE[cat.slug];
           if (derivedType) boxTypeSelect.value = derivedType;
@@ -867,7 +867,7 @@ export class ModernAdminComponent {
       'bow-medium': 'bow-box-medium',
       'bow-big': 'bow-box-big',
       'handle-small': 'handle-box-small',
-      'magnetic-small': 'full-cover-small-box',
+      'magnetic-small': 'full-cover-small',
     };
     const mapKey = `${boxType}-${sizeValue}`;
     const expectedSlug = CATEGORY_SLUG_MAP[mapKey];
