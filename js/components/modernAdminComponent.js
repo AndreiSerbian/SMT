@@ -757,7 +757,7 @@ export class ModernAdminComponent {
           const SLUG_TO_BOX_TYPE = {
             'bow-box-small': 'bow', 'bow-box-medium': 'bow', 'bow-box-big': 'bow',
             'handle-box-small': 'handle',
-            'full-cover-small-box': 'magnetic',
+            'full-cover-small': 'magnetic',
           };
           const derivedType = SLUG_TO_BOX_TYPE[cat.slug];
           if (derivedType) boxTypeSelect.value = derivedType;
