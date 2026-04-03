@@ -867,7 +867,7 @@ export class ModernAdminComponent {
       'bow-medium': 'bow-box-medium',
       'bow-big': 'bow-box-big',
       'handle-small': 'handle-box-small',
-      'magnetic-small': 'full-cover-small-box',
+      'magnetic-small': 'full-cover-small',
     };
     const mapKey = `${boxType}-${sizeValue}`;
     const expectedSlug = CATEGORY_SLUG_MAP[mapKey];
