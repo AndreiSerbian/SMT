@@ -48,19 +48,14 @@ export const PublicProductsComponent = {
    */
   async getProductsByCategory(categorySlug) {
     const allProducts = await productsService.getActiveProducts();
-    
-    switch(categorySlug) {
-      case 'small':
-        return allProducts.filter(product => product.size === 'small' && !product.name.toLowerCase().includes('ручк'));
-      case 'medium':
-        return allProducts.filter(product => product.size === 'medium');
-      case 'big':
-        return allProducts.filter(product => product.size === 'big');
-      case 'with_handle':
-        return allProducts.filter(product => product.name.toLowerCase().includes('ручк'));
-      default:
-        return allProducts;
+    if (!this.cachedCategories) {
+      this.cachedCategories = await productsService.getActiveCategories();
     }
+    const category = this.cachedCategories.find(c => c.slug === categorySlug);
+    if (category) {
+      return allProducts.filter(p => p.category_id === category.id);
+    }
+    return allProducts;
   },
 
   /**
