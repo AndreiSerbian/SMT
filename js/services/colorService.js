@@ -37,8 +37,7 @@ export const ColorService = {
     return Object.entries(colorMap)
       .filter(([color]) =>
         allProducts.some(p =>
-          p.name === product.name &&
-          p.sizeType === product.sizeType &&
+          p.category_id === product.category_id &&
           p.color === color
         )
       )
@@ -59,6 +58,7 @@ export const ColorService = {
             data-base-name="${product.name}"
             data-base-size="${product.sizeType}"
             data-color="${color}"
+            data-category-id="${product.category_id || ''}"
             data-active="${isActive}"
           ></button>
         `;
