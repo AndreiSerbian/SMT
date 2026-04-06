@@ -161,7 +161,7 @@ export const ColorService = {
     }
     
     // Find the matching product
-    const matchingProduct = await this.findMatchingProduct(baseName, baseSize, chosenColor);
+    const matchingProduct = await this.findMatchingProduct(baseName, baseSize, chosenColor, categoryId);
     
     if (!matchingProduct) return false;
     
