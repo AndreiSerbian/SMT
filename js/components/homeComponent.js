@@ -564,8 +564,9 @@ const HomeComponent = {
               console.log("First click on color:", chosenColor, "for product:", productId);
 
               // Находим соответствующий продукт с выбранным цветом
+              const categoryId = this.dataset.categoryId;
               const matchingProduct = HomeComponent.productsWithPrices.find(
-                (p) => p.name === baseName && p.sizeType === baseSize && p.color === chosenColor,
+                (p) => categoryId ? (p.category_id === categoryId && p.color === chosenColor) : (p.name === baseName && p.sizeType === baseSize && p.color === chosenColor),
               );
 
               if (matchingProduct) {
