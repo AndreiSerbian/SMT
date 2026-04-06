@@ -136,8 +136,14 @@ export const ColorService = {
   },
   
   // Find matching product by parameters
-  async findMatchingProduct(baseName, baseSize, color) {
+  async findMatchingProduct(baseName, baseSize, color, categoryId) {
     const allProducts = await productsService.getActiveProducts();
+    if (categoryId) {
+      return allProducts.find(p =>
+        p.category_id === categoryId && p.color === color
+      );
+    }
+    // Legacy fallback
     return allProducts.find(p =>
       p.name === baseName &&
       p.sizeType === baseSize &&
@@ -147,7 +153,7 @@ export const ColorService = {
   
   // Handle color change event
   async handleColorChange(data) {
-    const { productId, baseName, baseSize, chosenColor } = data;
+    const { productId, baseName, baseSize, chosenColor, categoryId } = data;
     
     // Если этот цвет уже выбран (повторный клик), вернем true, что значит "нужен редирект"
     if (this.selectedColors[productId] === chosenColor) {

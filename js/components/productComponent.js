@@ -609,29 +609,16 @@ const ProductComponent = {
    */
   async loadCategoryProducts(currentProduct) {
     try {
-      return this.productsWithPrices.filter(p => 
-        p.size === currentProduct.size && 
-        p.name.toLowerCase().includes(this.getCategoryKeyword(currentProduct))
-      );
+      if (currentProduct.category_id) {
+        return this.productsWithPrices.filter(p =>
+          p.category_id === currentProduct.category_id
+        );
+      }
+      return [currentProduct];
     } catch (error) {
       console.error('Error loading category products:', error);
       return [currentProduct];
     }
-  },
-
-  /**
-   * Определение ключевого слова категории по товару
-   */
-  getCategoryKeyword(product) {
-    const nameLower = product.name.toLowerCase();
-    
-    // Различаем типы коробок
-    if (nameLower.includes('бант')) return 'бант';
-    if (nameLower.includes('ручк')) return 'ручк';
-    
-    // Если ничего не подошло, возвращаем пустую строку
-    // чтобы не смешивать разные категории
-    return '';
   },
 
   /**
