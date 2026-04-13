@@ -154,6 +154,12 @@ const SwiperService = {
     });
     
     swiper.update();
+
+    if (swiper.params?.loop && typeof swiper.slideToLoop === 'function') {
+      swiper.slideToLoop(0, 0);
+    } else {
+      swiper.slideTo(0, 0);
+    }
     
     // null-safe обновление pagination и navigation
     if (swiper.pagination && swiper.pagination.render && swiper.pagination.update) {
