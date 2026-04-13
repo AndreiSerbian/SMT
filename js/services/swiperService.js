@@ -208,6 +208,21 @@ const SwiperService = {
     });
     
     swiper.update();
+
+    if (swiper.params?.loop && typeof swiper.slideToLoop === 'function') {
+      swiper.slideToLoop(0, 0);
+    } else {
+      swiper.slideTo(0, 0);
+    }
+
+    if (swiper.pagination && swiper.pagination.render && swiper.pagination.update) {
+      swiper.pagination.render();
+      swiper.pagination.update();
+    }
+
+    if (swiper.navigation && swiper.navigation.update) {
+      swiper.navigation.update();
+    }
   }
 };
 
