@@ -391,6 +391,33 @@ export type Database = {
           },
         ]
       }
+      products_photos_backup_20260509: {
+        Row: {
+          artikul: string | null
+          backed_up_at: string | null
+          color_hex: string | null
+          id: string | null
+          photos: string[] | null
+          videos: string[] | null
+        }
+        Insert: {
+          artikul?: string | null
+          backed_up_at?: string | null
+          color_hex?: string | null
+          id?: string | null
+          photos?: string[] | null
+          videos?: string[] | null
+        }
+        Update: {
+          artikul?: string | null
+          backed_up_at?: string | null
+          color_hex?: string | null
+          id?: string | null
+          photos?: string[] | null
+          videos?: string[] | null
+        }
+        Relationships: []
+      }
       site_settings: {
         Row: {
           id: string
