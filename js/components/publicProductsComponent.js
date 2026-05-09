@@ -190,7 +190,7 @@ export const PublicProductsComponent = {
             <div class="swiper-wrapper">
               ${currentPhotos.map(photo => `
                 <div class="swiper-slide">
-                  <img ${getImageAttrsHtml(this.getImageUrl(photo), 'CATEGORY_SLIDER', { alt: category.name, class: 'category-slide-image', onerror: "this.onerror=null;this.src='/images/placeholder.svg'" })} />
+                  <img ${getImageAttrsHtml(this.getImageUrl(photo), 'CATEGORY_SLIDER', { alt: category.name, class: 'category-slide-image', onerror: "this.onerror=null;this.src='/placeholder.svg'" })} />
                 </div>
               `).join('')}
             </div>
@@ -262,13 +262,13 @@ export const PublicProductsComponent = {
   },
 
   renderGroupedProductCard(group) {
-    const mainPhoto = this.getImageUrl(group.mainImage) || '/images/placeholder.svg';
+    const mainPhoto = this.getImageUrl(group.mainImage) || '/placeholder.svg';
 
     return `
       <div class="grouped-product-card">
         <div class="product-slider">
           <div class="slider-container">
-            <img ${getImageAttrsHtml(mainPhoto, 'PRODUCT_CARD', { alt: group.categoryName, onerror: "this.onerror=null;this.src='/images/placeholder.svg'" })} />
+            <img ${getImageAttrsHtml(mainPhoto, 'PRODUCT_CARD', { alt: group.categoryName, onerror: "this.onerror=null;this.src='/placeholder.svg'" })} />
           </div>
         </div>
         
@@ -361,7 +361,7 @@ export const PublicProductsComponent = {
     return `
       <div class="product-card" ${colorStyle}>
         <div class="product-image">
-          <img ${getImageAttrsHtml(mainPhoto, 'PRODUCT_CARD', { alt: `${product.name} - ${product.color}`, onerror: "this.onerror=null;this.src='/images/placeholder.svg'" })} />
+          <img ${getImageAttrsHtml(mainPhoto, 'PRODUCT_CARD', { alt: `${product.name} - ${product.color}`, onerror: "this.onerror=null;this.src='/placeholder.svg'" })} />
         </div>
         
         <div class="product-info">
