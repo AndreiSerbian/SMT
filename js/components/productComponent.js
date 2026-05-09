@@ -482,17 +482,18 @@ const ProductComponent = {
             
             if (isVideo) {
               slide.innerHTML = `
-                <video 
-                  controls 
-                  preload="metadata"
+                <video
+                  controls
+                  preload="none"
+                  poster="${resolveImageUrl(product.photos[0]) || ''}"
                 >
-                  <source src="${media}" type="video/mp4">
+                  <source src="${resolveImageUrl(media)}" type="video/mp4">
                   Ваш браузер не поддерживает воспроизведение видео.
                 </video>
               `;
             } else {
               slide.innerHTML = `
-                <img src="${media}" alt="${product.name}">
+                <img ${getImageAttrsHtml(resolveImageUrl(media), 'PRODUCT_GALLERY', { alt: product.name })}>
               `;
             }
             
