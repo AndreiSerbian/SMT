@@ -262,16 +262,13 @@ export const PublicProductsComponent = {
   },
 
   renderGroupedProductCard(group) {
-    const mainPhoto = this.getImageUrl(group.mainImage) || '/images/placeholder.jpg';
-    
+    const mainPhoto = this.getImageUrl(group.mainImage) || '/images/placeholder.svg';
+
     return `
       <div class="grouped-product-card">
         <div class="product-slider">
           <div class="slider-container">
-            <img src="${mainPhoto}" 
-                 alt="${group.categoryName}" 
-                 loading="lazy"
-                 onerror="this.src='/images/placeholder.jpg'" />
+            <img ${getImageAttrsHtml(mainPhoto, 'PRODUCT_CARD', { alt: group.categoryName, onerror: "this.onerror=null;this.src='/images/placeholder.svg'" })} />
           </div>
         </div>
         
@@ -358,16 +355,13 @@ export const PublicProductsComponent = {
 
   renderProductCard(product) {
     const mainPhoto = product.photos && product.photos[0] ? this.getImageUrl(product.photos[0]) : '';
-    const colorStyle = product.colorData?.hex_code ? 
+    const colorStyle = product.colorData?.hex_code ?
       `style="border-left: 4px solid ${product.colorData.hex_code}"` : '';
 
     return `
       <div class="product-card" ${colorStyle}>
         <div class="product-image">
-          <img src="${mainPhoto}" 
-               alt="${product.name} - ${product.color}" 
-               loading="lazy"
-               onerror="this.src='/images/placeholder.jpg'" />
+          <img ${getImageAttrsHtml(mainPhoto, 'PRODUCT_CARD', { alt: `${product.name} - ${product.color}`, onerror: "this.onerror=null;this.src='/images/placeholder.svg'" })} />
         </div>
         
         <div class="product-info">
