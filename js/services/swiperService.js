@@ -199,7 +199,7 @@ const SwiperService = {
       const imageUrl = typeof getImageUrl === 'function' ? getImageUrl(photo) : photo;
       swiper.appendSlide(`
         <div class="swiper-slide">
-          <img ${getImageAttrsHtml(imageUrl, 'CATEGORY_SLIDER', { alt: 'Товар', class: 'category-slide-image', onerror: "this.onerror=null;this.src='/images/placeholder.svg'" })} />
+          <img ${getImageAttrsHtml(imageUrl, 'CATEGORY_SLIDER', { alt: 'Товар', class: 'category-slide-image', onerror: "this.onerror=null;this.src='/placeholder.svg'" })} />
         </div>
       `);
     });
