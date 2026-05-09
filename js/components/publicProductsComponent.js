@@ -1,5 +1,8 @@
 import { productsService } from '../services/productsService.js';
 import SwiperService from '../services/swiperService.js';
+import { resolveImageUrl, loadMediaManifest } from '../services/mediaResolver.js';
+import { getImageAttrsHtml } from '../services/imageSizeService.js';
+loadMediaManifest();
 /**
  * Компонент для отображения товаров на публичной витрине
  * Читает данные из Supabase через productsService
@@ -187,11 +190,7 @@ export const PublicProductsComponent = {
             <div class="swiper-wrapper">
               ${currentPhotos.map(photo => `
                 <div class="swiper-slide">
-                  <img src="${this.getImageUrl(photo)}" 
-                       alt="${category.name}" 
-                       class="category-slide-image"
-                       loading="lazy"
-                       onerror="this.src='/images/placeholder.jpg'" />
+                  <img ${getImageAttrsHtml(this.getImageUrl(photo), 'CATEGORY_SLIDER', { alt: category.name, class: 'category-slide-image', onerror: "this.onerror=null;this.src='/images/placeholder.svg'" })} />
                 </div>
               `).join('')}
             </div>
@@ -351,10 +350,10 @@ export const PublicProductsComponent = {
 
   getImageUrl(photo) {
     if (!photo) return '';
-    if (photo.startsWith('http')) {
-      return photo;
-    }
-    return `https://bsndismiessofvhglzrv.supabase.co/storage/v1/object/public/product-media/${photo}`;
+    const absolute = photo.startsWith('http')
+      ? photo
+      : `https://bsndismiessofvhglzrv.supabase.co/storage/v1/object/public/product-media/${photo}`;
+    return resolveImageUrl(absolute);
   },
 
   renderProductCard(product) {
