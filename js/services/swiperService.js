@@ -1,4 +1,5 @@
 import Swiper from 'swiper/bundle';
+import { getImageAttrsHtml } from './imageSizeService.js';
 
 const SwiperService = {
   swipersById: {},
@@ -198,11 +199,7 @@ const SwiperService = {
       const imageUrl = typeof getImageUrl === 'function' ? getImageUrl(photo) : photo;
       swiper.appendSlide(`
         <div class="swiper-slide">
-          <img src="${imageUrl}" 
-               alt="Товар" 
-               class="category-slide-image"
-               loading="lazy"
-               onerror="this.src='/images/placeholder.jpg'" />
+          <img ${getImageAttrsHtml(imageUrl, 'CATEGORY_SLIDER', { alt: 'Товар', class: 'category-slide-image', onerror: "this.onerror=null;this.src='/images/placeholder.svg'" })} />
         </div>
       `);
     });
