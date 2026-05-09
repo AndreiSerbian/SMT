@@ -2,6 +2,8 @@ import { cartService } from '../services/cartService.js';
 import { ColorService } from '../services/colorService.js';
 import { productsService } from '../services/productsService.js';
 import SwiperService from '../services/swiperService.js';
+import { resolveImageUrl } from '../services/mediaResolver.js';
+import { getImageAttrsHtml } from '../services/imageSizeService.js';
 const ProductComponent = {
   eventListeners: [],
   timeouts: [],
@@ -251,16 +253,11 @@ const ProductComponent = {
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div class="space-y-4">
             <div class="bg-white rounded-lg shadow-lg overflow-hidden">
-              <img id="main-product-image" src="${product.photos[0]}" alt="${product.name}" class="w-full h-96 object-contain cursor-pointer">
+              <img id="main-product-image" ${getImageAttrsHtml(resolveImageUrl(product.photos[0]), 'PRODUCT_PAGE_MAIN', { alt: product.name, class: 'w-full h-96 object-contain cursor-pointer' })}>
             </div>
             <div class="grid grid-cols-4 gap-4">
               ${product.photos.map((photo, index) => `
-                <img 
-                  src="${photo}" 
-                  alt="${product.name}" 
-                  class="product-thumbnail w-full h-32 object-cover rounded-lg cursor-pointer hover:opacity-75 transition"
-                  data-index="${index}"
-                >
+                <img ${getImageAttrsHtml(resolveImageUrl(photo), 'CART_THUMBNAIL', { alt: product.name, class: 'product-thumbnail w-full h-32 object-cover rounded-lg cursor-pointer hover:opacity-75 transition', 'data-index': index })}>
               `).join('')}
             </div>
             ${product.videos && product.videos.length > 0 ? `
@@ -269,12 +266,13 @@ const ProductComponent = {
                 <div class="grid grid-cols-1 gap-4">
                   ${product.videos.map(video => `
                     <div class="bg-white rounded-lg shadow-lg overflow-hidden">
-                      <video 
-                        controls 
+                      <video
+                        controls
                         class="w-full h-64 object-contain"
-                        preload="metadata"
+                        preload="none"
+                        poster="${resolveImageUrl(product.photos[0]) || ''}"
                       >
-                        <source src="${video}" type="video/mp4">
+                        <source src="${resolveImageUrl(video)}" type="video/mp4">
                         Ваш браузер не поддерживает воспроизведение видео.
                       </video>
                     </div>
