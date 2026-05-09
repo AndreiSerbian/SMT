@@ -148,8 +148,11 @@ const HomeComponent = {
 <!-- Hero-блок -->
 <section class="relative bg-white overflow-hidden">
   <div class="absolute inset-0">
-    <img src="/images/hero.jpg"
+    <img src="/images/hero.webp"
          alt="Подарочные коробки оптом — SMT Premium Box"
+         loading="eager"
+         decoding="async"
+         fetchpriority="high"
          class="w-full h-full object-cover" />
     <div class="absolute inset-0 bg-white/60"></div>
   </div>

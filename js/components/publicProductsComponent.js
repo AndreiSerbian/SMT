@@ -1,5 +1,8 @@
 import { productsService } from '../services/productsService.js';
 import SwiperService from '../services/swiperService.js';
+import { resolveImageUrl, loadMediaManifest } from '../services/mediaResolver.js';
+import { getImageAttrsHtml } from '../services/imageSizeService.js';
+loadMediaManifest();
 /**
  * Компонент для отображения товаров на публичной витрине
  * Читает данные из Supabase через productsService
@@ -187,11 +190,7 @@ export const PublicProductsComponent = {
             <div class="swiper-wrapper">
               ${currentPhotos.map(photo => `
                 <div class="swiper-slide">
-                  <img src="${this.getImageUrl(photo)}" 
-                       alt="${category.name}" 
-                       class="category-slide-image"
-                       loading="lazy"
-                       onerror="this.src='/images/placeholder.jpg'" />
+                  <img ${getImageAttrsHtml(this.getImageUrl(photo), 'CATEGORY_SLIDER', { alt: category.name, class: 'category-slide-image', onerror: "this.onerror=null;this.src='/images/placeholder.svg'" })} />
                 </div>
               `).join('')}
             </div>
@@ -263,16 +262,13 @@ export const PublicProductsComponent = {
   },
 
   renderGroupedProductCard(group) {
-    const mainPhoto = this.getImageUrl(group.mainImage) || '/images/placeholder.jpg';
-    
+    const mainPhoto = this.getImageUrl(group.mainImage) || '/images/placeholder.svg';
+
     return `
       <div class="grouped-product-card">
         <div class="product-slider">
           <div class="slider-container">
-            <img src="${mainPhoto}" 
-                 alt="${group.categoryName}" 
-                 loading="lazy"
-                 onerror="this.src='/images/placeholder.jpg'" />
+            <img ${getImageAttrsHtml(mainPhoto, 'PRODUCT_CARD', { alt: group.categoryName, onerror: "this.onerror=null;this.src='/images/placeholder.svg'" })} />
           </div>
         </div>
         
@@ -351,24 +347,21 @@ export const PublicProductsComponent = {
 
   getImageUrl(photo) {
     if (!photo) return '';
-    if (photo.startsWith('http')) {
-      return photo;
-    }
-    return `https://bsndismiessofvhglzrv.supabase.co/storage/v1/object/public/product-media/${photo}`;
+    const absolute = photo.startsWith('http')
+      ? photo
+      : `https://bsndismiessofvhglzrv.supabase.co/storage/v1/object/public/product-media/${photo}`;
+    return resolveImageUrl(absolute);
   },
 
   renderProductCard(product) {
     const mainPhoto = product.photos && product.photos[0] ? this.getImageUrl(product.photos[0]) : '';
-    const colorStyle = product.colorData?.hex_code ? 
+    const colorStyle = product.colorData?.hex_code ?
       `style="border-left: 4px solid ${product.colorData.hex_code}"` : '';
 
     return `
       <div class="product-card" ${colorStyle}>
         <div class="product-image">
-          <img src="${mainPhoto}" 
-               alt="${product.name} - ${product.color}" 
-               loading="lazy"
-               onerror="this.src='/images/placeholder.jpg'" />
+          <img ${getImageAttrsHtml(mainPhoto, 'PRODUCT_CARD', { alt: `${product.name} - ${product.color}`, onerror: "this.onerror=null;this.src='/images/placeholder.svg'" })} />
         </div>
         
         <div class="product-info">
