@@ -10,7 +10,7 @@ import { createClient } from '@supabase/supabase-js';
 const env = Object.fromEntries(
   fs.readFileSync('.env', 'utf8').split('\n')
     .filter(l => l.includes('='))
-    .map(l => { const i = l.indexOf('='); return [l.slice(0, i).trim(), l.slice(i + 1).trim()]; })
+    .map(l => { const i = l.indexOf('='); return [l.slice(0, i).trim(), l.slice(i + 1).trim().replace(/^["']|["']$/g, '')]; })
 );
 const SUPABASE_URL = env.VITE_SUPABASE_URL;
 const ANON = env.VITE_SUPABASE_PUBLISHABLE_KEY;
