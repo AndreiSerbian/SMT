@@ -469,8 +469,11 @@ const HomeComponent = {
           <h2 class="text-3xl md:text-4xl font-bold text-center text-gray-900 mb-12">
             Коллекция подарочных упаковок
           </h2>
-          <div id="products-catalog-container">
-            <!-- Здесь будет загружен компонент группировки товаров по категориям -->
+          <div id="products-catalog-container" style="min-height:60vh">
+            <div class="text-center py-8">
+              <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <p class="mt-2 text-gray-500">Загрузка каталога товаров...</p>
+            </div>
           </div>
         </div>
       </section>
