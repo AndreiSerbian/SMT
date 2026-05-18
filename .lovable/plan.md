@@ -1,51 +1,106 @@
-# Local Image Variants + Placeholder Fix Plan
+# Shell-first рендер главной + чистка видимого SEO fallback
 
-## 1. Placeholder diagnosis
+## 1. Текущее поведение (узкое место)
 
-| Current reference | Current result | Problem | Fix |
-|---|---|---|---|
-| `/images/placeholder.svg` (used in 5 places in JS) | `200 text/html` (SPA fallback) | File does not exist at that path — only `public/placeholder.svg` exists | Change all references to `/placeholder.svg` |
-| `onerror="this.onerror=null;..."` | OK pattern | None — already guards against loops | Keep, just fix the path |
+```text
+GET / → index.html
+  └─ <div id="app"> содержит большой видимый <main class="seo-fallback">
+     (H1, sub, 2 CTA, 2 grid секции по 6 карточек, блок «Коллекция»,
+      footer + inline <style>.seo-fallback{…}). Пользователь видит
+      это как «другой сайт».
+  └─ js/app.js (module).
 
-Root cause: code points to `/images/placeholder.svg`, but the actual asset is `public/placeholder.svg`. SPA's `index.html` fallback returns HTML for the missing path, which the browser then keeps trying to render as an image — hence repeated requests.
+app.js → DOMContentLoaded → Router + initApp → HomeComponent.render(#app)
+  └─ await this.loadProducts()         ← блокирует первый paint
+  └─ await cartService.renderCart()    ← тоже до innerHTML
+  └─ container.innerHTML = `<nav>…<hero>…секции…
+                  #products-catalog-container (loader)…footer…cart`
+  └─ loadProductsCatalog(container) — уже async, try/catch,
+     локальный spinner, Swiper и color buttons после вставки HTML.
+```
 
-## 2. Local collections for variants
+`loadProductsCatalog()` устроен правильно — его НЕ переписываем,
+только вызываем позже (после первого paint shell-а).
 
-Already generated in the previous step (idempotent script `scripts/build-image-variants.mjs`). No re-run needed unless new originals are added.
-
-| Collection folder | 320w | 480w | Notes |
-|---|---|---|---|
-| `public/images/small with bow/` | done | done | |
-| `public/images/medium with bow/` | done | done | |
-| `public/images/big with bow/` | done | done | |
-| `public/images/boxes with handles/` | done | done | |
-| `public/images/full cover small/` | done | done | Lowercase + `Black/White/...` color folders |
-
-## 3. ImageSizeService behavior (already implemented, verified)
-
-| Source type | srcset? | Behavior |
-|---|---|---|
-| Local `/images/.../slideN.webp` | yes | Builds 320w + 480w + original srcset per scenario |
-| Local non-slide image | no | Plain `src` only |
-| Supabase URL (fallback) | no | Plain `src`, no transformations |
-
-Scenarios PRODUCT_CARD / CATEGORY_SLIDER / PRODUCT_PAGE_MAIN / PRODUCT_GALLERY already match the PRD spec.
-
-## 4. Files to change
+## 2. Что меняем
 
 | File | Change | Risk |
 |---|---|---|
-| `js/services/swiperService.js` | `/images/placeholder.svg` → `/placeholder.svg` (1 occurrence) | none |
-| `js/components/publicProductsComponent.js` | same replacement (4 occurrences, lines 193/265/271/364) | none |
-| `js/components/modernAdminComponent.js` | already uses `/placeholder.svg` — no change | none |
+| `index.html` | Удалить весь `<main class="seo-fallback">…</main>` и блок `<style>.seo-fallback{…}</style>`. Оставить `<div id="app"></div>` пустым и сразу после него короткий `<noscript>Для работы каталога включите JavaScript.</noscript>`. `<head>` (title, description, canonical, OG, Twitter, favicon, Clarity, gtag, yandex-verification, FontAwesome, gpteng) НЕ трогаем. | Низкий |
+| `js/components/homeComponent.js` | 1) Разбить `render(container)` на три метода: `renderShell(container)` (синхронно, без `await`), `hydrateStaticUI(container)` (бургер-меню, cookie consent, обработчики nav/cart, init пустого cart modal), `loadAndRenderCatalog(container)` (вызывает уже существующий `loadProductsCatalog`). 2) Убрать `await this.loadProducts()` и `await cartService.renderCart()` ДО первого `container.innerHTML`. 3) Cart modal вставлять как пустой shell `<div id="cartModal" class="hidden">…</div>`, наполнение — через `cartService.updateCartUI()` (уже вызывается из `initApp`). 4) `getCategories()` — только внутри `loadAndRenderCatalog`. | Средний |
+| `src/styles/grouped-products.css` | Добавить `#products-catalog-container { min-height: 60vh; }` против CLS при позднем рендере каталога. | Низкий |
+| `js/components/homeComponent.js` (hero) | Проверить, что hero `<img>`/background использует `/images/hero.webp`, не `.jpg`. Если уже webp — не трогать. | Низкий |
 
-No DB, Supabase Storage, Edge Function, Swiper, color-button, or cart/order changes.
+НЕ трогаем: `.htaccess`, `public/robots.txt`, `public/sitemap.xml`,
+Supabase, products schema, Edge Functions, `mediaResolver`,
+`imageSizeService`, `swiperService` API, `colorService`,
+`PublicProductsComponent`, `cartService`, `orderComponent`, router,
+customizer, существующий код внутри `loadProductsCatalog`.
 
-## 5. Testing plan
+## 3. Shell-first render plan
 
-- Reload preview, check Network: no `/images/placeholder.svg` requests, no repeated placeholder requests during normal browsing.
-- If placeholder fires on a real broken image, response is `image/svg+xml` from `/placeholder.svg`.
-- Local product images load with `srcset` containing `-320.webp` and `-480.webp`.
-- Supabase fallback images load as plain `src` (no srcset).
-- Swiper, color buttons, product page, cart unaffected.
-- `npm run build` passes.
+Синхронно (`renderShell`), без `await`:
+- `<nav>` (desktop + mobile);
+- `<section>` hero (`/images/hero.webp`, H1, sub, CTA `#catalog`);
+- `<section id="about-boxes">` «Что мы продаём» — статика;
+- `<section>` «Наши преимущества» — статика;
+- `<section id="catalog">` с `<div id="products-catalog-container">`
+  и текущим компактным loader «Загрузка каталога товаров…»;
+- `<section id="contacts">` / footer;
+- пустой shell cart modal `#cartModal`.
+
+Асинхронно (`loadAndRenderCatalog`):
+- `await productsService.getActiveProducts()`;
+- существующий `loadProductsCatalog(container)` без изменений
+  (PublicProductsComponent.render → initCategorySliders →
+  Swiper + color buttons).
+
+## 4. Catalog loading safety
+
+States внутри `#products-catalog-container`:
+- **loading** — отрисован из shell, виден сразу;
+- **loaded** — HTML карточек + `initCategorySliders()` строго после
+  `innerHTML`;
+- **empty** — ветка «Каталог пока пуст», если `products.length === 0`;
+- **error** — текущий try/catch с кнопкой «Повторить попытку».
+
+Защита от гонок: флаг `this.catalogLoading`; перед вставкой нового
+HTML `catalogContainer.innerHTML = ''`.
+
+Swiper / color buttons — API не меняем, init остаётся внутри
+`loadProductsCatalog` строго после успешного `innerHTML`.
+
+## 5. Risk mitigation
+
+| Risk | Mitigation |
+|---|---|
+| «Другой сайт» при загрузке | Удалён видимый `seo-fallback` из body. |
+| Белый экран | `renderShell()` синхронный, до любого `await`. |
+| Swiper падает | Init только после `catalogContainer.innerHTML = …` (как сейчас). |
+| Color buttons не работают | Не трогаем; вешаются после рендера карточек. |
+| Loader зависнет | try/catch/finally в `loadAndRenderCatalog`, снятие флага. |
+| Дубли каталога | Очистка `catalogContainer` + флаг `catalogLoading`. |
+| CLS | `min-height: 60vh` на `#products-catalog-container`. |
+| Cart не найдёт DOM | Пустой `#cartModal` в shell, `cartService.updateCartUI()` асинхронно. |
+| Потеря SEO | `<head>` (title/description/canonical/OG/Twitter/JSON-LD) сохраняется; контент секций индексируется WRS (Googlebot, Yandex). |
+| No-JS юзер | Короткий `<noscript>` после `#app`. |
+| Hero | Проверить, что `/images/hero.webp` (а не `.jpg`). |
+| Placeholder | Network не должен содержать `/images/placeholder.jpg` — уже исправлено на `/placeholder.svg`. |
+
+## 6. Testing checklist
+
+- Hard refresh `/` — нет видимого `seo-fallback`, shell виден сразу.
+- DevTools Network throttling Slow 3G — shell мгновенно, loader только в каталоге.
+- Offline / эмуляция ошибки Supabase — shell остаётся, ошибка только в каталоге, кнопка «Повторить».
+- Пустой каталог — сообщение «Каталог пока пуст».
+- View Source `/` — `<head>` полный (title, description, canonical, OG, Twitter, Clarity, gtag), `<body>` содержит пустой `#app` + `<noscript>`.
+- Без JS — виден только `<noscript>`.
+- Network на `/` — нет запросов к `/images/placeholder.jpg`, нет запросов к `/sitemap.xml`/`/robots.txt`.
+- `curl -I /robots.txt` → `Content-Type: text/plain`.
+- `curl -I /sitemap.xml` → `Content-Type: application/xml`.
+- Hero — отдаётся `/images/hero.webp` (Network → Type: webp).
+- `#product/<id>` — открывается, Swiper работает, color buttons переключают слайдер.
+- `#contacts`, `#order`, `#order-confirmation`, `#privacy-policy`, `#terms-of-use` — работают.
+- Корзина: открытие, +/−, удаление, переход к заказу, оформление.
+- Mobile ≤768 и desktop ≥1024.
+- `npm run build` проходит.
