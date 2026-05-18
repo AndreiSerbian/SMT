@@ -555,11 +555,11 @@ const HomeComponent = {
       });
     }
 
-    // Инициализируем все слайдеры
-    const timeoutId = setTimeout(() => {
+    // Функция навешивания обработчиков на карточки каталога.
+    // Вызывается ПОСЛЕ загрузки каталога, чтобы DOM-узлы существовали.
+    const attachCatalogHandlers = () => {
       SwiperService.initSwipers();
 
-      // Добавляем обработчики для кнопок цветов
       container.querySelectorAll(".color-button").forEach((button) => {
         let clickCount = 0;
         let clickTimer = null;
@@ -572,42 +572,29 @@ const HomeComponent = {
 
           if (clickCount === 1) {
             clickTimer = setTimeout(() => {
-              // Первый клик - меняем изображения
               const productId = this.dataset.productId;
               const baseName = this.dataset.baseName;
               const baseSize = this.dataset.baseSize;
               const chosenColor = this.dataset.color;
-
-              console.log("First click on color:", chosenColor, "for product:", productId);
-
-              // Находим соответствующий продукт с выбранным цветом
               const categoryId = this.dataset.categoryId;
               const matchingProduct = HomeComponent.productsWithPrices.find(
                 (p) => categoryId ? (p.category_id === categoryId && p.color === chosenColor) : (p.name === baseName && p.sizeType === baseSize && p.color === chosenColor),
               );
 
               if (matchingProduct) {
-                // Обновляем изображения в слайдере
                 SwiperService.updateSliderPhotos(productId, matchingProduct.photo);
-
-                // Обновляем активную кнопку цвета
                 ColorService.updateButtonColor(productId, chosenColor);
               }
 
               clickCount = 0;
             }, 300);
           } else if (clickCount === 2) {
-            // Второй клик - переходим к товару
             clearTimeout(clickTimer);
 
             const productId = this.dataset.productId;
             const baseName = this.dataset.baseName;
             const baseSize = this.dataset.baseSize;
             const chosenColor = this.dataset.color;
-
-            console.log("Second click on color:", chosenColor, "navigating to product");
-
-            // Находим соответствующий продукт с выбранным цветом
             const categoryId = this.dataset.categoryId;
             const matchingProduct = HomeComponent.productsWithPrices.find(
               (p) => categoryId ? (p.category_id === categoryId && p.color === chosenColor) : (p.name === baseName && p.sizeType === baseSize && p.color === chosenColor),
@@ -624,23 +611,17 @@ const HomeComponent = {
         HomeComponent.addEventListenerWithCleanup(button, "click", clickHandler);
       });
 
-      // Добавляем обработчики для кнопок "Подробно"
       container.querySelectorAll(".view-all-btn").forEach((button) => {
         const clickHandler = function () {
           const productId = this.dataset.productId;
-
-          // Находим активную кнопку цвета
           const activeColorButton = container.querySelector(
             `.color-button[data-product-id="${productId}"][data-active="true"]`,
           );
 
           if (activeColorButton) {
-            // Получаем данные о выбранном цвете
             const baseName = activeColorButton.dataset.baseName;
             const baseSize = activeColorButton.dataset.baseSize;
             const chosenColor = activeColorButton.dataset.color;
-
-            // Находим соответствующий продукт с выбранным цветом
             const categoryId = activeColorButton.dataset.categoryId;
             const matchingProduct = HomeComponent.productsWithPrices.find(
               (p) => categoryId ? (p.category_id === categoryId && p.color === chosenColor) : (p.name === baseName && p.sizeType === baseSize && p.color === chosenColor),
@@ -652,30 +633,30 @@ const HomeComponent = {
             }
           }
 
-          // Если активной кнопки нет, просто переходим к текущему продукту
           window.location.href = `#product/${productId}`;
         };
 
         HomeComponent.addEventListenerWithCleanup(button, "click", clickHandler);
       });
-    }, 100);
+    };
 
-    this.timeouts.push(timeoutId);
+    // Асинхронная загрузка каталога — НЕ блокирует shell.
+    (async () => {
+      try {
+        await this.loadProducts();
+        await this.loadProductsCatalog(container);
+        attachCatalogHandlers();
+        this.loadColorButtons();
+      } catch (err) {
+        console.error("Ошибка инициализации каталога:", err);
+      }
+    })();
 
-    // Асинхронно загружаем кнопки цветов для каждого продукта
-    setTimeout(() => {
-      this.loadColorButtons();
-    }, 200);
-
-    // Загружаем каталог товаров
-    setTimeout(() => {
-      this.loadProductsCatalog(container);
-    }, 300);
-
-    // Показываем cookie-баннер с небольшой задержкой
-    setTimeout(() => {
+    // Cookie-баннер
+    const cookieTimeout = setTimeout(() => {
       CookieConsentService.show();
     }, 500);
+    this.timeouts.push(cookieTimeout);
   },
 };
 
