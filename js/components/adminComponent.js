@@ -361,7 +361,7 @@ export class AdminComponent {
 
   async loadProductsWithPrices() {
     try {
-      this.productsWithPrices = await productsService.getActiveProducts();
+      this.productsWithPrices = await productsService.getActiveProducts({ source: 'admin' });
     } catch (error) {
       console.error('Failed to load products with prices:', error);
       this.productsWithPrices = [];
@@ -483,7 +483,7 @@ export class AdminComponent {
     }
     
     try {
-      const products = await productsService.getActiveProducts();
+      const products = await productsService.getActiveProducts({ source: 'admin' });
       const product = products.find(p => p.id === productId);
       return product ? product.price_rub || 0 : 0;
     } catch (error) {
