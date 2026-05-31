@@ -155,9 +155,17 @@ export const PublicProductsComponent = {
    */
   renderCategoryCards() {
     if (!this.data.categoryCards || this.data.categoryCards.length === 0) {
-      return `
+      const unavailable = productsService._source === 'none';
+      return unavailable
+        ? `
         <div class="products-empty">
-          <p>Категории товаров временно недоступны</p>
+          <p>Каталог временно недоступен. Попробуйте обновить страницу позже или включите VPN.</p>
+          <button onclick="location.reload()" class="retry-btn">Повторить попытку</button>
+        </div>
+      `
+        : `
+        <div class="products-empty">
+          <p>Каталог пока пуст</p>
         </div>
       `;
     }
