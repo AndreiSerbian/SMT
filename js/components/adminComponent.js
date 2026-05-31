@@ -361,7 +361,7 @@ export class AdminComponent {
 
   async loadProductsWithPrices() {
     try {
-      this.productsWithPrices = await productsService.getActiveProducts();
+      this.productsWithPrices = await productsService.getActiveProducts({ source: 'admin' });
     } catch (error) {
       console.error('Failed to load products with prices:', error);
       this.productsWithPrices = [];
