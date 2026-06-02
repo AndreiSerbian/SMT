@@ -27,14 +27,35 @@ const colorByHex = Object.fromEntries(colors.map(c => [c.hex_code.toUpperCase(),
 
 const STORAGE_PREFIX = `${URL}/storage/v1/object/public/product-media/`;
 
+// Hard remap for admin-uploaded products whose DB photos point to
+// /images/<artikul>_<ts>_*.jpg (files exist only in Supabase Storage, not on
+// TimeWeb). We force them to the matching local category folder.
+const ARTIKUL_PHOTO_REMAP = {
+  '0629':  ['/images/boxes with handles/gold/slide1.jpg','/images/boxes with handles/gold/slide2.jpg','/images/boxes with handles/gold/slide3.jpg'],
+  '0628':  ['/images/boxes with handles/blue velvet/slide1.jpg','/images/boxes with handles/blue velvet/slide2.jpg','/images/boxes with handles/blue velvet/slide3.jpg'],
+  '06210': ['/images/boxes with handles/olive/slide1.webp','/images/boxes with handles/olive/slide2.webp','/images/boxes with handles/olive/slide3.webp'],
+  '0626':  ['/images/boxes with handles/rose gold/slide1.webp','/images/boxes with handles/rose gold/slide2.webp'],
+  '0621':  ['/images/boxes with handles/lilac/slide1.webp','/images/boxes with handles/lilac/slide2.webp'],
+};
+
+// Artikuls that have no matching local folder yet — leave as-is, but report.
+const NEEDS_MANUAL_REVIEW = ['0641','0647','0644','0651','0657','0654'];
+
+function decodePath(s) { try { return decodeURI(s); } catch { return s; } }
+
 function toLocalPath(url) {
   if (!url) return url;
-  if (url.startsWith(STORAGE_PREFIX)) {
-    return '/' + url.slice(STORAGE_PREFIX.length); // -> /images/<folder>/<color>/slide1.webp
+  let u = url;
+  if (u.startsWith(STORAGE_PREFIX)) {
+    u = '/' + u.slice(STORAGE_PREFIX.length); // -> /images/<folder>/<color>/slide1.webp
+  } else if (!u.startsWith('http') && !u.startsWith('/')) {
+    u = '/' + u;
+  } else if (u.startsWith('http')) {
+    return u; // external — keep
   }
-  if (url.startsWith('http')) return url; // external — keep
-  if (url.startsWith('/')) return url;
-  return '/' + url;
+  u = decodePath(u);
+  u = u.replace('/boxes with handles/liliac/', '/boxes with handles/lilac/');
+  return u;
 }
 
 const slugSet = new Set();
@@ -43,7 +64,9 @@ const out = products.map(p => {
   const slug = cat ? cat.slug : null;
   if (slug) slugSet.add(slug);
   const colorName = colorByHex[(p.color_hex || '').toUpperCase()] || p.color_hex;
-  const photos = (p.photos || []).map(toLocalPath);
+  const photos = ARTIKUL_PHOTO_REMAP[p.artikul]
+    ? [...ARTIKUL_PHOTO_REMAP[p.artikul]]
+    : (p.photos || []).map(toLocalPath);
   const videos = (p.videos || []).map(toLocalPath);
   return {
     id: p.artikul,
@@ -86,6 +109,7 @@ fs.writeFileSync('public/data/catalog-version.json', JSON.stringify({
 
 console.log('version:', version);
 console.log('slugs:', [...slugSet].sort());
+console.log('NEEDS MANUAL REVIEW:', NEEDS_MANUAL_REVIEW.join(', '));
 const p0706 = out.find(p => p.artikul === '0706');
 console.log('0706:', p0706 ? { slug: p0706.category_slug, photo: p0706.photos[0] } : 'NOT FOUND');
 const handle = out.find(p => p.category_slug === 'handle-box-small');
