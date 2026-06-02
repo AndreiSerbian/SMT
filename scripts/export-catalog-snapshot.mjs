@@ -109,6 +109,7 @@ fs.writeFileSync('public/data/catalog-version.json', JSON.stringify({
 
 console.log('version:', version);
 console.log('slugs:', [...slugSet].sort());
+console.log('NEEDS MANUAL REVIEW:', NEEDS_MANUAL_REVIEW.join(', '));
 const p0706 = out.find(p => p.artikul === '0706');
 console.log('0706:', p0706 ? { slug: p0706.category_slug, photo: p0706.photos[0] } : 'NOT FOUND');
 const handle = out.find(p => p.category_slug === 'handle-box-small');
