@@ -27,14 +27,35 @@ const colorByHex = Object.fromEntries(colors.map(c => [c.hex_code.toUpperCase(),
 
 const STORAGE_PREFIX = `${URL}/storage/v1/object/public/product-media/`;
 
+// Hard remap for admin-uploaded products whose DB photos point to
+// /images/<artikul>_<ts>_*.jpg (files exist only in Supabase Storage, not on
+// TimeWeb). We force them to the matching local category folder.
+const ARTIKUL_PHOTO_REMAP = {
+  '0629':  ['/images/boxes with handles/gold/slide1.webp','/images/boxes with handles/gold/slide2.webp','/images/boxes with handles/gold/slide3.webp'],
+  '0628':  ['/images/boxes with handles/blue velvet/slide1.webp','/images/boxes with handles/blue velvet/slide2.webp'],
+  '06210': ['/images/boxes with handles/olive/slide1.webp','/images/boxes with handles/olive/slide2.webp','/images/boxes with handles/olive/slide3.webp'],
+  '0626':  ['/images/boxes with handles/rose gold/slide1.webp','/images/boxes with handles/rose gold/slide2.webp'],
+  '0621':  ['/images/boxes with handles/lilac/slide1.webp','/images/boxes with handles/lilac/slide2.webp'],
+};
+
+// Artikuls that have no matching local folder yet — leave as-is, but report.
+const NEEDS_MANUAL_REVIEW = ['0641','0647','0644','0651','0657','0654'];
+
+function decodePath(s) { try { return decodeURI(s); } catch { return s; } }
+
 function toLocalPath(url) {
   if (!url) return url;
-  if (url.startsWith(STORAGE_PREFIX)) {
-    return '/' + url.slice(STORAGE_PREFIX.length); // -> /images/<folder>/<color>/slide1.webp
+  let u = url;
+  if (u.startsWith(STORAGE_PREFIX)) {
+    u = '/' + u.slice(STORAGE_PREFIX.length); // -> /images/<folder>/<color>/slide1.webp
+  } else if (!u.startsWith('http') && !u.startsWith('/')) {
+    u = '/' + u;
+  } else if (u.startsWith('http')) {
+    return u; // external — keep
   }
-  if (url.startsWith('http')) return url; // external — keep
-  if (url.startsWith('/')) return url;
-  return '/' + url;
+  u = decodePath(u);
+  u = u.replace('/boxes with handles/liliac/', '/boxes with handles/lilac/');
+  return u;
 }
 
 const slugSet = new Set();
