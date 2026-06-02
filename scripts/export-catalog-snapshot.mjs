@@ -64,7 +64,9 @@ const out = products.map(p => {
   const slug = cat ? cat.slug : null;
   if (slug) slugSet.add(slug);
   const colorName = colorByHex[(p.color_hex || '').toUpperCase()] || p.color_hex;
-  const photos = (p.photos || []).map(toLocalPath);
+  const photos = ARTIKUL_PHOTO_REMAP[p.artikul]
+    ? [...ARTIKUL_PHOTO_REMAP[p.artikul]]
+    : (p.photos || []).map(toLocalPath);
   const videos = (p.videos || []).map(toLocalPath);
   return {
     id: p.artikul,
