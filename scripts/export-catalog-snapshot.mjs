@@ -31,8 +31,8 @@ const STORAGE_PREFIX = `${URL}/storage/v1/object/public/product-media/`;
 // /images/<artikul>_<ts>_*.jpg (files exist only in Supabase Storage, not on
 // TimeWeb). We force them to the matching local category folder.
 const ARTIKUL_PHOTO_REMAP = {
-  '0629':  ['/images/boxes with handles/gold/slide1.webp','/images/boxes with handles/gold/slide2.webp','/images/boxes with handles/gold/slide3.webp'],
-  '0628':  ['/images/boxes with handles/blue velvet/slide1.webp','/images/boxes with handles/blue velvet/slide2.webp'],
+  '0629':  ['/images/boxes with handles/gold/slide1.jpg','/images/boxes with handles/gold/slide2.jpg','/images/boxes with handles/gold/slide3.jpg'],
+  '0628':  ['/images/boxes with handles/blue velvet/slide1.jpg','/images/boxes with handles/blue velvet/slide2.jpg','/images/boxes with handles/blue velvet/slide3.jpg'],
   '06210': ['/images/boxes with handles/olive/slide1.webp','/images/boxes with handles/olive/slide2.webp','/images/boxes with handles/olive/slide3.webp'],
   '0626':  ['/images/boxes with handles/rose gold/slide1.webp','/images/boxes with handles/rose gold/slide2.webp'],
   '0621':  ['/images/boxes with handles/lilac/slide1.webp','/images/boxes with handles/lilac/slide2.webp'],
