@@ -403,14 +403,14 @@
       },
       "weight": 450,
       "photo": [
-        "/images/boxes with handles/gold/slide1.webp",
-        "/images/boxes with handles/gold/slide2.webp",
-        "/images/boxes with handles/gold/slide3.webp"
+        "/images/boxes with handles/gold/slide1.jpg",
+        "/images/boxes with handles/gold/slide2.jpg",
+        "/images/boxes with handles/gold/slide3.jpg"
       ],
       "photos": [
-        "/images/boxes with handles/gold/slide1.webp",
-        "/images/boxes with handles/gold/slide2.webp",
-        "/images/boxes with handles/gold/slide3.webp"
+        "/images/boxes with handles/gold/slide1.jpg",
+        "/images/boxes with handles/gold/slide2.jpg",
+        "/images/boxes with handles/gold/slide3.jpg"
       ],
       "videos": [
         "/videos/Video%203.mp4"
@@ -437,12 +437,14 @@
       },
       "weight": 450,
       "photo": [
-        "/images/boxes with handles/blue velvet/slide1.webp",
-        "/images/boxes with handles/blue velvet/slide2.webp"
+        "/images/boxes with handles/blue velvet/slide1.jpg",
+        "/images/boxes with handles/blue velvet/slide2.jpg",
+        "/images/boxes with handles/blue velvet/slide3.jpg"
       ],
       "photos": [
-        "/images/boxes with handles/blue velvet/slide1.webp",
-        "/images/boxes with handles/blue velvet/slide2.webp"
+        "/images/boxes with handles/blue velvet/slide1.jpg",
+        "/images/boxes with handles/blue velvet/slide2.jpg",
+        "/images/boxes with handles/blue velvet/slide3.jpg"
       ],
       "videos": [
         "/videos/Video%203.mp4"
