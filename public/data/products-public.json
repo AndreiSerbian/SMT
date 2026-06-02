@@ -163,7 +163,7 @@
         "/images/full cover small/Gold/slide4.webp"
       ],
       "videos": [
-        "/videos/Video%204.mp4"
+        "/videos/Video 4.mp4"
       ]
     },
     {
@@ -199,7 +199,7 @@
         "/images/full cover small/Silver/slide4.webp"
       ],
       "videos": [
-        "/videos/Video%204.mp4"
+        "/videos/Video 4.mp4"
       ]
     },
     {
@@ -235,7 +235,7 @@
         "/images/full cover small/Blue/slide4.webp"
       ],
       "videos": [
-        "/videos/Video%204.mp4"
+        "/videos/Video 4.mp4"
       ]
     },
     {
@@ -271,7 +271,7 @@
         "/images/full cover small/Orange/slide4.webp"
       ],
       "videos": [
-        "/videos/Video%204.mp4"
+        "/videos/Video 4.mp4"
       ]
     },
     {
@@ -307,7 +307,7 @@
         "/images/full cover small/Red/slide4.webp"
       ],
       "videos": [
-        "/videos/Video%204.mp4"
+        "/videos/Video 4.mp4"
       ]
     },
     {
@@ -343,7 +343,7 @@
         "/images/full cover small/White/slide4.webp"
       ],
       "videos": [
-        "/videos/Video%204.mp4"
+        "/videos/Video 4.mp4"
       ]
     },
     {
@@ -379,7 +379,7 @@
         "/images/full cover small/Black/slide4.webp"
       ],
       "videos": [
-        "/videos/Video%204.mp4"
+        "/videos/Video 4.mp4"
       ]
     },
     {
@@ -403,14 +403,14 @@
       },
       "weight": 450,
       "photo": [
-        "/images/0629_1772524558444_1.jpg",
-        "/images/0629_1772524558579_2.jpg",
-        "/images/0629_1772524558693_3.jpg"
+        "/images/boxes with handles/gold/slide1.webp",
+        "/images/boxes with handles/gold/slide2.webp",
+        "/images/boxes with handles/gold/slide3.webp"
       ],
       "photos": [
-        "/images/0629_1772524558444_1.jpg",
-        "/images/0629_1772524558579_2.jpg",
-        "/images/0629_1772524558693_3.jpg"
+        "/images/boxes with handles/gold/slide1.webp",
+        "/images/boxes with handles/gold/slide2.webp",
+        "/images/boxes with handles/gold/slide3.webp"
       ],
       "videos": [
         "/videos/Video%203.mp4"
@@ -437,14 +437,12 @@
       },
       "weight": 450,
       "photo": [
-        "/images/0628_1772524366355_1.jpg",
-        "/images/0628_1772524366598_2.jpg",
-        "/images/0628_1772524366739_3.jpg"
+        "/images/boxes with handles/blue velvet/slide1.webp",
+        "/images/boxes with handles/blue velvet/slide2.webp"
       ],
       "photos": [
-        "/images/0628_1772524366355_1.jpg",
-        "/images/0628_1772524366598_2.jpg",
-        "/images/0628_1772524366739_3.jpg"
+        "/images/boxes with handles/blue velvet/slide1.webp",
+        "/images/boxes with handles/blue velvet/slide2.webp"
       ],
       "videos": [
         "/videos/Video%203.mp4"
@@ -471,14 +469,14 @@
       },
       "weight": 450,
       "photo": [
-        "/images/06210_1772522829196_1.jpg",
-        "/images/06210_1772522836863_1.jpg",
-        "/images/06210_1772522844055_1.jpg"
+        "/images/boxes with handles/olive/slide1.webp",
+        "/images/boxes with handles/olive/slide2.webp",
+        "/images/boxes with handles/olive/slide3.webp"
       ],
       "photos": [
-        "/images/06210_1772522829196_1.jpg",
-        "/images/06210_1772522836863_1.jpg",
-        "/images/06210_1772522844055_1.jpg"
+        "/images/boxes with handles/olive/slide1.webp",
+        "/images/boxes with handles/olive/slide2.webp",
+        "/images/boxes with handles/olive/slide3.webp"
       ],
       "videos": [
         "/videos/Video%203.mp4"
@@ -505,19 +503,19 @@
       },
       "weight": 410,
       "photo": [
-        "/images/big%20with%20bow/blue%20velvet/slide1.webp",
-        "/images/big%20with%20bow/blue%20velvet/slide2.webp",
-        "/images/big%20with%20bow/blue%20velvet/slide3.webp",
-        "/images/big%20with%20bow/blue%20velvet/slide4.webp"
+        "/images/big with bow/blue velvet/slide1.webp",
+        "/images/big with bow/blue velvet/slide2.webp",
+        "/images/big with bow/blue velvet/slide3.webp",
+        "/images/big with bow/blue velvet/slide4.webp"
       ],
       "photos": [
-        "/images/big%20with%20bow/blue%20velvet/slide1.webp",
-        "/images/big%20with%20bow/blue%20velvet/slide2.webp",
-        "/images/big%20with%20bow/blue%20velvet/slide3.webp",
-        "/images/big%20with%20bow/blue%20velvet/slide4.webp"
+        "/images/big with bow/blue velvet/slide1.webp",
+        "/images/big with bow/blue velvet/slide2.webp",
+        "/images/big with bow/blue velvet/slide3.webp",
+        "/images/big with bow/blue velvet/slide4.webp"
       ],
       "videos": [
-        "/videos/Video%201.mp4"
+        "/videos/Video 1.mp4"
       ]
     },
     {
@@ -541,19 +539,19 @@
       },
       "weight": 320,
       "photo": [
-        "/images/medium%20with%20bow/peach/slide1.webp",
-        "/images/medium%20with%20bow/peach/slide2.webp",
-        "/images/medium%20with%20bow/peach/slide3.webp",
-        "/images/medium%20with%20bow/peach/slide4.webp"
+        "/images/medium with bow/peach/slide1.webp",
+        "/images/medium with bow/peach/slide2.webp",
+        "/images/medium with bow/peach/slide3.webp",
+        "/images/medium with bow/peach/slide4.webp"
       ],
       "photos": [
-        "/images/medium%20with%20bow/peach/slide1.webp",
-        "/images/medium%20with%20bow/peach/slide2.webp",
-        "/images/medium%20with%20bow/peach/slide3.webp",
-        "/images/medium%20with%20bow/peach/slide4.webp"
+        "/images/medium with bow/peach/slide1.webp",
+        "/images/medium with bow/peach/slide2.webp",
+        "/images/medium with bow/peach/slide3.webp",
+        "/images/medium with bow/peach/slide4.webp"
       ],
       "videos": [
-        "/videos/Video%201.mp4"
+        "/videos/Video 1.mp4"
       ]
     },
     {
@@ -587,7 +585,7 @@
         "/images/0643_1760264710593_3.jpg"
       ],
       "videos": [
-        "/videos/Video%201.mp4"
+        "/videos/Video 1.mp4"
       ]
     },
     {
@@ -611,15 +609,15 @@
       },
       "weight": 430,
       "photo": [
-        "/images/boxes%20with%20handles/pink/slide1.webp",
-        "/images/boxes%20with%20handles/pink/slide2.webp"
+        "/images/boxes with handles/pink/slide1.webp",
+        "/images/boxes with handles/pink/slide2.webp"
       ],
       "photos": [
-        "/images/boxes%20with%20handles/pink/slide1.webp",
-        "/images/boxes%20with%20handles/pink/slide2.webp"
+        "/images/boxes with handles/pink/slide1.webp",
+        "/images/boxes with handles/pink/slide2.webp"
       ],
       "videos": [
-        "/videos/Video%203.mp4"
+        "/videos/Video 3.mp4"
       ]
     },
     {
@@ -651,7 +649,7 @@
         "/images/0651_1759657601374_1.jpg"
       ],
       "videos": [
-        "/videos/Video%201.mp4"
+        "/videos/Video 1.mp4"
       ]
     },
     {
@@ -685,7 +683,7 @@
         "/images/0647_1760249366874_3.jpg"
       ],
       "videos": [
-        "/videos/Video%201.mp4"
+        "/videos/Video 1.mp4"
       ]
     },
     {
@@ -717,7 +715,7 @@
         "/images/boxes with handles/orange/slide2.webp"
       ],
       "videos": [
-        "/videos/Video%203.mp4"
+        "/videos/Video 3.mp4"
       ]
     },
     {
@@ -749,7 +747,7 @@
         "/images/big with bow/pink/slide2.webp"
       ],
       "videos": [
-        "/videos/Video%200.mp4"
+        "/videos/Video 0.mp4"
       ]
     },
     {
@@ -773,19 +771,19 @@
       },
       "weight": 410,
       "photo": [
-        "/images/big%20with%20bow/gold/slide1.webp",
-        "/images/big%20with%20bow/gold/slide2.webp",
-        "/images/big%20with%20bow/gold/slide3.webp",
-        "/images/big%20with%20bow/gold/slide4.webp"
+        "/images/big with bow/gold/slide1.webp",
+        "/images/big with bow/gold/slide2.webp",
+        "/images/big with bow/gold/slide3.webp",
+        "/images/big with bow/gold/slide4.webp"
       ],
       "photos": [
-        "/images/big%20with%20bow/gold/slide1.webp",
-        "/images/big%20with%20bow/gold/slide2.webp",
-        "/images/big%20with%20bow/gold/slide3.webp",
-        "/images/big%20with%20bow/gold/slide4.webp"
+        "/images/big with bow/gold/slide1.webp",
+        "/images/big with bow/gold/slide2.webp",
+        "/images/big with bow/gold/slide3.webp",
+        "/images/big with bow/gold/slide4.webp"
       ],
       "videos": [
-        "/videos/Video%202.mp4"
+        "/videos/Video 2.mp4"
       ]
     },
     {
@@ -821,7 +819,7 @@
         "/images/small with bow/vanilla/slide4.webp"
       ],
       "videos": [
-        "/videos/Video%202.mp4"
+        "/videos/Video 2.mp4"
       ]
     },
     {
@@ -853,7 +851,7 @@
         "/images/0657_1771348397143_1.jpg"
       ],
       "videos": [
-        "/videos/Video%201.mp4"
+        "/videos/Video 1.mp4"
       ]
     },
     {
@@ -885,7 +883,7 @@
         "/images/small with bow/orange/slide2.webp"
       ],
       "videos": [
-        "/videos/Video%200.mp4"
+        "/videos/Video 0.mp4"
       ]
     },
     {
@@ -917,7 +915,7 @@
         "/images/small with bow/red/slide2.webp"
       ],
       "videos": [
-        "/videos/Video%200.mp4"
+        "/videos/Video 0.mp4"
       ]
     },
     {
@@ -941,19 +939,19 @@
       },
       "weight": 320,
       "photo": [
-        "/images/medium%20with%20bow/black%20moire/slide1.webp",
-        "/images/medium%20with%20bow/black%20moire/slide2.webp",
-        "/images/medium%20with%20bow/black%20moire/slide3.webp",
-        "/images/medium%20with%20bow/black%20moire/slide4.webp"
+        "/images/medium with bow/black moire/slide1.webp",
+        "/images/medium with bow/black moire/slide2.webp",
+        "/images/medium with bow/black moire/slide3.webp",
+        "/images/medium with bow/black moire/slide4.webp"
       ],
       "photos": [
-        "/images/medium%20with%20bow/black%20moire/slide1.webp",
-        "/images/medium%20with%20bow/black%20moire/slide2.webp",
-        "/images/medium%20with%20bow/black%20moire/slide3.webp",
-        "/images/medium%20with%20bow/black%20moire/slide4.webp"
+        "/images/medium with bow/black moire/slide1.webp",
+        "/images/medium with bow/black moire/slide2.webp",
+        "/images/medium with bow/black moire/slide3.webp",
+        "/images/medium with bow/black moire/slide4.webp"
       ],
       "videos": [
-        "/videos/Video%201.mp4"
+        "/videos/Video 1.mp4"
       ]
     },
     {
@@ -985,7 +983,7 @@
         "/images/medium with bow/orange/slide2.webp"
       ],
       "videos": [
-        "/videos/Video%200.mp4"
+        "/videos/Video 0.mp4"
       ]
     },
     {
@@ -1017,7 +1015,7 @@
         "/images/big with bow/tiffany/slide2.webp"
       ],
       "videos": [
-        "/videos/Video%200.mp4"
+        "/videos/Video 0.mp4"
       ]
     },
     {
@@ -1049,7 +1047,7 @@
         "/images/0656_1759337108433_2.jpg"
       ],
       "videos": [
-        "/videos/Video%201.mp4"
+        "/videos/Video 1.mp4"
       ]
     },
     {
@@ -1109,19 +1107,19 @@
       },
       "weight": 410,
       "photo": [
-        "/images/big%20with%20bow/blue%20ice/slide1.webp",
-        "/images/big%20with%20bow/blue%20ice/slide2.webp",
-        "/images/big%20with%20bow/blue%20ice/slide3.webp",
-        "/images/big%20with%20bow/blue%20ice/slide4.webp"
+        "/images/big with bow/blue ice/slide1.webp",
+        "/images/big with bow/blue ice/slide2.webp",
+        "/images/big with bow/blue ice/slide3.webp",
+        "/images/big with bow/blue ice/slide4.webp"
       ],
       "photos": [
-        "/images/big%20with%20bow/blue%20ice/slide1.webp",
-        "/images/big%20with%20bow/blue%20ice/slide2.webp",
-        "/images/big%20with%20bow/blue%20ice/slide3.webp",
-        "/images/big%20with%20bow/blue%20ice/slide4.webp"
+        "/images/big with bow/blue ice/slide1.webp",
+        "/images/big with bow/blue ice/slide2.webp",
+        "/images/big with bow/blue ice/slide3.webp",
+        "/images/big with bow/blue ice/slide4.webp"
       ],
       "videos": [
-        "/videos/Video%202.mp4"
+        "/videos/Video 2.mp4"
       ]
     },
     {
@@ -1153,7 +1151,7 @@
         "/images/medium with bow/red/slide2.webp"
       ],
       "videos": [
-        "/videos/Video%200.mp4"
+        "/videos/Video 0.mp4"
       ]
     },
     {
@@ -1185,7 +1183,7 @@
         "/images/medium with bow/tiffany/slide2.webp"
       ],
       "videos": [
-        "/videos/Video%200.mp4"
+        "/videos/Video 0.mp4"
       ]
     },
     {
@@ -1253,7 +1251,7 @@
         "/images/big with bow/red/slide2.webp"
       ],
       "videos": [
-        "/videos/Video%200.mp4"
+        "/videos/Video 0.mp4"
       ]
     },
     {
@@ -1277,19 +1275,19 @@
       },
       "weight": 440,
       "photo": [
-        "/images/big%20with%20bow/black/slide1.webp",
-        "/images/big%20with%20bow/black/slide2.webp",
-        "/images/big%20with%20bow/black/slide3.webp",
-        "/images/big%20with%20bow/black/slide4.webp"
+        "/images/big with bow/black/slide1.webp",
+        "/images/big with bow/black/slide2.webp",
+        "/images/big with bow/black/slide3.webp",
+        "/images/big with bow/black/slide4.webp"
       ],
       "photos": [
-        "/images/big%20with%20bow/black/slide1.webp",
-        "/images/big%20with%20bow/black/slide2.webp",
-        "/images/big%20with%20bow/black/slide3.webp",
-        "/images/big%20with%20bow/black/slide4.webp"
+        "/images/big with bow/black/slide1.webp",
+        "/images/big with bow/black/slide2.webp",
+        "/images/big with bow/black/slide3.webp",
+        "/images/big with bow/black/slide4.webp"
       ],
       "videos": [
-        "/videos/Video%200.mp4"
+        "/videos/Video 0.mp4"
       ]
     },
     {
@@ -1357,7 +1355,7 @@
         "/images/small with bow/white/slide4.webp"
       ],
       "videos": [
-        "/videos/Video%200.mp4"
+        "/videos/Video 0.mp4"
       ]
     },
     {
@@ -1393,7 +1391,7 @@
         "/images/small with bow/blue ice/slide4.webp"
       ],
       "videos": [
-        "/videos/Video%202.mp4"
+        "/videos/Video 2.mp4"
       ]
     },
     {
@@ -1429,7 +1427,7 @@
         "/images/small with bow/gold/slide4.webp"
       ],
       "videos": [
-        "/videos/Video%202.mp4"
+        "/videos/Video 2.mp4"
       ]
     },
     {
@@ -1465,7 +1463,7 @@
         "/images/big with bow/white/slide4.webp"
       ],
       "videos": [
-        "/videos/Video%200.mp4"
+        "/videos/Video 0.mp4"
       ]
     },
     {
@@ -1489,12 +1487,12 @@
       },
       "weight": 430,
       "photo": [
-        "/images/boxes%20with%20handles/liliac/slide1.webp",
-        "/images/boxes%20with%20handles/liliac/slide2.webp"
+        "/images/boxes with handles/lilac/slide1.webp",
+        "/images/boxes with handles/lilac/slide2.webp"
       ],
       "photos": [
-        "/images/boxes%20with%20handles/liliac/slide1.webp",
-        "/images/boxes%20with%20handles/liliac/slide2.webp"
+        "/images/boxes with handles/lilac/slide1.webp",
+        "/images/boxes with handles/lilac/slide2.webp"
       ],
       "videos": [
         "/videos/Video%203.mp4"
@@ -1529,7 +1527,7 @@
         "/images/big with bow/orange/slide2.webp"
       ],
       "videos": [
-        "/videos/Video%200.mp4"
+        "/videos/Video 0.mp4"
       ]
     },
     {
@@ -1565,7 +1563,7 @@
         "/images/medium with bow/black/slide4.webp"
       ],
       "videos": [
-        "/videos/Video%200.mp4"
+        "/videos/Video 0.mp4"
       ]
     },
     {
@@ -1597,7 +1595,7 @@
         "/images/boxes with handles/black/slide2.webp"
       ],
       "videos": [
-        "/videos/Video%203.mp4"
+        "/videos/Video 3.mp4"
       ]
     },
     {
@@ -1633,7 +1631,7 @@
         "/images/medium with bow/lavender/slide4.webp"
       ],
       "videos": [
-        "/videos/Video%200.mp4"
+        "/videos/Video 0.mp4"
       ]
     },
     {
@@ -1665,7 +1663,7 @@
         "/images/boxes with handles/white/slide2.webp"
       ],
       "videos": [
-        "/videos/Video%203.mp4"
+        "/videos/Video 3.mp4"
       ]
     },
     {
@@ -1697,7 +1695,7 @@
         "/images/boxes with handles/silver/slide2.webp"
       ],
       "videos": [
-        "/videos/Video%203.mp4"
+        "/videos/Video 3.mp4"
       ]
     },
     {
@@ -1721,12 +1719,12 @@
       },
       "weight": 430,
       "photo": [
-        "/images/boxes with handles/gold/slide1.webp",
-        "/images/boxes with handles/gold/slide2.webp"
+        "/images/boxes with handles/rose gold/slide1.webp",
+        "/images/boxes with handles/rose gold/slide2.webp"
       ],
       "photos": [
-        "/images/boxes with handles/gold/slide1.webp",
-        "/images/boxes with handles/gold/slide2.webp"
+        "/images/boxes with handles/rose gold/slide1.webp",
+        "/images/boxes with handles/rose gold/slide2.webp"
       ],
       "videos": [
         "/videos/Video%203.mp4"
@@ -1797,7 +1795,7 @@
         "/images/small with bow/pink/slide2.webp"
       ],
       "videos": [
-        "/videos/Video%200.mp4"
+        "/videos/Video 0.mp4"
       ]
     },
     {
@@ -1833,7 +1831,7 @@
         "/images/big with bow/vanilla/slide4.webp"
       ],
       "videos": [
-        "/videos/Video%202.mp4"
+        "/videos/Video 2.mp4"
       ]
     },
     {
@@ -1865,7 +1863,7 @@
         "/images/small with bow/tiffany/slide2.webp"
       ],
       "videos": [
-        "/videos/Video%200.mp4"
+        "/videos/Video 0.mp4"
       ]
     },
     {
@@ -1901,7 +1899,7 @@
         "/images/small with bow/black/slide4.webp"
       ],
       "videos": [
-        "/videos/Video%200.mp4"
+        "/videos/Video 0.mp4"
       ]
     },
     {
@@ -1969,7 +1967,7 @@
         "/images/medium with bow/white/slide4.webp"
       ],
       "videos": [
-        "/videos/Video%200.mp4"
+        "/videos/Video 0.mp4"
       ]
     },
     {
@@ -2001,7 +1999,7 @@
         "/images/boxes with handles/red/slide2.webp"
       ],
       "videos": [
-        "/videos/Video%203.mp4"
+        "/videos/Video 3.mp4"
       ]
     },
     {
