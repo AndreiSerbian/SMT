@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-02T22:10:11.819Z",
+  "generatedAt": "2026-06-10T10:03:55.520Z",
   "categories": [
     {
       "id": "1819e393-a1b5-4217-aca2-980325874675",
@@ -413,7 +413,7 @@
         "/images/boxes with handles/gold/slide3.jpg"
       ],
       "videos": [
-        "/videos/Video%203.mp4"
+        "/videos/Video 3.mp4"
       ]
     },
     {
@@ -447,7 +447,7 @@
         "/images/boxes with handles/blue velvet/slide3.jpg"
       ],
       "videos": [
-        "/videos/Video%203.mp4"
+        "/videos/Video 3.mp4"
       ]
     },
     {
@@ -481,7 +481,7 @@
         "/images/boxes with handles/olive/slide3.webp"
       ],
       "videos": [
-        "/videos/Video%203.mp4"
+        "/videos/Video 3.mp4"
       ]
     },
     {
@@ -577,14 +577,14 @@
       },
       "weight": 320,
       "photo": [
-        "/images/0643_1760264710067_1.jpg",
-        "/images/0643_1760264710467_2.jpg",
-        "/images/0643_1760264710593_3.jpg"
+        "/images/medium with bow/olive/slide1.webp",
+        "/images/medium with bow/olive/slide2.webp",
+        "/images/medium with bow/olive/slide3.webp"
       ],
       "photos": [
-        "/images/0643_1760264710067_1.jpg",
-        "/images/0643_1760264710467_2.jpg",
-        "/images/0643_1760264710593_3.jpg"
+        "/images/medium with bow/olive/slide1.webp",
+        "/images/medium with bow/olive/slide2.webp",
+        "/images/medium with bow/olive/slide3.webp"
       ],
       "videos": [
         "/videos/Video 1.mp4"
@@ -643,12 +643,12 @@
       },
       "weight": 410,
       "photo": [
-        "/images/0651_1759657588717_1.jpg",
-        "/images/0651_1759657601374_1.jpg"
+        "/images/big with bow/olive/slide1.webp",
+        "/images/big with bow/olive/slide2.webp"
       ],
       "photos": [
-        "/images/0651_1759657588717_1.jpg",
-        "/images/0651_1759657601374_1.jpg"
+        "/images/big with bow/olive/slide1.webp",
+        "/images/big with bow/olive/slide2.webp"
       ],
       "videos": [
         "/videos/Video 1.mp4"
@@ -675,14 +675,14 @@
       },
       "weight": 320,
       "photo": [
-        "/images/0647_1760249366621_1.jpg",
-        "/images/0647_1760249366733_2.jpg",
-        "/images/0647_1760249366874_3.jpg"
+        "/images/medium with bow/silver/slide1.webp",
+        "/images/medium with bow/silver/slide2.webp",
+        "/images/medium with bow/silver/slide3.webp"
       ],
       "photos": [
-        "/images/0647_1760249366621_1.jpg",
-        "/images/0647_1760249366733_2.jpg",
-        "/images/0647_1760249366874_3.jpg"
+        "/images/medium with bow/silver/slide1.webp",
+        "/images/medium with bow/silver/slide2.webp",
+        "/images/medium with bow/silver/slide3.webp"
       ],
       "videos": [
         "/videos/Video 1.mp4"
@@ -845,12 +845,12 @@
       },
       "weight": 410,
       "photo": [
-        "/images/0657_1771348397328_2.jpg",
-        "/images/0657_1771348397143_1.jpg"
+        "/images/big with bow/silver/slide1.webp",
+        "/images/big with bow/silver/slide2.webp"
       ],
       "photos": [
-        "/images/0657_1771348397328_2.jpg",
-        "/images/0657_1771348397143_1.jpg"
+        "/images/big with bow/silver/slide1.webp",
+        "/images/big with bow/silver/slide2.webp"
       ],
       "videos": [
         "/videos/Video 1.mp4"
@@ -1041,12 +1041,12 @@
       },
       "weight": 410,
       "photo": [
-        "/images/0656_1759337108295_1.jpg",
-        "/images/0656_1759337108433_2.jpg"
+        "/images/big with bow/crimson/slide1.webp",
+        "/images/big with bow/crimson/slide2.webp"
       ],
       "photos": [
-        "/images/0656_1759337108295_1.jpg",
-        "/images/0656_1759337108433_2.jpg"
+        "/images/big with bow/crimson/slide1.webp",
+        "/images/big with bow/crimson/slide2.webp"
       ],
       "videos": [
         "/videos/Video 1.mp4"
@@ -1313,14 +1313,14 @@
       },
       "weight": 320,
       "photo": [
-        "/images/0642_1760250965227_1.jpg",
-        "/images/0642_1760250965426_2.jpg",
-        "/images/0642_1760250965630_3.jpg"
+        "/images/medium with bow/crimson/slide1.webp",
+        "/images/medium with bow/crimson/slide2.webp",
+        "/images/medium with bow/crimson/slide3.webp"
       ],
       "photos": [
-        "/images/0642_1760250965227_1.jpg",
-        "/images/0642_1760250965426_2.jpg",
-        "/images/0642_1760250965630_3.jpg"
+        "/images/medium with bow/crimson/slide1.webp",
+        "/images/medium with bow/crimson/slide2.webp",
+        "/images/medium with bow/crimson/slide3.webp"
       ],
       "videos": []
     },
@@ -1497,7 +1497,7 @@
         "/images/boxes with handles/lilac/slide2.webp"
       ],
       "videos": [
-        "/videos/Video%203.mp4"
+        "/videos/Video 3.mp4"
       ]
     },
     {
@@ -1729,7 +1729,7 @@
         "/images/boxes with handles/rose gold/slide2.webp"
       ],
       "videos": [
-        "/videos/Video%203.mp4"
+        "/videos/Video 3.mp4"
       ]
     },
     {
@@ -2041,5 +2041,5 @@
       ]
     }
   ],
-  "version": "f7e8f248"
+  "version": "27c00555"
 }
