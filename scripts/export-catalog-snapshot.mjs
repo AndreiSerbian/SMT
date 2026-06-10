@@ -36,10 +36,17 @@ const ARTIKUL_PHOTO_REMAP = {
   '06210': ['/images/boxes with handles/olive/slide1.webp','/images/boxes with handles/olive/slide2.webp','/images/boxes with handles/olive/slide3.webp'],
   '0626':  ['/images/boxes with handles/rose gold/slide1.webp','/images/boxes with handles/rose gold/slide2.webp'],
   '0621':  ['/images/boxes with handles/lilac/slide1.webp','/images/boxes with handles/lilac/slide2.webp'],
+  // Admin-uploaded photos migrated from Supabase Storage → TimeWeb local folders.
+  '0641':  ['/images/medium with bow/olive/slide1.webp','/images/medium with bow/olive/slide2.webp','/images/medium with bow/olive/slide3.webp'],
+  '0644':  ['/images/medium with bow/crimson/slide1.webp','/images/medium with bow/crimson/slide2.webp','/images/medium with bow/crimson/slide3.webp'],
+  '0647':  ['/images/medium with bow/silver/slide1.webp','/images/medium with bow/silver/slide2.webp','/images/medium with bow/silver/slide3.webp'],
+  '0651':  ['/images/big with bow/olive/slide1.webp','/images/big with bow/olive/slide2.webp'],
+  '0654':  ['/images/big with bow/crimson/slide1.webp','/images/big with bow/crimson/slide2.webp'],
+  '0657':  ['/images/big with bow/silver/slide1.webp','/images/big with bow/silver/slide2.webp'],
 };
 
 // Artikuls that have no matching local folder yet — leave as-is, but report.
-const NEEDS_MANUAL_REVIEW = ['0641','0647','0644','0651','0657','0654'];
+const NEEDS_MANUAL_REVIEW = [];
 
 function decodePath(s) { try { return decodeURI(s); } catch { return s; } }
 
