@@ -57,7 +57,8 @@ export function resolveImageUrl(originalUrl) {
   if (originalUrl.startsWith('/images/') || originalUrl.startsWith('/videos/')) return originalUrl;
   const storagePath = extractStoragePathFromSupabaseUrl(originalUrl);
   if (!storagePath) return originalUrl;
-  const normalized = normalizeMediaPath(storagePath);
+  const cleaned = storagePath.replace(/^\/+/, '');
+  const normalized = normalizeMediaPath(cleaned);
   if (manifestFiles && manifestFiles[normalized]) return toLocalPath(normalized);
   return originalUrl;
 }
