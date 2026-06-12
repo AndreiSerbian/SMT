@@ -355,10 +355,10 @@ export const PublicProductsComponent = {
 
   getImageUrl(photo) {
     if (!photo) return '';
-    const absolute = photo.startsWith('http')
-      ? photo
-      : `https://bsndismiessofvhglzrv.supabase.co/storage/v1/object/public/product-media/${photo}`;
-    return resolveImageUrl(absolute);
+    if (photo.startsWith('http')) return resolveImageUrl(photo);
+    if (photo.startsWith('/images/') || photo.startsWith('/videos/')) return resolveImageUrl(photo);
+    if (photo.startsWith('images/') || photo.startsWith('videos/')) return resolveImageUrl('/' + photo);
+    return resolveImageUrl(`https://bsndismiessofvhglzrv.supabase.co/storage/v1/object/public/product-media/${photo}`);
   },
 
   renderProductCard(product) {

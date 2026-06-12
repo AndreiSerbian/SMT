@@ -1,106 +1,84 @@
-# Shell-first рендер главной + чистка видимого SEO fallback
+## Проблема
 
-## 1. Текущее поведение (узкое место)
+На главной странице карточки категорий показывают пустые слайды или загружаются по 1–3 секунды, тогда как страница товара рендерит мгновенно.
 
-```text
-GET / → index.html
-  └─ <div id="app"> содержит большой видимый <main class="seo-fallback">
-     (H1, sub, 2 CTA, 2 grid секции по 6 карточек, блок «Коллекция»,
-      footer + inline <style>.seo-fallback{…}). Пользователь видит
-      это как «другой сайт».
-  └─ js/app.js (module).
+## Диагностика (по сети из preview)
 
-app.js → DOMContentLoaded → Router + initApp → HomeComponent.render(#app)
-  └─ await this.loadProducts()         ← блокирует первый paint
-  └─ await cartService.renderCart()    ← тоже до innerHTML
-  └─ container.innerHTML = `<nav>…<hero>…секции…
-                  #products-catalog-container (loader)…footer…cart`
-  └─ loadProductsCatalog(container) — уже async, try/catch,
-     локальный spinner, Swiper и color buttons после вставки HTML.
+Все фото категорий на главной грузятся с Supabase, а не локально. URL’ы выглядят так:
+
+```
+https://bsndismiessofvhglzrv.supabase.co/storage/v1/object/public/product-media//images/medium%20with%20bow/peach/slide1.webp
+                                                                              ^^ двойной слэш
 ```
 
-`loadProductsCatalog()` устроен правильно — его НЕ переписываем,
-только вызываем позже (после первого paint shell-а).
+Часть запросов даже падает с `net::ERR_BLOCKED_BY_ORB` (например, `boxes with handles/gold/*.jpg` — этих файлов в Supabase нет, локально они тоже не в манифесте webp). Из-за этого слайды на главной пустые или медленные.
 
-## 2. Что меняем
+## Причина
 
-| File | Change | Risk |
-|---|---|---|
-| `index.html` | Удалить весь `<main class="seo-fallback">…</main>` и блок `<style>.seo-fallback{…}</style>`. Оставить `<div id="app"></div>` пустым и сразу после него короткий `<noscript>Для работы каталога включите JavaScript.</noscript>`. `<head>` (title, description, canonical, OG, Twitter, favicon, Clarity, gtag, yandex-verification, FontAwesome, gpteng) НЕ трогаем. | Низкий |
-| `js/components/homeComponent.js` | 1) Разбить `render(container)` на три метода: `renderShell(container)` (синхронно, без `await`), `hydrateStaticUI(container)` (бургер-меню, cookie consent, обработчики nav/cart, init пустого cart modal), `loadAndRenderCatalog(container)` (вызывает уже существующий `loadProductsCatalog`). 2) Убрать `await this.loadProducts()` и `await cartService.renderCart()` ДО первого `container.innerHTML`. 3) Cart modal вставлять как пустой shell `<div id="cartModal" class="hidden">…</div>`, наполнение — через `cartService.updateCartUI()` (уже вызывается из `initApp`). 4) `getCategories()` — только внутри `loadAndRenderCatalog`. | Средний |
-| `src/styles/grouped-products.css` | Добавить `#products-catalog-container { min-height: 60vh; }` против CLS при позднем рендере каталога. | Низкий |
-| `js/components/homeComponent.js` (hero) | Проверить, что hero `<img>`/background использует `/images/hero.webp`, не `.jpg`. Если уже webp — не трогать. | Низкий |
+В `public/data/products-public.json` пути фото хранятся с ведущим слэшем: `/images/medium with bow/peach/slide1.webp`.
 
-НЕ трогаем: `.htaccess`, `public/robots.txt`, `public/sitemap.xml`,
-Supabase, products schema, Edge Functions, `mediaResolver`,
-`imageSizeService`, `swiperService` API, `colorService`,
-`PublicProductsComponent`, `cartService`, `orderComponent`, router,
-customizer, существующий код внутри `loadProductsCatalog`.
+В `js/components/publicProductsComponent.js` → `getImageUrl()`:
 
-## 3. Shell-first render plan
+```js
+const absolute = photo.startsWith('http')
+  ? photo
+  : `https://...product-media/${photo}`;   // ← склейка даёт //images/...
+return resolveImageUrl(absolute);
+```
 
-Синхронно (`renderShell`), без `await`:
-- `<nav>` (desktop + mobile);
-- `<section>` hero (`/images/hero.webp`, H1, sub, CTA `#catalog`);
-- `<section id="about-boxes">` «Что мы продаём» — статика;
-- `<section>` «Наши преимущества» — статика;
-- `<section id="catalog">` с `<div id="products-catalog-container">`
-  и текущим компактным loader «Загрузка каталога товаров…»;
-- `<section id="contacts">` / footer;
-- пустой shell cart modal `#cartModal`.
+Дальше в `js/services/mediaResolver.js`:
+- `extractStoragePathFromSupabaseUrl` возвращает `/images/medium with bow/peach/slide1.webp` (с ведущим `/`)
+- ключи в `public/media-manifest.json` идут без ведущего слэша (`images/medium with bow/peach/slide1.webp`)
+- лукап `manifestFiles[normalized]` промахивается → fallback на Supabase URL с двойным слэшем
 
-Асинхронно (`loadAndRenderCatalog`):
-- `await productsService.getActiveProducts()`;
-- существующий `loadProductsCatalog(container)` без изменений
-  (PublicProductsComponent.render → initCategorySliders →
-  Swiper + color buttons).
+Страница товара работает быстрее, потому что её разметка изначально использует относительные `/images/...` пути (resolveImageUrl выходит на первой же строке `if (originalUrl.startsWith('/images/'))`), минуя сломанный путь через `getImageUrl`.
 
-## 4. Catalog loading safety
+## Что меняю
 
-States внутри `#products-catalog-container`:
-- **loading** — отрисован из shell, виден сразу;
-- **loaded** — HTML карточек + `initCategorySliders()` строго после
-  `innerHTML`;
-- **empty** — ветка «Каталог пока пуст», если `products.length === 0`;
-- **error** — текущий try/catch с кнопкой «Повторить попытку».
+Только фронтенд‑резолвинг путей. Данные и медиафайлы не трогаю.
 
-Защита от гонок: флаг `this.catalogLoading`; перед вставкой нового
-HTML `catalogContainer.innerHTML = ''`.
+### 1. `js/components/publicProductsComponent.js` — `getImageUrl()`
 
-Swiper / color buttons — API не меняем, init остаётся внутри
-`loadProductsCatalog` строго после успешного `innerHTML`.
+Если `photo` уже относительный путь (`/images/...`, `/videos/...` или `images/...`) — не приклеивать Supabase‑префикс. Передавать как есть в `resolveImageUrl`, который уже умеет короткое замыкание для `/images/...`.
 
-## 5. Risk mitigation
+Псевдокод:
 
-| Risk | Mitigation |
-|---|---|
-| «Другой сайт» при загрузке | Удалён видимый `seo-fallback` из body. |
-| Белый экран | `renderShell()` синхронный, до любого `await`. |
-| Swiper падает | Init только после `catalogContainer.innerHTML = …` (как сейчас). |
-| Color buttons не работают | Не трогаем; вешаются после рендера карточек. |
-| Loader зависнет | try/catch/finally в `loadAndRenderCatalog`, снятие флага. |
-| Дубли каталога | Очистка `catalogContainer` + флаг `catalogLoading`. |
-| CLS | `min-height: 60vh` на `#products-catalog-container`. |
-| Cart не найдёт DOM | Пустой `#cartModal` в shell, `cartService.updateCartUI()` асинхронно. |
-| Потеря SEO | `<head>` (title/description/canonical/OG/Twitter/JSON-LD) сохраняется; контент секций индексируется WRS (Googlebot, Yandex). |
-| No-JS юзер | Короткий `<noscript>` после `#app`. |
-| Hero | Проверить, что `/images/hero.webp` (а не `.jpg`). |
-| Placeholder | Network не должен содержать `/images/placeholder.jpg` — уже исправлено на `/placeholder.svg`. |
+```js
+getImageUrl(photo) {
+  if (!photo) return '';
+  if (photo.startsWith('http')) return resolveImageUrl(photo);
+  if (photo.startsWith('/images/') || photo.startsWith('/videos/')) return resolveImageUrl(photo);
+  if (photo.startsWith('images/') || photo.startsWith('videos/')) return resolveImageUrl('/' + photo);
+  // storage-path вида "small with bow/..." — как и раньше клеим в Supabase URL
+  return resolveImageUrl(`https://bsndismiessofvhglzrv.supabase.co/storage/v1/object/public/product-media/${photo}`);
+}
+```
 
-## 6. Testing checklist
+### 2. `js/services/mediaResolver.js` — защита от ведущего слэша в `extractStoragePathFromSupabaseUrl`
 
-- Hard refresh `/` — нет видимого `seo-fallback`, shell виден сразу.
-- DevTools Network throttling Slow 3G — shell мгновенно, loader только в каталоге.
-- Offline / эмуляция ошибки Supabase — shell остаётся, ошибка только в каталоге, кнопка «Повторить».
-- Пустой каталог — сообщение «Каталог пока пуст».
-- View Source `/` — `<head>` полный (title, description, canonical, OG, Twitter, Clarity, gtag), `<body>` содержит пустой `#app` + `<noscript>`.
-- Без JS — виден только `<noscript>`.
-- Network на `/` — нет запросов к `/images/placeholder.jpg`, нет запросов к `/sitemap.xml`/`/robots.txt`.
-- `curl -I /robots.txt` → `Content-Type: text/plain`.
-- `curl -I /sitemap.xml` → `Content-Type: application/xml`.
-- Hero — отдаётся `/images/hero.webp` (Network → Type: webp).
-- `#product/<id>` — открывается, Swiper работает, color buttons переключают слайдер.
-- `#contacts`, `#order`, `#order-confirmation`, `#privacy-policy`, `#terms-of-use` — работают.
-- Корзина: открытие, +/−, удаление, переход к заказу, оформление.
-- Mobile ≤768 и desktop ≥1024.
-- `npm run build` проходит.
+На случай, если где-то ещё в коде сформируется URL с двойным слэшем, нормализовать результат: срезать ведущий `/` перед лукапом в манифесте. Это сделает `resolveImageUrl` устойчивым к таким URL и в будущем.
+
+```js
+const storagePath = extractStoragePathFromSupabaseUrl(originalUrl);
+const cleaned = storagePath.replace(/^\/+/, '');
+const normalized = normalizeMediaPath(cleaned);
+if (manifestFiles && manifestFiles[normalized]) return toLocalPath(normalized);
+```
+
+### 3. Проверка артикула 0629 (gold, `boxes with handles`)
+
+Пути в JSON: `/images/boxes with handles/gold/slide1.jpg` — этих файлов нет ни локально (`public/images/boxes with handles/gold/` содержит только `.webp`), ни в Supabase (ORB‑ошибка). После фикса №1 они подхватятся локально, **если** локальные `.webp` версии для gold есть; если нет — нужно отдельно сконвертировать/залить (вне этого плана).
+
+Сейчас я не трогаю данные, только фиксирую проблему путей. По результату подскажу, какие конкретные артикулы остались без локальных файлов и их нужно либо перевести на `.webp` пути в JSON, либо догенерировать.
+
+## Проверка после правок
+
+1. Открыть preview главной → сетевой лог: запросы фото должны идти на `/images/...` (тот же origin), а не на supabase.
+2. Скриншот: слайды во всех видимых карточках непустые.
+3. Открыть страницу товара одной из категорий — поведение не должно регрессировать.
+
+## Что НЕ меняю
+
+- `public/data/products-public.json` и `js/data/products.js` — пути остаются как есть.
+- `media-manifest.json`, скрипты сборки вариантов webp.
+- Логику `productComponent` / страницы товара.

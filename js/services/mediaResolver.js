@@ -51,13 +51,40 @@ function toLocalPath(storagePath) {
   return '/' + storagePath.split('/').map(encodeURIComponent).join('/');
 }
 
+// Encode an already-local path (e.g. "/images/big with bow/...") so that
+// spaces and other unsafe chars don't break srcset parsing.
+function encodeLocalPath(localPath) {
+  // Split off any query/hash before encoding.
+  const hashIdx = localPath.indexOf('#');
+  const queryIdx = localPath.indexOf('?');
+  let cutIdx = -1;
+  if (hashIdx >= 0 && queryIdx >= 0) cutIdx = Math.min(hashIdx, queryIdx);
+  else cutIdx = Math.max(hashIdx, queryIdx);
+  const pathPart = cutIdx >= 0 ? localPath.slice(0, cutIdx) : localPath;
+  const tail = cutIdx >= 0 ? localPath.slice(cutIdx) : '';
+  // Re-encode only if it appears to contain raw unsafe chars (e.g. space).
+  if (!/[ "'<>]/.test(pathPart) && !/%[0-9A-Fa-f]{2}/.test(pathPart) === false) {
+    // Already percent-encoded or safe — return as-is.
+  }
+  if (!/[ "'<>]/.test(pathPart)) return localPath;
+  const segments = pathPart.split('/').map(seg => {
+    // Avoid double-encoding already encoded segments.
+    try { return seg === decodeURIComponent(seg) ? encodeURIComponent(seg) : seg; }
+    catch { return encodeURIComponent(seg); }
+  });
+  return segments.join('/') + tail;
+}
+
 export function resolveImageUrl(originalUrl) {
   if (!originalUrl) return originalUrl;
   // Already a relative local path
-  if (originalUrl.startsWith('/images/') || originalUrl.startsWith('/videos/')) return originalUrl;
+  if (originalUrl.startsWith('/images/') || originalUrl.startsWith('/videos/')) {
+    return encodeLocalPath(originalUrl);
+  }
   const storagePath = extractStoragePathFromSupabaseUrl(originalUrl);
   if (!storagePath) return originalUrl;
-  const normalized = normalizeMediaPath(storagePath);
+  const cleaned = storagePath.replace(/^\/+/, '');
+  const normalized = normalizeMediaPath(cleaned);
   if (manifestFiles && manifestFiles[normalized]) return toLocalPath(normalized);
   return originalUrl;
 }
