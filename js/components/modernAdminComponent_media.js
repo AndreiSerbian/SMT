@@ -10,12 +10,8 @@ const MediaMethods = {
     }
 
     try {
-      // Set admin context before reading (needed for inactive products)
-      if (this.adminLogin) {
-        await this.supabase.rpc('set_admin_login_context', {
-          admin_login: this.adminLogin
-        });
-      }
+      // SAFE P0 patch: legacy admin context removed; RLS has_role handles authorization.
+
 
       const { data: product, error } = await this.supabase
         .from('products')
