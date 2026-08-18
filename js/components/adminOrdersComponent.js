@@ -1,5 +1,5 @@
 import { supabase } from '../utils/supabase.js';
-import { AdminAuthComponent } from './adminAuthComponent.js';
+
 
 /**
  * Компонент управления заказами
