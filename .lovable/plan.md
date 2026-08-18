@@ -1,324 +1,175 @@
-# Замер объёма данных перед миграцией — запросы и правило принятия решения
+# SAFE P0 Security Patch (migration-aware) — план
 
-Только диагностика. Код не изменяется, реализация не предлагается.
+PHASE 0 выполнена как read-only трассировка. Код не изменялся. Ниже — фактическая карта зависимостей и минимальный патч, который из неё следует.
 
-Важное уточнение по связи макетов и заказов, установленное из кода: **отдельной колонки-связи между `designs` и `orders` не существует**. Связь есть только внутри `orders.cart_items` — элементы корзины могут содержать поле `design_id` (`js/components/orderComponent.js` L502, `supabase/functions/order-processing/index.ts` L40, L398, L429). Поэтому запросы ниже используют разбор jsonb.
-
-Также: факт загрузки клиентом собственных файлов **в таблице `designs` не хранится**. Файлы уходят в Storage по пути `designs/<uuid>/assets/**` (`js/customizer/storageService.js` L81), а в БД пишутся только `preview_urls`, `objects_mm` и `production_pdf_url`. Точный ответ про клиентские файлы даёт только запрос к `storage.objects` (раздел 4).
+Главный вывод трассировки: **объём реального патча существенно меньше, чем предполагал предыдущий аудит.** Значительная часть «опасных» вызовов находится в модулях, которые не подключены к работающей админке.
 
 ---
 
-## 1. Общие количества строк
+## PHASE 0 — Dependency Trace (факты)
 
-Все запросы выполняются в Supabase Dashboard → SQL Editor.
+### Что реально загружается
 
-```sql
-select 'orders'            as table_name, count(*) from public.orders
-union all select 'contact_requests', count(*) from public.contact_requests
-union all select 'b2b_clients',      count(*) from public.b2b_clients
-union all select 'designs',          count(*) from public.designs
-union all select 'wb_clicks',        count(*) from public.wb_clicks
-union all select 'products',         count(*) from public.products
-union all select 'product_prices',   count(*) from public.product_prices
-union all select 'categories',       count(*) from public.categories
-union all select 'colors',           count(*) from public.colors
-order by 1;
+`index.html` L60 → `js/app.js` → `js/router.js`.
+
+Роутер импортирует только `AdminAuthComponent` и `AdminLayoutComponent` (L9-10). `AdminLayoutComponent` L140-160 динамически подгружает ровно шесть модулей:
+
+```text
+#admin
+  → AdminAuthComponent            (Supabase Auth + rpc has_role)
+  → AdminLayoutComponent
+        ├─ modernAdminComponent.js       (товары)  → modernAdminComponent_media.js
+        ├─ adminCategoriesComponent.js
+        ├─ adminColorsComponent.js
+        ├─ adminOrdersComponent.js
+        ├─ adminClientsComponent.js
+        └─ adminAnalyticsComponent.js
 ```
 
-Дополнительно — быстрый обзор всей схемы, включая объекты, которых нет в списке выше (в частности `client_analytics`, назначение которого из репозитория не выводится):
+### Статус модулей
 
-```sql
-select table_name, table_type
-from information_schema.tables
-where table_schema = 'public'
-order by table_type, table_name;
-```
+| Модуль | Статус | Доказательство |
+|---|---|---|
+| `adminAuthComponent.js` | **ACTIVE** | импорт в `router.js` L9 |
+| `adminLayoutComponent.js` | **ACTIVE** | импорт в `router.js` L10 |
+| `modernAdminComponent.js` (+`_media.js`) | **ACTIVE** | `adminLayoutComponent.js` L140; `_media` — L67 внутри modernAdmin |
+| `adminCategories/Colors/Orders/Clients/Analytics` | **ACTIVE** | `adminLayoutComponent.js` L144-160 |
+| `adminComponent.js` | **DEAD CODE** | ни одного `import` во всём проекте; совпадения — только `window.adminComponent`, которое присваивает себе `modernAdminComponent.js` L62 |
+| `adminProductsComponent.js` | **DEAD CODE (транзитивно)** | единственный импорт — `adminComponent.js` L213 |
+| `mediaManagerComponent.js` | **DEAD CODE (транзитивно)** | единственный импорт — `adminComponent.js` L225 |
+| `js/utils/storageHelper.js` | **DEAD CODE (транзитивно)** | единственный импортёр — `adminProductsComponent.js` |
+| `js/data/products.js` | **DEAD CODE** | импортируется только из `adminProductsComponent.js` L1005 |
 
-Если `client_analytics` окажется представлением:
+### Цепочки по endpoint'ам
 
-```sql
-select pg_get_viewdef('public.client_analytics', true);
-```
+**storage-manager** — 5 вызовов, все в `js/utils/storageHelper.js` (L39, L64, L89, L113, L136). Единственный импортёр — мёртвый `adminProductsComponent.js`.
+→ **ACTIVE CALLERS: НЕТ.** Функция при этом остаётся публично вызываемой (`verify_jwt = false` + `SERVICE_ROLE_KEY`, `storage-manager/index.ts` L42-44, без единой проверки прав).
+
+**media-manager** — вызовы в `modernAdminComponent_media.js` L71 и L156 (**ACTIVE**), а также в мёртвых `adminProductsComponent.js` (8) и `mediaManagerComponent.js` (4).
+→ **ACTIVE CALLERS: 2, action `upload_images`.** Функция: `verify_jwt = false` + `SERVICE_ROLE_KEY` (L37-39), без проверки прав, умеет писать в Storage и в `products`.
+
+**update-price** — единственный вызов: `adminComponent.js` L405, `fetch` с `admin_login`/`admin_password` в теле.
+→ **ACTIVE CALLERS: НЕТ.** Активная админка меняет цену прямой записью `products.price_rub` (`modernAdminComponent.js` L914) под RLS `has_role`.
+
+**import-products** — единственный вызов: `adminProductsComponent.js` L1007, с `admin_login`/`admin_password`.
+→ **ACTIVE CALLERS: НЕТ.**
+
+**Legacy admin context** — `set_admin_login_context` вызывается в `modernAdminComponent.js` L518/L846/L959, `modernAdminComponent_media.js` L15/L229 (все под условием `if (this.adminLogin)`) и в `adminOrdersComponent.js` L474.
+Источник `this.adminLogin` — `sessionStorage.getItem('admin_session')` (`modernAdminComponent.js` L20-24). **Ключ `admin_session` не записывается нигде в проекте** — единственный код, писавший сессию, это мёртвый `adminComponent.js` L315-317, и он пишет другие ключи. Следовательно `this.adminLogin === null`, и все пять вызовов в modernAdmin **фактически не выполняются**.
+В `adminOrdersComponent.js` L467 вызывается `AdminAuthComponent.getAdminLogin()` — **такого метода в `adminAuthComponent.js` не существует** (там только `isAuthenticated`, `getAdminEmail`, `logout`). Это выбросит `TypeError` до запроса к БД.
+→ **Смена статуса заказа в админке, вероятнее всего, сейчас не работает. NOT VERIFIED IN RUNTIME — требует ручной проверки.**
+
+**Admin login** — `adminAuthComponent.js` L100 `signInWithPassword` → L108 `rpc('has_role')` → при отсутствии роли `signOut()`. Единственный работающий контур аутентификации. `sessionStorage` не используется.
+
+**Designs** — `designService.js` (INSERT/SELECT/UPDATE от анонима), `storageService.js` (upload в публичный бакет), `exportPipeline.js` L23 генерирует `designId` на клиенте через `crypto.randomUUID()` и передаёт его как первичный ключ. Владение макетом на сервере не фиксируется ничем.
 
 ---
 
-## 2. Заказы
+## Что предлагается сделать (и чего не делать)
 
-Сводка одним запросом:
+### PHASE 1 — Edge authorization
 
-```sql
-select
-  count(*)                     as total_orders,
-  min(created_at)              as earliest_order,
-  max(created_at)              as latest_order,
-  count(*) filter (where confirmed_at is not null) as confirmed_orders,
-  count(distinct email)        as distinct_emails,
-  count(distinct phone)        as distinct_phones,
-  count(*) filter (where client_id is not null)    as linked_to_client,
-  sum(total)                   as sum_total
-from public.orders;
-```
+Добавить в `storage-manager/index.ts` и `media-manager/index.ts` единый блок авторизации в начале обработчика: взять `Authorization`, проверить пользователя через анонимный клиент с этим токеном, вызвать `has_role(user.id,'admin')`, и **только после успеха** создавать service-role клиент. Нет токена → 401, невалидный → 401, не админ → 403.
 
-Разбивка по статусам:
+`supabase/config.toml`: `verify_jwt = true` для обеих функций.
 
-```sql
-select
-  coalesce(order_status, '(null)') as order_status,
-  count(*)                         as orders,
-  min(created_at)                  as first_seen,
-  max(created_at)                  as last_seen,
-  sum(total)                       as sum_total
-from public.orders
-group by 1
-order by orders desc;
-```
+Атомарно с этим — фронтенд. `supabase.functions.invoke` автоматически подставляет токен текущей сессии, поэтому два активных вызова в `modernAdminComponent_media.js` L71 и L156 менять не требуется по существу; нужно только убедиться, что клиент из `js/utils/supabase.js` — тот же, в котором выполнен вход (это так: `adminAuthComponent.js` использует его же). Добавляется обработка 401/403 с понятным сообщением.
 
-Распределение по месяцам — показывает, живой ли поток заказов и насколько критично окно переключения:
+`storage-manager` активных вызовов не имеет — его защита не ломает ничего.
 
-```sql
-select date_trunc('month', created_at)::date as month, count(*) as orders
-from public.orders
-group by 1
-order by 1;
-```
+Прочие функции с той же комбинацией проверяются отдельно: `generate-design-pdf` (`verify_jwt = false` + service_role) вызывается анонимным покупателем из кастомайзера — **её закрывать нельзя**, она остаётся как есть и уходит в раздел deferred.
 
-Состав ключей в `cart_items` — нужен, чтобы понять, во что разворачивать позиции заказа:
+### PHASE 2 — Plaintext-пароли в active runtime
 
-```sql
-select key, count(*) as occurrences
-from public.orders o,
-     lateral jsonb_array_elements(o.cart_items) item,
-     lateral jsonb_object_keys(item) key
-group by key
-order by occurrences desc;
-```
+Активных вызовов `update-price` и `import-products` нет. Поэтому вместо переписывания рабочего кода:
 
-Общее число позиций во всех заказах:
+- удалить мёртвые модули `adminComponent.js`, `adminProductsComponent.js`, `mediaManagerComponent.js`, `js/utils/storageHelper.js` (dependency trace доказан выше);
+- привести `update-price` и `import-products` к той же JWT + `has_role` модели, что и Phase 1, и убрать приём `admin_login`/`admin_password` — чтобы эндпоинты не оставались публично вызываемым способом дёрнуть `is_admin_user` перебором.
 
-```sql
-select
-  count(*)                                   as total_line_items,
-  round(avg(items_per_order), 2)             as avg_items_per_order
-from (
-  select jsonb_array_length(cart_items) as items_per_order
-  from public.orders
-  where jsonb_typeof(cart_items) = 'array'
-) t, lateral generate_series(1, greatest(items_per_order, 1));
-```
+Функции `is_admin_user`, `set_admin_context`, `set_admin_login_context` и таблица `admins` **не удаляются** — только перестают использоваться.
 
-Если предыдущий запрос покажется избыточным, достаточно простого варианта:
+### PHASE 3 — Legacy admin context
 
-```sql
-select sum(jsonb_array_length(cart_items)) as total_line_items
-from public.orders
-where jsonb_typeof(cart_items) = 'array';
-```
+В `modernAdminComponent.js` (L20-30, L516, L844, L957) и `modernAdminComponent_media.js` (L15, L229) убрать чтение `admin_session` и обёртки `if (this.adminLogin) rpc(...)`. Эти ветки и так не исполняются; RLS на `products` работает через `has_role`, то есть удаление ничего не разблокирует и ничего не сломает.
+
+В `adminOrdersComponent.js` L465-478 убрать несуществующий `getAdminLogin()` и вызов `set_admin_login_context`, оставив прямой `update` под RLS `has_role`. Это **починка сломанного функционала**, а не изменение логики.
+
+### PHASE 4 — Critical RLS
+
+Только доказанное:
+
+- `wb_clicks`: политика SELECT для роли `public` с `qual = true` заменяется на `has_role(auth.uid(),'admin')`. INSERT для анонима сохраняется — он нужен трекингу (`productComponent.js` L553).
+- `b2b_clients`: политика `Service role can manage b2b clients` (роль `public`, ALL, `qual = true`) переназначается на `service_role`. Перед изменением — проверка фактического анонимного доступа запросом к REST; если доступа нет, изменение всё равно безопасно, так как админские политики `has_role` остаются нетронутыми.
+- `orders` и `contact_requests`: аноним может только INSERT, SELECT закрыт — это требуется публичным формам. **NO P0 CHANGE REQUIRED.**
+- `user_roles`, `products`, справочники — без изменений.
+- `storage.objects` — не трогаем (см. Phase 5).
+
+### PHASE 5 — Designs
+
+Минимального безопасного фикса не существует. `design_id` генерируется в браузере (`exportPipeline.js` L23), сервер не хранит признак владения, а `order-processing/index.ts` L429 обновляет `designs` по этому же id. Любое сужение RLS без введения серверного токена владения ломает кастомайзер и оформление заказа с макетом.
+
+→ **F-02 designs: DEFERRED TO TIMEWEB MIGRATION.**
+→ **F-05 приватное хранилище клиентских файлов: DEFERRED** — перевод бакета в приватный сломает уже выданные клиентам ссылки на PDF, что прямо запрещено рамками задачи.
+
+Что при этом всё равно закрывается: `storage-manager` и `media-manager`, то есть привилегированные пути произвольной работы с бакетом, перестают быть доступны анониму.
+
+### PHASE 6 — Проверки
+
+Матрица 401/invalid/403/admin по `storage-manager`, `media-manager`, `update-price`, `import-products` — выполнима из sandbox через `curl` (без токена, с мусорным токеном, с анонимным ключом). Проверка «valid admin → success» требует реальной сессии администратора и будет помечена как **MANUAL VERIFICATION REQUIRED**, если войти в админку в рантайме не удастся.
+
+Регрессия админки и публичной части — по чек-листам из задания, с явным разделением STATIC CODE VERIFIED / RUNTIME VERIFIED / MANUAL VERIFICATION REQUIRED. Никаких «PASS» без фактической проверки.
+
+Счётчики строк по `products`, `orders`, `contact_requests`, `b2b_clients`, `designs` снимаются до и после; персональные данные не выводятся.
 
 ---
 
-## 3. Макеты (designs)
+## Rollback
 
-Сводка:
+| Изменение | CURRENT | CHANGE | ROLLBACK |
+|---|---|---|---|
+| `config.toml` | `verify_jwt = false` ×2 | `true` для storage-manager, media-manager | вернуть `false` |
+| `storage-manager/index.ts` | нет авторизации | блок JWT + has_role | удалить блок |
+| `media-manager/index.ts` | нет авторизации | блок JWT + has_role | удалить блок |
+| `update-price`, `import-products` | login/password в теле | JWT + has_role | вернуть прежний обработчик |
+| `modernAdminComponent(.js/_media.js)`, `adminOrdersComponent.js` | ветки `set_admin_login_context` | удалены | вернуть блоки |
+| Удаление мёртвых файлов | присутствуют | удалены | восстановить из истории |
+| RLS `wb_clicks`, `b2b_clients` | текущие политики | заменены миграцией | обратная миграция, текст готовится заранее |
 
-```sql
-select
-  count(*)                                                        as total_designs,
-  count(*) filter (where production_pdf_url is not null)          as with_production_pdf,
-  count(*) filter (where status = 'saved')                        as status_saved,
-  count(*) filter (where status is distinct from 'saved')         as status_other,
-  count(*) filter (where preview_urls <> '{}'::jsonb)             as with_previews,
-  count(distinct product_id)                                      as distinct_products,
-  min(created_at)                                                 as earliest,
-  max(created_at)                                                 as latest
-from public.designs;
-```
-
-Макеты, реально попавшие в заказы (связь через `cart_items[].design_id`):
-
-```sql
-with order_design_ids as (
-  select distinct (item ->> 'design_id')::uuid as design_id
-  from public.orders o,
-       lateral jsonb_array_elements(o.cart_items) item
-  where item ? 'design_id'
-    and item ->> 'design_id' is not null
-)
-select
-  (select count(*) from order_design_ids)                              as designs_referenced_by_orders,
-  (select count(*) from public.designs d
-     join order_design_ids od on od.design_id = d.id)                  as matched_in_designs_table,
-  (select count(*) from public.designs d
-     where not exists (select 1 from order_design_ids od where od.design_id = d.id))
-                                                                       as orphan_designs;
-```
-
-Если предыдущий запрос упадёт из-за нечислового значения в `design_id`, используйте безопасный вариант:
-
-```sql
-select count(distinct item ->> 'design_id') as design_ids_in_orders
-from public.orders o,
-     lateral jsonb_array_elements(o.cart_items) item
-where item ? 'design_id';
-```
-
-Макеты с загруженными клиентом файлами — **из таблицы не определяются**, только через Storage:
-
-```sql
-select count(distinct split_part(name, '/', 2)) as designs_with_uploaded_files
-from storage.objects
-where bucket_id = 'product-media'
-  and name like 'designs/%/assets/%';
-```
+Необратимых изменений нет. Бизнес-схема не меняется, данные не трогаются, Storage не мигрирует.
 
 ---
 
-## 4. Storage
+## Migration handoff (документация, не реализация)
 
-Все файлы под `designs/**`:
+| Текущий компонент | Статус | Будущая замена на Timeweb | Долг миграции |
+|---|---|---|---|
+| Supabase Auth + `has_role` | ВРЕМЕННО | собственная админ-авторизация на российском API | НЕТ |
+| `storage-manager` | ВРЕМЕННО | `/api/admin/media` | НЕТ |
+| `media-manager` | ВРЕМЕННО | `/api/admin/media` | НЕТ |
+| `update-price` | ВРЕМЕННО | `PATCH /api/admin/products/:id/price` | НЕТ |
+| `import-products` | ВРЕМЕННО | `POST /api/admin/products/import` | НЕТ |
+| Supabase Postgres | ВРЕМЕННО | Timeweb Managed PostgreSQL | НЕТ |
+| Supabase Storage | ВРЕМЕННО | приватное хранилище в РФ | НЕТ |
+| `designs` + публичный бакет | ВРЕМЕННО, риск принят | PostgreSQL + приватное хранилище + серверный токен владения | НЕТ |
+| JSON-first каталог | ОСТАЁТСЯ | остаётся без изменений | НЕТ |
 
-```sql
-select
-  count(*)                                                          as total_files,
-  pg_size_pretty(sum((metadata ->> 'size')::bigint))                as total_size,
-  sum((metadata ->> 'size')::bigint)                                as total_bytes,
-  count(distinct split_part(name, '/', 2))                          as distinct_design_folders
-from storage.objects
-where bucket_id = 'product-media'
-  and name like 'designs/%';
-```
-
-Разбивка по типу содержимого (previews / scene / assets / production):
-
-```sql
-select
-  split_part(name, '/', 3)                             as subfolder,
-  count(*)                                             as files,
-  pg_size_pretty(sum((metadata ->> 'size')::bigint))   as size
-from storage.objects
-where bucket_id = 'product-media'
-  and name like 'designs/%'
-group by 1
-order by files desc;
-```
-
-Список папок верхнего уровня (UUID макетов) с объёмом:
-
-```sql
-select
-  split_part(name, '/', 2)                             as design_uuid,
-  count(*)                                             as files,
-  pg_size_pretty(sum((metadata ->> 'size')::bigint))   as size,
-  min(created_at)                                      as first_upload,
-  max(created_at)                                      as last_upload
-from storage.objects
-where bucket_id = 'product-media'
-  and name like 'designs/%'
-group by 1
-order by max(created_at) desc;
-```
-
-Для сравнения — объём каталожных изображений, которые уже мигрированы на TimeWeb и переносить их повторно не нужно:
-
-```sql
-select
-  case
-    when name like 'designs/%' then 'designs (клиентские)'
-    when name like 'images/%'  then 'images (каталог)'
-    when name like 'videos/%'  then 'videos'
-    else 'прочее'
-  end                                                  as area,
-  count(*)                                             as files,
-  pg_size_pretty(sum((metadata ->> 'size')::bigint))   as size
-from storage.objects
-where bucket_id = 'product-media'
-group by 1
-order by files desc;
-```
-
-Папки макетов, у которых больше нет записи в таблице `designs` (кандидаты на невынос):
-
-```sql
-select distinct split_part(o.name, '/', 2) as orphan_folder
-from storage.objects o
-where o.bucket_id = 'product-media'
-  and o.name like 'designs/%'
-  and not exists (
-    select 1 from public.designs d
-    where d.id::text = split_part(o.name, '/', 2)
-  );
-```
+Новых Supabase-специфичных механизмов не вводится: единственная добавляемая конструкция — стандартная проверка «Bearer-токен → пользователь → роль», которая один в один переносится в любой REST-бэкенд.
 
 ---
 
-## 5. Администраторы
+## Файлы, которых коснётся патч
 
-```sql
-select
-  (select count(*) from public.user_roles where role = 'admin') as admin_roles,
-  (select count(*) from public.user_roles)                      as all_roles,
-  (select count(*) from public.admins)                          as legacy_admins_table;
-```
+Изменяются: `supabase/config.toml`, `supabase/functions/storage-manager/index.ts`, `supabase/functions/media-manager/index.ts`, `supabase/functions/update-price/index.ts`, `supabase/functions/import-products/index.ts`, `js/components/modernAdminComponent.js`, `js/components/modernAdminComponent_media.js`, `js/components/adminOrdersComponent.js`.
 
-Кто именно (email из `auth.users` доступен только в SQL Editor, не через клиентский API):
+Удаляются как dead code: `js/components/adminComponent.js`, `js/components/adminProductsComponent.js`, `js/components/mediaManagerComponent.js`, `js/utils/storageHelper.js`.
 
-```sql
-select u.id, u.email, u.created_at, u.last_sign_in_at, r.role
-from auth.users u
-left join public.user_roles r on r.user_id = u.id
-order by u.created_at;
-```
+Миграция БД: две политики (`wb_clicks` SELECT, `b2b_clients` ALL). **NO BUSINESS DATABASE SCHEMA CHANGES.**
 
-Legacy-контур — сколько записей в отдельной таблице с паролями:
-
-```sql
-select id, login, created_at from public.admins order by created_at;
-```
-
-Пароли не выводите и не пересылайте — нужен только перечень логинов и их количество.
+Не изменяются: публичный каталог, `products-public.json`, `mediaResolver.js`, кастомайзер, формы заказа и обратной связи, Telegram, Sheets, аналитика, тексты политик.
 
 ---
 
-## 6. Правило принятия решения
+## Требует вашего решения перед началом
 
-Оценивайте по результатам замеров. Достаточно, чтобы условие выполнялось для большинства пунктов — решающими являются заказы, макеты и объём Storage.
-
-### A. Ручная миграция / CSV — предпочтительна, когда
-
-- `orders` ≤ ~200 строк и `contact_requests` ≤ ~200;
-- `designs` ≤ ~50, из них с производственными PDF — единицы;
-- суммарный объём `designs/**` ≤ ~200 МБ и число UUID-папок ≤ ~50;
-- `cart_items` имеет стабильный набор ключей и не более 3–5 позиций в заказе;
-- поток новых заказов редкий — единицы в неделю, окно переключения можно выбрать спокойно;
-- админов 1–2.
-
-Как это выглядит на практике: выгрузка каждой таблицы в CSV через Table Editor, разворачивание `cart_items` вручную или полуручным разбором, скачивание папки `designs/` архивом, единоразовая загрузка в новую БД. Проверка результата — глазами, по контрольным суммам числа заказов и итоговых сумм.
-
-### B. Один разовый скрипт миграции — предпочтителен, когда
-
-- `orders` в диапазоне ~200–3000, либо суммарное число позиций в заказах превышает ~1000;
-- `designs` от ~50 до ~500, либо `designs/**` от ~200 МБ до ~5 ГБ;
-- `cart_items` содержит разнородные ключи, встречаются позиции с `design_id`, `production_pdf_url`, `preview_urls` — то есть разбор в `order_items` нельзя сделать глазами без ошибок;
-- есть заметное число «сирот»: макеты без заказов, папки Storage без записей в `designs`;
-- поток заказов есть, но переключение можно сделать в короткое окно.
-
-Скрипт при этом остаётся одноразовым: читает дамп, трансформирует, пишет в целевую БД, печатает отчёт сверки. Повторный прогон допускается только на очищенную базу.
-
-### C. Полноценный автоматизированный пайплайн — оправдан только когда
-
-- `orders` > ~3000 либо поток новых заказов такой, что окно простоя недопустимо;
-- `designs/**` > ~5 ГБ, перенос файлов заведомо не укладывается в одно окно;
-- требуется период двойной записи и последующая инкрементальная досинхронизация;
-- нужна повторяемость: несколько прогонов на тестовой базе, идемпотентность, возобновление после сбоя, детальный отчёт расхождений по каждой таблице;
-- миграция разбивается на несколько дней и в это время в старой системе продолжают появляться новые записи.
-
-### Как читать результат
-
-- Если по разделам 1–4 всё попадает в диапазон **A** — автоматизация не оправдана, и сложный пайплайн будет стоить дороже, чем сама миграция.
-- Если хотя бы **заказы или Storage** попадают в диапазон **B**, а остальное в **A** — правильный выбор всё равно **B**: разбор `cart_items` руками не делается надёжно.
-- **C** выбирается только при выполнении условий по объёму **и** по недопустимости окна простоя одновременно. Один только большой объём файлов решается предварительным переносом Storage заранее, без инкрементального пайплайна.
-
----
-
-## 7. Что прислать по итогам
-
-Достаточно результата семи запросов: сводка по строкам (раздел 1), сводка и разбивка по статусам заказов (раздел 2), состав ключей `cart_items`, сводка по `designs`, связь макетов с заказами, сводка по Storage с разбивкой по областям, число администраторов. По этим цифрам определяется A, B или C, и только после этого имеет смысл проектировать миграцию.
+1. Удаление `adminProductsComponent.js` и `mediaManagerComponent.js` вместе с `adminComponent.js`: они не подключены к роутеру, но содержат функциональность (массовый импорт товаров, отдельный медиа-менеджер, работа с папками Storage), которой нет в активной админке. Удалять их или оставить в репозитории неиспользуемыми?
+2. Подтвердите, пожалуйста, работает ли сейчас смена статуса заказа в админке — по коду там должна быть ошибка. Это влияет на то, считать ли Phase 3 починкой или изменением поведения.
