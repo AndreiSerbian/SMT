@@ -219,17 +219,8 @@ const MediaMethods = {
     const product = this.currentEditingProduct;
     if (!product?.id && !product?.artikul) return;
 
-    // Устанавливаем контекст администратора перед операцией
-    if (this.adminLogin) {
-      try {
-        await this.supabase.rpc('set_admin_login_context', {
-          admin_login: this.adminLogin
-        });
-      } catch (error) {
-        alert('Ошибка установки контекста: ' + error.message);
-        return;
-      }
-    }
+    // SAFE P0 patch: legacy admin context removed; RLS has_role handles authorization.
+
 
     try {
       const { error } = await this.supabase
