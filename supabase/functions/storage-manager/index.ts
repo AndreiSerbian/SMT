@@ -34,13 +34,15 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // SAFE P0 patch: admin-only. Nothing privileged happens before this check.
+  const auth = await requireAdmin(req);
+  if (!auth.ok) return auth.response;
+
   try {
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
+    const supabaseClient = createServiceClient();
 
     const { action, size, colorHex, fileName, oldPath, newPath } = await req.json();
+
 
     switch (action) {
       case 'create_folder_structure':
