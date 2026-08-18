@@ -15,21 +15,11 @@ export class ModernAdminComponent {
     this.sortDirection = 'asc';
     this.ordersPage = 0;
     this.ORDERS_PAGE_SIZE = 20;
-    
-    // Получаем логин администратора из сессии
-    const sessionData = sessionStorage.getItem('admin_session');
-    if (sessionData) {
-      try {
-        const session = JSON.parse(sessionData);
-        this.adminLogin = session.admin_login;
-      } catch (error) {
-        console.error('Error parsing admin session:', error);
-        this.adminLogin = null;
-      }
-    } else {
-      this.adminLogin = null;
-    }
+
+    // SAFE P0 patch: legacy `admin_session` / set_admin_login_context contour removed.
+    // Authorization is Supabase Auth (auth.uid()) + RLS has_role(..., 'admin').
   }
+
 
   // Метод для проверки режима технических работ (заглушка для совместимости)
   checkMaintenanceMode() {
