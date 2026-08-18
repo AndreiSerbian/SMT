@@ -1,5 +1,5 @@
 import { supabase } from '../utils/supabase.js';
-import { AdminAuthComponent } from './adminAuthComponent.js';
+
 
 /**
  * Компонент управления заказами
@@ -463,20 +463,9 @@ export class AdminOrdersComponent {
     const newStatus = statusSelect.value;
 
     try {
-      // Получаем логин админа из сессии
-      const adminLogin = AdminAuthComponent.getAdminLogin();
-      if (!adminLogin) {
-        alert('Необходима авторизация администратора');
-        return;
-      }
-
-      // Устанавливаем контекст админа
-      const { error: contextError } = await supabase.rpc('set_admin_login_context', {
-        admin_login: adminLogin
-      });
-
-      if (contextError) throw contextError;
-
+      // SAFE P0 patch: removed the nonexistent AdminAuthComponent.getAdminLogin() call and
+      // the legacy set_admin_login_context RPC. Authorization is enforced by RLS:
+      // "Admins can update orders" -> has_role(auth.uid(), 'admin').
       const { error } = await supabase
         .from('orders')
         .update({ order_status: newStatus })
@@ -490,8 +479,12 @@ export class AdminOrdersComponent {
       this.applyFilters();
     } catch (error) {
       console.error('Error updating order status:', error);
-      alert('Ошибка обновления статуса');
+      const denied = error?.code === '42501' || /permission|policy|row-level/i.test(error?.message || '');
+      alert(denied
+        ? 'Недостаточно прав: нужна роль администратора. Войдите заново.'
+        : 'Ошибка обновления статуса: ' + (error?.message || 'неизвестная ошибка'));
     }
+
   }
 
   closeModal() {

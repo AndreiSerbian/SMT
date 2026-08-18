@@ -15,21 +15,11 @@ export class ModernAdminComponent {
     this.sortDirection = 'asc';
     this.ordersPage = 0;
     this.ORDERS_PAGE_SIZE = 20;
-    
-    // Получаем логин администратора из сессии
-    const sessionData = sessionStorage.getItem('admin_session');
-    if (sessionData) {
-      try {
-        const session = JSON.parse(sessionData);
-        this.adminLogin = session.admin_login;
-      } catch (error) {
-        console.error('Error parsing admin session:', error);
-        this.adminLogin = null;
-      }
-    } else {
-      this.adminLogin = null;
-    }
+
+    // SAFE P0 patch: legacy `admin_session` / set_admin_login_context contour removed.
+    // Authorization is Supabase Auth (auth.uid()) + RLS has_role(..., 'admin').
   }
+
 
   // Метод для проверки режима технических работ (заглушка для совместимости)
   checkMaintenanceMode() {
@@ -512,16 +502,9 @@ export class ModernAdminComponent {
       document.getElementById('tableBody').innerHTML = '';
     }
 
-    // Устанавливаем контекст администратора
-    if (this.adminLogin) {
-      try {
-        await this.supabase.rpc('set_admin_login_context', {
-          admin_login: this.adminLogin
-        });
-      } catch (error) {
-        console.error('Error setting admin context:', error);
-      }
-    }
+    // SAFE P0 patch: legacy admin context removed; RLS has_role handles authorization.
+
+
 
     this.isLoading = true;
 
@@ -840,17 +823,8 @@ export class ModernAdminComponent {
   async onSaveProduct(e) {
     e.preventDefault();
     
-    // Устанавливаем контекст администратора перед операцией
-    if (this.adminLogin) {
-      try {
-        await this.supabase.rpc('set_admin_login_context', {
-          admin_login: this.adminLogin
-        });
-      } catch (error) {
-        alert('Ошибка установки контекста: ' + error.message);
-        return;
-      }
-    }
+    // SAFE P0 patch: legacy admin context removed; RLS has_role handles authorization.
+
     
     const formData = new FormData(e.target);
     const productId = formData.get('id');
@@ -953,17 +927,8 @@ export class ModernAdminComponent {
     
     if (!confirm('Вы уверены, что хотите удалить этот товар?')) return;
     
-    // Устанавливаем контекст администратора перед операцией
-    if (this.adminLogin) {
-      try {
-        await this.supabase.rpc('set_admin_login_context', {
-          admin_login: this.adminLogin
-        });
-      } catch (error) {
-        alert('Ошибка установки контекста: ' + error.message);
-        return;
-      }
-    }
+    // SAFE P0 patch: legacy admin context removed; RLS has_role handles authorization.
+
     
     const { error } = await this.supabase.from('products').delete().eq('id', this.currentProductId);
     

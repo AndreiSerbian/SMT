@@ -1,6 +1,8 @@
 
 project_id = "bsndismiessofvhglzrv"
 
+# Public endpoints: called by anonymous visitors (checkout, contact form, customizer).
+# These intentionally stay open and are authorized by business logic, not by JWT.
 [functions.order-processing]
 verify_jwt = false
 
@@ -10,14 +12,21 @@ verify_jwt = false
 [functions.admin-notify]
 verify_jwt = false
 
-[functions.update-price]
-verify_jwt = false
-
-[functions.storage-manager]
-verify_jwt = false
-
-[functions.media-manager]
-verify_jwt = false
-
+# KNOWN TEMPORARY SERVICE_ROLE RISK — DEFERRED TO TIMEWEB MIGRATION.
+# The anonymous customizer depends on this function, so it is not closed in the P0 patch.
 [functions.generate-design-pdf]
 verify_jwt = false
+
+# Admin-only endpoints. Layer 1 of the P0 patch: the gateway rejects requests without a
+# valid JWT. Layer 2 (requireAdmin -> has_role) lives inside each function.
+[functions.update-price]
+verify_jwt = true
+
+[functions.storage-manager]
+verify_jwt = true
+
+[functions.media-manager]
+verify_jwt = true
+
+[functions.import-products]
+verify_jwt = true

@@ -1,16 +1,9 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsHeaders, requireAdmin, createServiceClient } from '../_shared/adminAuth.ts';
 
 interface UpdatePriceRequest {
   product_id: string;
   price: number;
-  admin_login: string;
-  admin_password: string;
 }
 
 serve(async (req) => {
@@ -26,45 +19,26 @@ serve(async (req) => {
     });
   }
 
-  try {
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
+  // SAFE P0 patch: admin-only via JWT + has_role.
+  // Plaintext admin_login/admin_password in the request body is no longer accepted.
+  const auth = await requireAdmin(req);
+  if (!auth.ok) return auth.response;
 
-    const { product_id, price, admin_login, admin_password }: UpdatePriceRequest = await req.json();
+  try {
+    const supabase = createServiceClient();
+
+    const { product_id, price }: UpdatePriceRequest = await req.json();
 
     // Validate input
-    if (!product_id || price === undefined || !admin_login || !admin_password) {
-      return new Response(JSON.stringify({ 
-        error: 'Missing required fields: product_id, price, admin_login, admin_password' 
+    if (!product_id || price === undefined || price === null || Number.isNaN(Number(price))) {
+      return new Response(JSON.stringify({
+        error: 'Missing or invalid required fields: product_id, price'
       }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // Verify admin credentials
-    const { data: isAdmin, error: authError } = await supabase
-      .rpc('is_admin_user', {
-        login_input: admin_login,
-        password_input: admin_password
-      });
-
-    if (authError) {
-      console.error('Auth verification error:', authError);
-      return new Response(JSON.stringify({ error: 'Authentication failed' }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    if (!isAdmin) {
-      return new Response(JSON.stringify({ error: 'Access denied: invalid admin credentials' }), {
-        status: 403,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
 
     // Update price
     const { error: updateError } = await supabase

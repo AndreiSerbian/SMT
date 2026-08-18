@@ -1,3 +1,17 @@
+// ============================================================================
+// DEPRECATED / DO NOT REACTIVATE (SAFE P0 patch, 2026)
+// This module is NOT part of the active admin runtime (AdminAuthComponent ->
+// AdminLayoutComponent -> modernAdmin/categories/colors/orders/clients/analytics).
+// It is kept for reference until the Timeweb migration. It still contains legacy
+// admin-context / plaintext-credential patterns that must never be re-enabled.
+
+// ============================================================================
+
+
+
+
+
+
 import { supabase } from './supabase.js';
 
 // Маппинг размеров в папки

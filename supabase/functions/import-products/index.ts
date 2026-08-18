@@ -1,10 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsHeaders, requireAdmin, createServiceClient } from "../_shared/adminAuth.ts";
 
 interface Product {
   name: string;
@@ -24,28 +19,25 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // SAFE P0 patch: admin-only via JWT + has_role.
+  // Plaintext admin_login/admin_password in the request body is no longer accepted.
+  const auth = await requireAdmin(req);
+  if (!auth.ok) return auth.response;
+
   try {
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
+    const supabaseClient = createServiceClient();
 
-    const { products, admin_login, admin_password } = await req.json();
+    const { products } = await req.json();
 
-    // Проверяем права админа
-    const { data: isAdmin } = await supabaseClient.rpc('is_admin_user', {
-      login_input: admin_login,
-      password_input: admin_password
-    });
-
-    if (!isAdmin) {
+    if (!Array.isArray(products) || products.length === 0) {
       return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: 'Invalid payload: "products" must be a non-empty array' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     console.log(`Starting import of ${products.length} products`);
+
 
     // Маппинг размеров из JSON в базу
     const sizeTypeMapping: Record<string, 'small' | 'medium' | 'big'> = {
