@@ -823,17 +823,8 @@ export class ModernAdminComponent {
   async onSaveProduct(e) {
     e.preventDefault();
     
-    // Устанавливаем контекст администратора перед операцией
-    if (this.adminLogin) {
-      try {
-        await this.supabase.rpc('set_admin_login_context', {
-          admin_login: this.adminLogin
-        });
-      } catch (error) {
-        alert('Ошибка установки контекста: ' + error.message);
-        return;
-      }
-    }
+    // SAFE P0 patch: legacy admin context removed; RLS has_role handles authorization.
+
     
     const formData = new FormData(e.target);
     const productId = formData.get('id');
