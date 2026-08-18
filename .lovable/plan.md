@@ -153,7 +153,7 @@ Admin вошёл через Supabase Auth → auth.uid() → RLS has_role(...,'a
 | `media-manager/index.ts` | нет авторизации | блок JWT + has_role | удалить блок |
 | `update-price`, `import-products` | login/password в теле | JWT + has_role | вернуть прежний обработчик |
 | `modernAdminComponent(.js/_media.js)`, `adminOrdersComponent.js` | ветки `set_admin_login_context` | удалены | вернуть блоки |
-| Удаление мёртвых файлов | присутствуют | удалены | восстановить из истории |
+| Мёртвые модули | присутствуют | остаются, добавлен маркер DEPRECATED | удалить комментарий |
 | RLS `wb_clicks`, `b2b_clients` | текущие политики | заменены миграцией | обратная миграция, текст готовится заранее |
 
 Необратимых изменений нет. Бизнес-схема не меняется, данные не трогаются, Storage не мигрирует.
@@ -182,7 +182,7 @@ Admin вошёл через Supabase Auth → auth.uid() → RLS has_role(...,'a
 
 Изменяются: `supabase/config.toml`, `supabase/functions/storage-manager/index.ts`, `supabase/functions/media-manager/index.ts`, `supabase/functions/update-price/index.ts`, `supabase/functions/import-products/index.ts`, `js/components/modernAdminComponent.js`, `js/components/modernAdminComponent_media.js`, `js/components/adminOrdersComponent.js`.
 
-Удаляются как dead code: `js/components/adminComponent.js`, `js/components/adminProductsComponent.js`, `js/components/mediaManagerComponent.js`, `js/utils/storageHelper.js`.
+Помечаются как DEPRECATED, но **остаются в репозитории**: `js/components/adminComponent.js`, `js/components/adminProductsComponent.js`, `js/components/mediaManagerComponent.js`, `js/utils/storageHelper.js`. Ни один файл проекта не удаляется.
 
 Миграция БД: две политики (`wb_clicks` SELECT, `b2b_clients` ALL). **NO BUSINESS DATABASE SCHEMA CHANGES.**
 
@@ -190,7 +190,21 @@ Admin вошёл через Supabase Auth → auth.uid() → RLS has_role(...,'a
 
 ---
 
-## Требует вашего решения перед началом
+## Ручная приёмка после деплоя
 
-1. Удаление `adminProductsComponent.js` и `mediaManagerComponent.js` вместе с `adminComponent.js`: они не подключены к роутеру, но содержат функциональность (массовый импорт товаров, отдельный медиа-менеджер, работа с папками Storage), которой нет в активной админке. Удалять их или оставить в репозитории неиспользуемыми?
-2. Подтвердите, пожалуйста, работает ли сейчас смена статуса заказа в админке — по коду там должна быть ошибка. Это влияет на то, считать ли Phase 3 починкой или изменением поведения.
+Оба открытых вопроса закрыты вашими решениями: файлы не удаляем, смена статуса заказа считается NOT VERIFIED IN RUNTIME и чинится по коду. Ничего блокирующего не осталось.
+
+Короткий приёмочный сценарий после деплоя:
+
+1. Войти в `/admin`
+2. Выйти
+3. Войти повторно
+4. Открыть товар
+5. Изменить тестовое поле и вернуть обратно
+6. Загрузить изображение
+7. Проверить управление изображением (удаление, назначение главным)
+8. Открыть заказ
+9. Изменить статус заказа и вернуть обратно
+10. Открыть раздел B2B clients
+
+Пункты 6-7 — основная зона риска Phase 1 (единственные активные вызовы `media-manager`). Пункт 9 — проверка исправления Phase 3.
