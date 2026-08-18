@@ -117,30 +117,48 @@ Admin вошёл через Supabase Auth → auth.uid() → RLS has_role(...,'a
 
 ### PHASE 4 — Critical RLS
 
-Только доказанное:
+Анонимная REST-проверка уже выполнена (BEFORE-состояние зафиксировано):
 
-- `wb_clicks`: политика SELECT для роли `public` с `qual = true` заменяется на `has_role(auth.uid(),'admin')`. INSERT для анонима сохраняется — он нужен трекингу (`productComponent.js` L553).
-- `b2b_clients`: политика `Service role can manage b2b clients` (роль `public`, ALL, `qual = true`) переназначается на `service_role`. Перед изменением — проверка фактического анонимного доступа запросом к REST; если доступа нет, изменение всё равно безопасно, так как админские политики `has_role` остаются нетронутыми.
-- `orders` и `contact_requests`: аноним может только INSERT, SELECT закрыт — это требуется публичным формам. **NO P0 CHANGE REQUIRED.**
-- `user_roles`, `products`, справочники — без изменений.
-- `storage.objects` — не трогаем (см. Phase 5).
+| Запрос от анонима | HTTP | Результат |
+|---|---|---|
+| `GET /rest/v1/b2b_clients?select=id&limit=1` | **200** | вернулась реальная строка → **EXPOSED** |
+| `GET /rest/v1/wb_clicks?select=id&limit=1` | **200** | вернулась реальная строка → **EXPOSED** |
+| `GET /rest/v1/orders?select=id&limit=1` | 200 | `[]` — RLS блокирует, утечки нет |
+
+Миграция (единственная в патче, схема бизнес-таблиц не меняется):
+
+- `b2b_clients`: **DROP** политики `Service role can manage b2b clients` (роль `public`, ALL, `USING (true)`). Замещающая политика для `service_role` **не создаётся** — service-role обходит RLS. Админские политики `has_role` остаются нетронутыми. Дополнительно `REVOKE ALL ... FROM anon`.
+- `wb_clicks`: **DROP** политики `Admins can read WB clicks` (роль `public`, `USING (true)`) и создание её же для роли `authenticated` с `has_role(auth.uid(),'admin')`. Анонимный INSERT сохраняется — от него зависит трекинг (`productComponent.js` L553). `REVOKE ALL FROM anon` + `GRANT INSERT TO anon`.
+- Гранты — минимальные: `SELECT, INSERT, UPDATE, DELETE` вместо `ALL`; дополнительные табличные привилегии (`TRUNCATE`, `REFERENCES`, `TRIGGER`) текущим функциям не нужны.
+- `orders`, `contact_requests`: **NO P0 CHANGE REQUIRED** (проверено выше).
+- `user_roles`, `products`, справочники, `storage.objects` — без изменений.
+
+Runtime-проверки сразу после миграции, до перехода к остальным фазам:
+
+1. анонимный SELECT `b2b_clients` → DENIED, 0 строк;
+2. SELECT `b2b_clients` под админом → SUCCESS;
+3. анонимный SELECT `wb_clicks` → DENIED;
+4. анонимный INSERT `wb_clicks` → SUCCESS;
+5. полный список оставшихся политик по обеим таблицам + проверка отсутствия любой другой permissive `SELECT ... USING (true)`.
+
+Пункт 2 требует реальной админ-сессии; если её не удастся получить в песочнице — статус **MANUAL VERIFICATION REQUIRED**, без пометки PASS.
 
 ### PHASE 5 — Designs
 
 Минимального безопасного фикса не существует. `design_id` генерируется в браузере (`exportPipeline.js` L23), сервер не хранит признак владения, а `order-processing/index.ts` L429 обновляет `designs` по этому же id. Любое сужение RLS без введения серверного токена владения ломает кастомайзер и оформление заказа с макетом.
 
 → **F-02 designs: DEFERRED TO TIMEWEB MIGRATION.**
-→ **F-05 приватное хранилище клиентских файлов: DEFERRED** — перевод бакета в приватный сломает уже выданные клиентам ссылки на PDF, что прямо запрещено рамками задачи.
+→ **F-05 приватное хранилище клиентских файлов: DEFERRED** — перевод бакета в приватный сломает уже выданные клиентам ссылки на PDF.
+→ **`generate-design-pdf`: KNOWN TEMPORARY SERVICE_ROLE RISK — DEFERRED TO TIMEWEB MIGRATION.** Функция остаётся `verify_jwt = false` + `SERVICE_ROLE_KEY` и не переделывается в этом патче, потому что от неё зависит анонимный кастомайзер. Этот пункт обязателен в финальном отчёте.
 
-Что при этом всё равно закрывается: `storage-manager` и `media-manager`, то есть привилегированные пути произвольной работы с бакетом, перестают быть доступны анониму.
+Формулировка «все анонимные service-role пути устранены» в отчёте **запрещена**. Закрываются только `storage-manager` и `media-manager`; `generate-design-pdf` и `order-processing` остаются анонимно вызываемыми по бизнес-необходимости.
 
 ### PHASE 6 — Проверки
 
-Матрица 401/invalid/403/admin по `storage-manager`, `media-manager`, `update-price`, `import-products` — выполнима из sandbox через `curl` (без токена, с мусорным токеном, с анонимным ключом). Проверка «valid admin → success» требует реальной сессии администратора и будет помечена как **MANUAL VERIFICATION REQUIRED**, если войти в админку в рантайме не удастся.
+Матрица 401 / невалидный токен / 403 / админ по `storage-manager`, `media-manager`, `update-price`, `import-products` — выполнима из песочницы через `curl`. «Valid admin → success» требует реальной сессии и помечается **MANUAL VERIFICATION REQUIRED**, если войти не удастся.
 
-Регрессия админки и публичной части — по чек-листам из задания, с явным разделением STATIC CODE VERIFIED / RUNTIME VERIFIED / MANUAL VERIFICATION REQUIRED. Никаких «PASS» без фактической проверки.
+Финальный отчёт строго разделён на **STATIC CODE VERIFIED / RUNTIME VERIFIED / MANUAL VERIFICATION REQUIRED**, с BEFORE/AFTER и фактическими HTTP-кодами. Ручные админ-тесты не помечаются PASS без реального выполнения. Персональные данные не выводятся — только счётчики и коды ответов.
 
-Счётчики строк по `products`, `orders`, `contact_requests`, `b2b_clients`, `designs` снимаются до и после; персональные данные не выводятся.
 
 ---
 
