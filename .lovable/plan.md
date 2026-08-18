@@ -69,30 +69,51 @@ PHASE 0 выполнена как read-only трассировка. Код не 
 
 ### PHASE 1 — Edge authorization
 
-Добавить в `storage-manager/index.ts` и `media-manager/index.ts` единый блок авторизации в начале обработчика: взять `Authorization`, проверить пользователя через анонимный клиент с этим токеном, вызвать `has_role(user.id,'admin')`, и **только после успеха** создавать service-role клиент. Нет токена → 401, невалидный → 401, не админ → 403.
+Защита строится в два независимых слоя, а не только на `verify_jwt`:
+
+```text
+1. Gateway: verify_jwt = true        → «токен вообще валидный?»
+2. In-code: getUser(token)           → «кто именно это?»
+3. In-code: has_role(user.id,'admin')→ «имеет ли право на ADMIN-операцию?»
+4. Только после (3) создаётся service_role клиент
+```
+
+`verify_jwt = true` сам по себе пропускает любого авторизованного пользователя, включая обычного. Поэтому проверка роли в коде обязательна и не заменяется настройкой шлюза; наоборот, настройка шлюза не заменяется проверкой в коде. Оба слоя ставятся одновременно.
+
+Реализация в `storage-manager/index.ts` и `media-manager/index.ts`: в начале обработчика (после CORS-preflight) взять `Authorization`, создать клиент с anon-ключом и этим токеном, `auth.getUser()`, затем `rpc('has_role', { _user_id, _role: 'admin' })`. Нет токена → 401, невалидный → 401, не админ → 403. Service-role клиент создаётся строго ниже этого блока.
 
 `supabase/config.toml`: `verify_jwt = true` для обеих функций.
 
-Атомарно с этим — фронтенд. `supabase.functions.invoke` автоматически подставляет токен текущей сессии, поэтому два активных вызова в `modernAdminComponent_media.js` L71 и L156 менять не требуется по существу; нужно только убедиться, что клиент из `js/utils/supabase.js` — тот же, в котором выполнен вход (это так: `adminAuthComponent.js` использует его же). Добавляется обработка 401/403 с понятным сообщением.
+Фронтенд: `supabase.functions.invoke` подставляет токен текущей сессии автоматически, поэтому два активных вызова в `modernAdminComponent_media.js` L71 и L156 по существу не меняются; нужно лишь убедиться, что клиент из `js/utils/supabase.js` — тот же, в котором выполнен вход (это так: `adminAuthComponent.js` использует его же). Добавляется обработка 401/403 с понятным сообщением вместо «Unknown error».
 
 `storage-manager` активных вызовов не имеет — его защита не ломает ничего.
 
-Прочие функции с той же комбинацией проверяются отдельно: `generate-design-pdf` (`verify_jwt = false` + service_role) вызывается анонимным покупателем из кастомайзера — **её закрывать нельзя**, она остаётся как есть и уходит в раздел deferred.
+`generate-design-pdf` (`verify_jwt = false` + service_role) вызывается анонимным покупателем из кастомайзера — **её закрывать нельзя**, остаётся как есть, уходит в deferred.
 
 ### PHASE 2 — Plaintext-пароли в active runtime
 
-Активных вызовов `update-price` и `import-products` нет. Поэтому вместо переписывания рабочего кода:
+Активных вызовов `update-price` и `import-products` нет: цена в рабочей админке пишется напрямую в `products.price_rub` (`modernAdminComponent.js` L914) под RLS `has_role`. Поэтому фронтенд не переделывается под эти эндпоинты — они просто перестают быть публично вызываемым способом перебирать `is_admin_user`:
 
-- удалить мёртвые модули `adminComponent.js`, `adminProductsComponent.js`, `mediaManagerComponent.js`, `js/utils/storageHelper.js` (dependency trace доказан выше);
-- привести `update-price` и `import-products` к той же JWT + `has_role` модели, что и Phase 1, и убрать приём `admin_login`/`admin_password` — чтобы эндпоинты не оставались публично вызываемым способом дёрнуть `is_admin_user` перебором.
+- обе функции переводятся на ту же трёхслойную модель, что и Phase 1 (`verify_jwt = true` + `getUser` + `has_role`);
+- приём `admin_login` / `admin_password` из тела запроса убирается.
+
+**Мёртвые модули НЕ удаляются** (решение принято): `adminComponent.js`, `adminProductsComponent.js`, `mediaManagerComponent.js`, `js/utils/storageHelper.js` остаются в репозитории со статусом `DEPRECATED / DEAD CODE — DO NOT REACTIVATE`. Они не подключены к роутеру, не создают runtime-риска и служат документацией по массовому импорту, медиа-менеджеру и работе с папками Storage перед миграцией на Timeweb. Единственное изменение — комментарий-маркер в шапке каждого файла. Удаление — после успешной миграции, вместе со старым Supabase-контуром.
 
 Функции `is_admin_user`, `set_admin_context`, `set_admin_login_context` и таблица `admins` **не удаляются** — только перестают использоваться.
 
 ### PHASE 3 — Legacy admin context
 
-В `modernAdminComponent.js` (L20-30, L516, L844, L957) и `modernAdminComponent_media.js` (L15, L229) убрать чтение `admin_session` и обёртки `if (this.adminLogin) rpc(...)`. Эти ветки и так не исполняются; RLS на `products` работает через `has_role`, то есть удаление ничего не разблокирует и ничего не сломает.
+В `modernAdminComponent.js` (L20-30, L516, L844, L957) и `modernAdminComponent_media.js` (L15, L229) убрать чтение `admin_session` и обёртки `if (this.adminLogin) rpc(...)`. Эти ветки не исполняются (`admin_session` никем не записывается); RLS на `products` работает через `has_role`, то есть удаление ничего не разблокирует и ничего не сломает.
 
-В `adminOrdersComponent.js` L465-478 убрать несуществующий `getAdminLogin()` и вызов `set_admin_login_context`, оставив прямой `update` под RLS `has_role`. Это **починка сломанного функционала**, а не изменение логики.
+В `adminOrdersComponent.js` L465-478 убрать несуществующий `AdminAuthComponent.getAdminLogin()` и вызов `set_admin_login_context`, оставив прямой `update` под RLS `has_role`:
+
+```text
+Admin вошёл через Supabase Auth → auth.uid() → RLS has_role(...,'admin') → UPDATE orders
+```
+
+Статус результата: **CODE FIXED / RUNTIME MANUAL VERIFICATION REQUIRED.** Текущая работоспособность смены статуса вручную не подтверждалась — считаем **NOT VERIFIED IN RUNTIME**; проверка выполняется вами после деплоя.
+
+
 
 ### PHASE 4 — Critical RLS
 
