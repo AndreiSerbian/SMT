@@ -502,16 +502,9 @@ export class ModernAdminComponent {
       document.getElementById('tableBody').innerHTML = '';
     }
 
-    // Устанавливаем контекст администратора
-    if (this.adminLogin) {
-      try {
-        await this.supabase.rpc('set_admin_login_context', {
-          admin_login: this.adminLogin
-        });
-      } catch (error) {
-        console.error('Error setting admin context:', error);
-      }
-    }
+    // SAFE P0 patch: legacy admin context removed; RLS has_role handles authorization.
+
+
 
     this.isLoading = true;
 
