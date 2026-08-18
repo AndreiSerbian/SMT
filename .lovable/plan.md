@@ -1,494 +1,647 @@
-# Аудит SMTBoxes / giftboxopt.ru на соответствие 152-ФЗ
+# Аудит архитектуры данных SMT Premium Box (DIAGNOSTIC ONLY)
 
-Дата оценки требований: 18.08.2026. Код не изменялся, миграции не выполнялись, реальные данные клиентов не выводились, секреты не раскрывались.
+Код не изменялся, миграции не выполнялись, ресурсы Supabase не удалялись, переменные окружения не трогались.
 
 ---
 
 ## 1. Executive Summary
 
-Найдено: **P0 — 5**, **P1 — 7**, **P2 — 9**, **P3 — 4**.
+Архитектура **гибридная и асимметричная**:
 
-Пять наиболее серьёзных проблем:
+- **Публичный каталог** уже не зависит от Supabase в горячем пути — он читает `public/data/products-public.json` (JSON-first, 56 SKU, версия `27c00555`), а Supabase остаётся только аварийным фоллбеком с таймаутом 4 с.
+- **Всё остальное** — заказы, заявки, кастомайзер, изображения товаров, аналитика, админка — по-прежнему полностью на Supabase (БД + Storage + Auth + Edge Functions).
+- **Источник истины по товарам — Supabase**, JSON является производным снапшотом, генерируемым скриптом. Двойного независимого источника нет, но есть риск рассинхронизации: правки в админке не появятся на сайте без повторного экспорта и деплоя.
+- **Персональные данные российских покупателей пишутся в Supabase**, регион которого из репозитория недоказуем, и дополнительно расходятся в Telegram, Resend и Google Sheets.
+- **Браузер обращается к БД напрямую** через anon-ключ; защита держится исключительно на RLS, и в двух таблицах RLS фактически открыта.
 
-1. **P0.** Edge Functions `storage-manager` и `media-manager` работают с `SUPABASE_SERVICE_ROLE_KEY`, объявлены как `verify_jwt = false` и **не содержат ни одной проверки авторизации**. Любой, кто знает URL, может загружать/удалять/переименовывать объекты в бакете и изменять записи товаров.
-2. **P0.** Анонимный доступ на **чтение и изменение** таблицы `designs` (пользовательские макеты, комментарии, ссылки на PDF). Подтверждено политикой и живым тестом.
-3. **P0.** Первичная запись ПДн российских покупателей происходит в Supabase. Регион проекта из репозитория недоказуем → требования ч.5 ст.18 **не подтверждены**.
-4. **P0.** Аутентификация администратора частично идёт по паролю в открытом виде: таблица `admins(login, password)` содержит 2 записи, функция `is_admin_user(login, password)` активно вызывается из `update-price`.
-5. **P1.** Microsoft Clarity (session replay) и Google `gtag` запускаются в `<head>` до какого-либо волеизъявления пользователя; cookie-баннер авто-«соглашается» через 10 секунд, кнопка «Закрыть» тоже засчитывается как согласие, кнопки «Отклонить» нет.
-
----
-
-## 2. Actual Personal Data Inventory
-
-| Данные | Где вводятся/собираются | Точное место |
-|---|---|---|
-| ФИО | Форма заказа | `js/components/orderComponent.js` L212 (`#customerName`), L432, L531 |
-| Телефон | Заказ, обратная связь | `orderComponent.js` L219, L533; `js/components/contactsComponent.js` L75, L172 |
-| Email | Форма заказа | `orderComponent.js` L229, L534 |
-| Адрес доставки | Форма заказа | `orderComponent.js` L241 (`#yandexAddress`), L534 |
-| Комментарий (свободный текст) | Заказ | `orderComponent.js` L248, L535 |
-| Сообщение (свободный текст) | Обратная связь | `contactsComponent.js` L76, L173 |
-| Признак рассылки | Заказ | `orderComponent.js` L234 (`subscribe`, **checked по умолчанию**) |
-| Состав заказа | Заказ | `orderComponent.js` L496, L538 |
-| Данные B2B-клиента (компания, контактное лицо, телефон, email) | Формируются в админке/из заказов | таблица `b2b_clients` (12 записей) |
-| Пользовательские макеты, загруженные изображения, PDF | Кастомайзер | `js/customizer/canvasController.js` L241 `addImage`, `js/customizer/storageService.js` L13/36/53/78 |
-| User-Agent, Referrer | Клик по ссылке Wildberries | `js/components/productComponent.js` L546-566 |
-| Корзина | localStorage | `js/services/cartService.js` L12-17 (ключ `cart`) |
-| Черновик макета | localStorage | `js/customizer/sceneManager.js` L89-125 |
-| Флаг cookie-согласия | localStorage | `js/services/cookieConsentService.js` L2, L15 (ключ `cookieConsent`) |
-| Логин/пароль админа | sessionStorage — **мёртвый код** | `js/components/adminComponent.js` L315-317 (компонент не импортирован в `js/router.js`) |
-| Поведенческая запись (движение мыши, клики, DOM) | Clarity | `index.html` L34-41 |
-| IP-адрес | Не собирается кодом; попадает в логи Supabase/хостинга | НЕВОЗМОЖНО ПОДТВЕРДИТЬ ИЗ РЕПОЗИТОРИЯ |
-
-IndexedDB, UTM-обработка, fingerprint-библиотеки, captcha, error-monitoring SDK (Sentry и т.п.) — **в проекте не обнаружены**.
+Ключевой вывод: миграция «website DB» на Timeweb Managed PostgreSQL технически реалистична, потому что публичный каталог уже отвязан. Основной объём работы — не каталог, а контур заказов, кастомайзера и админки.
 
 ---
 
-## 3. Data Flow Map
+## 2. Current Architecture Diagram
 
 ```text
-Форма заказа (orderComponent.js L558)
-  USER -> FRONTEND -> POST bsndismiessofvhglzrv.supabase.co/functions/v1/order-processing
-    -> DATABASE: public.orders (INSERT)
-    -> EMAIL: Resend -> покупателю (order-processing L251-253)
-    -> EMAIL: Resend -> ADMIN_EMAIL (L356)
-    -> MESSENGER: api.telegram.org sendMessage, полный текст с ФИО/тел/email/адресом (L203-206, L297, L325-328)
-    -> MESSENGER: api.telegram.org sendDocument, PDF-макет клиента (L163-190)
-    -> EXTERNAL: Google Apps Script / Google Sheets (L21, updateGoogleSheets)
-    -> ADMIN: админка читает orders через Supabase Auth + has_role
-
-Форма обратной связи (contactsComponent.js -> js/services/contact-service.js)
-  USER -> FRONTEND -> POST /rest/v1/contact_requests  (INSERT)
-                   -> POST /functions/v1/contact-notify -> Telegram (name, phone, message)
-
-Кастомайзер (js/customizer/*)
-  USER -> FRONTEND -> supabase.storage 'product-media' (ПУБЛИЧНЫЙ бакет)
-                       пути designs/<uuid>/previews|scene|assets
-                   -> DATABASE: public.designs (INSERT/UPDATE)
-                   -> /functions/v1/generate-design-pdf -> PDF в тот же публичный бакет
-                   -> далее в заказ -> Telegram
-
-Клик по Wildberries (productComponent.js L546-566)
-  USER -> FRONTEND -> POST /rest/v1/wb_clicks (product_id, user_agent, referrer)
-
-Аналитика (index.html L34-50) — стартует до выбора пользователя
-  USER -> www.clarity.ms  (session replay)
-  USER -> www.googletagmanager.com/gtag/js?id=G-1HVF***
-
-Хранение/логи Supabase, хостинг giftboxopt.ru — UNKNOWN
+                       ┌──────────────────────────────────────┐
+   Посетитель ────────▶│ Timeweb shared hosting (giftboxopt.ru)│
+                       │  статика: index.html, js/, images/   │
+                       └───────────────┬──────────────────────┘
+                                       │
+        ┌──────────────────────────────┼───────────────────────────────┐
+        │                              │                               │
+   JSON-first                     прямые вызовы                  внешние скрипты
+        │                          из браузера                         │
+        ▼                              ▼                               ▼
+ /data/products-public.json    supabase.co (REST/Storage/Auth)   clarity.ms, gtag,
+ /data/catalog-version.json    /functions/v1/*                    CDN, шрифты
+ /images/**  (локально)               │
+                                      ▼
+                          ┌───────────────────────────┐
+                          │ Supabase (регион UNKNOWN) │
+                          │  Postgres: products,      │
+                          │   orders, designs, ...    │
+                          │  Storage: product-media   │
+                          │  Auth: админы             │
+                          │  Edge Functions: 10 шт.   │
+                          └────────────┬──────────────┘
+                                       │
+                    ┌──────────────────┼──────────────────┐
+                    ▼                  ▼                  ▼
+             api.telegram.org      Resend (email)   Google Apps Script
+             (ФИО, тел, email,     покупателю        → Google Sheets
+              адрес, PDF)          и админу          (полный заказ)
 ```
 
-Пересечение потоков подтверждено: **Clarity загружается на всех страницах, включая маршруты `#order` и `#contacts`**, где пользователь вводит ФИО, телефон, email и адрес. Masking полей в конфигурации Clarity в репозитории не задан — используется дефолтный тег без параметров (`index.html` L36-40).
-
 ---
 
-## 4. Forms & Consent Audit
+## 3. Database Inventory
 
-### Форма заказа — маршрут `#order`, `js/components/orderComponent.js`
-
-| Поле | Строка | Обязательное | Цель | Возможное основание |
-|---|---|---|---|---|
-| ФИО | L212 | да | заключение/исполнение договора | п.5 ч.1 ст.6 (договор) |
-| Телефон | L219 | да | связь по заказу | договор |
-| Email | L229 | да | подтверждение заказа | договор |
-| Адрес | L241 | нет | доставка | договор |
-| Комментарий | L248 | нет | уточнения к заказу | договор |
-| Оплата/доставка | L258-276 | да | исполнение | договор |
-| `subscribe` | **L234, `checked`** | предустановлено | рекламная рассылка | **согласие, ст.9 + ст.18 ФЗ «О рекламе»** |
-
-Проблемы:
-- Отдельного согласия на обработку ПДн на форме **нет вообще**. Для контрактных полей это допустимо, но не для маркетинга.
-- Чекбокс рассылки **предустановлен** — это не активное волеизъявление.
-- Ссылка на Политику есть только в футере страницы (`orderComponent.js` L312), не рядом с кнопкой отправки.
-- Серверная фиксация факта согласия отсутствует: `order-processing` принимает `subscribe` как обычное поле, запись в `orders.subscribe` не сопровождается версией текста согласия, датой предъявления, form ID или источником.
-- Валидация полей только клиентская (`orderComponent.js` L432-460); в edge-функции проверки формата нет.
-
-### Форма обратной связи — маршрут `#contacts`, `js/components/contactsComponent.js` L74-76
-
-Поля: имя (обяз.), телефон (обяз.), сообщение (необяз.). Цель формой не объявлена; фактически это смешанная форма — и предконтрактный запрос, и общая коммуникация. Согласия нет, ссылки на Политику рядом нет, серверной валидации нет, доказательства согласия не фиксируются. **LEGAL REVIEW REQUIRED** — квалификация основания зависит от того, как оператор описывает назначение формы.
-
-### Кастомайзер — `customizer.html`, `js/customizer/*`
-
-Загрузка изображений (`canvasController.js` L241). Никакого текста об обработке ПДн, никакого предупреждения не загружать изображения с личными данными, отдельного согласия нет.
-
-### Вход в админку — `js/components/adminAuthComponent.js`
-
-Email + пароль через Supabase Auth + `has_role`. Согласия не требуется (внутренний процесс).
-
-### Cookie-баннер — `js/services/cookieConsentService.js`
-
-- L74-75: формулировка «Продолжая просматривать этот сайт, вы соглашаетесь…» — пассивное согласие.
-- L101: кнопка «Закрыть» вызывает `accept()`.
-- L105: `setTimeout(() => this.accept(), 10000)` — автоматическое проставление согласия.
-- Кнопки отказа нет, категорий нет, отзыва нет, `hasConsent()` ни на что не влияет — скрипты аналитики уже отработали в `<head>`.
-
----
-
-## 5. Privacy Documents Audit
-
-| Документ | Путь | URL | Состояние |
-|---|---|---|---|
-| Политика конфиденциальности | `js/components/privacyPolicyComponent.js` | `giftboxopt.ru/#privacy-policy` | Есть, доступна без авторизации |
-| Условия пользования | `js/components/termsOfUseComponent.js` | `giftboxopt.ru/#terms-of-use` | Есть |
-| Согласие на обработку ПДн (отдельный документ) | — | — | **ОТСУТСТВУЕТ** |
-| Согласие на рекламные рассылки | — | — | **ОТСУТСТВУЕТ** |
-| Cookie-политика (отдельно) | — | — | **ОТСУТСТВУЕТ** (только §5 внутри Политики) |
-| Публичная оферта | — | — | **ОТСУТСТВУЕТ** (Условия пользования её не заменяют) |
-| Реквизиты оператора (наименование, ИНН/ОГРН, адрес) | — | — | **ОТСУТСТВУЮТ** во всём репозитории |
-
-Расхождения Политики с фактической реализацией:
-- §5 (`privacyPolicyComponent.js` L96) называет **Яндекс.Метрику** — в коде её **нет**.
-- **Не названы**: Microsoft Clarity, Google `gtag`, Supabase, Resend, Telegram, Google Sheets / Apps Script, Wildberries-трекинг.
-- §4 (L88) утверждает «данные не передаются третьим лицам, кроме курьерских служб» — фактически передаются минимум пяти внешним сервисам.
-- §4 (L87) заявляет срок «не позднее 5 лет» — механизма удаления в проекте нет.
-- §6 (L109) даёт email для обращений; технической процедуры исполнения запроса нет.
-- Раздела о трансграничной передаче нет.
-- Раздела о месте нахождения базы данных нет.
-
----
-
-## 6. Analytics / Cookies / Session Replay
-
-| Сервис | Точное место | Момент запуска | Комментарий |
-|---|---|---|---|
-| **Microsoft Clarity** | `index.html` L34-41, тег `w8xav***` | Синхронно в `<head>`, до баннера | Session replay + heatmaps. Параметры masking не заданы. Ввод в поля формы потенциально попадает в запись. Opt-out в коде отсутствует. |
-| **Google gtag** | `index.html` L43-50, ID `G-1HVF***` | `async` в `<head>`, до баннера | Тип потока (GA4 / Google Ads) из кода **не подтверждается** — есть только `gtag('config', ...)`. Конкретные cookie и срок хранения не подтверждаются из репозитория. |
-| **Yandex.Metrika** | не найдена | — | **Отсутствует.** В `index.html` L32 есть только `yandex-verification` meta-тег — он не создаёт сетевого запроса и **не является аналитикой**. |
-| **Lovable tagger** | `index.html` L31 `cdn.gpteng.co/gptengineer.js` | Синхронно | Служебный скрипт среды разработки; на проде подлежит проверке. |
-| **cdnjs / jsdelivr / Google Fonts** | `index.html` L30, `customizer.html` L10 | Синхронно | CDN получает IP и User-Agent при загрузке ресурса. |
-
-`customizer.html` аналитику **не подключает** — Clarity и gtag там отсутствуют.
-
-Собственных cookie сайт через `document.cookie` не ставит (совпадений в коде нет). localStorage: `cart`, `cookieConsent`, ключ черновика кастомайзера.
-
----
-
-## 7. Database / Storage / Localization
-
-### Проект Supabase
-
-- API hostname: `bsndismiessofvhglzrv.supabase.co` (`js/utils/supabase.js` L3, `public/env.js` L3, `src/integrations/supabase/client.ts` L6, `supabase/config.toml` L2).
-- Ответ API содержит `sb-project-ref` и `server: cloudflare`, `cf-ray: …-AMS`. Это точка присутствия CDN, **не** регион базы.
-- **Регион проекта из репозитория недоказуем.**
-
-Ответ по цепочке ч.5 ст.18:
-
-| Операция | Где происходит |
-|---|---|
-| Первая запись | Supabase Postgres (`orders`, `contact_requests`, `designs`) |
-| Систематизация | Supabase Postgres |
-| Накопление | Supabase Postgres + Supabase Storage |
-| Хранение | Supabase Postgres + Supabase Storage + Google Sheets + Telegram-чат + почтовые ящики Resend |
-| Изменение | Supabase Postgres (админка) |
-| Извлечение | Supabase Postgres (админка, edge-функции) |
-
-Статус: **P0 CRITICAL — LOCATION NOT VERIFIED**. Российской базы, в которую производилась бы первичная запись, в проекте нет. Утверждать выполнение требований локализации нельзя.
-
-### RLS — фактические политики
-
-| Таблица | RLS | anon | authenticated | Проверено вживую |
-|---|---|---|---|---|
-| `orders` (18 зап.) | вкл. | INSERT `with_check=true`; SELECT/UPDATE/DELETE закрыты | admin через `has_role` | anon SELECT → пустой ответ, утечки нет |
-| `contact_requests` (5) | вкл. | INSERT `true`; SELECT закрыт | admin SELECT | утечки нет |
-| `b2b_clients` (12) | вкл. | нет | admin RW+D; отдельная политика `Service role can manage b2b clients` для роли `public` с `qual=true` (ALL) | требует ручной перепроверки — политика назначена роли `public`, а не `service_role` |
-| `designs` (16) | вкл. | **SELECT `qual=true`**, **UPDATE `qual=true`**, INSERT `true` | — | anon SELECT → **непустой ответ, HTTP 200** |
-| `wb_clicks` (17) | вкл. | INSERT `true`, **SELECT `qual=true`** | — | anon SELECT → **непустой ответ, HTTP 200** |
-| `admins` (2) | вкл. | нет | SELECT только admin | Хранит колонку `password` типа `text` |
-| `user_roles` | вкл. | нет | own SELECT + admin ALL | корректно |
-
-Отдельной таблицы для фиксации согласий в схеме **нет**.
-
-### Storage
-
-Единственный бакет: **`product-media`, `public = true`**. В нём смешаны:
-
-- A) Публичные ассеты каталога — `images/<размер>/<цвет>/slide*.webp`. Публичность здесь ожидаема и нарушением не является.
-- B) **Пользовательский контент** — `designs/<uuid>/previews/*.png`, `designs/<uuid>/scene/scene.json`, `designs/<uuid>/assets/<timestamp>.<ext>`, PDF-макеты (`js/customizer/storageService.js` L42, L56, L81).
-
-Свойства пользовательских объектов: публичный URL без срока жизни (`getPublicUrl`, L26/68/92), signed URL не используются, идентификатор — UUID (непредсказуемый сам по себе), **но** UUID извлекается анонимно из таблицы `designs`, чтение которой открыто. Это превращает непредсказуемость в неработающую защиту.
-
-Валидация загрузки: только `file.size > 25MB` (`canvasController.js` L242). MIME-проверка, whitelist расширений, санитизация имени, снятие EXIF, антивирусная проверка — **отсутствуют**. `contentType` берётся из `file.type`, то есть из значения, контролируемого клиентом (`storageService.js` L86).
-
-Retention / lifecycle / cron: **не найдены** нигде в `supabase/` и `scripts/`.
-
----
-
-## 8. Third Parties & Cross-Border Processing
-
-| Service | Domain | Purpose | Data Sent | Russian DB Confirmed? | Cross-border Risk | Action |
+| Component | Technology | File(s) | Purpose | Reads | Writes | Critical? |
 |---|---|---|---|---|---|---|
-| Supabase | `bsndismiessofvhglzrv.supabase.co` | БД, storage, edge, auth | ФИО, телефон, email, адрес, комментарии, файлы | НЕТ | Высокий | INFRASTRUCTURE VERIFICATION REQUIRED |
-| Telegram | `api.telegram.org` | Уведомления админа | ФИО, телефон, email, адрес, состав заказа, PDF клиента | НЕТ | Высокий | Минимизировать до номера заказа |
-| Resend | через SDK в `order-processing` | Транзакционная почта | Email, ФИО, состав заказа | НЕТ | Высокий | Оценить замену на РФ-провайдера |
-| Google Apps Script / Sheets | задаётся секретом `GOOGLE_SCRIPT_URL` | Лог заказов | Полный заказ | НЕТ | Высокий | Оценить отказ |
-| Microsoft Clarity | `www.clarity.ms` | Session replay | Поведение, потенциально содержимое полей | НЕТ | Высокий | Гейт по согласию + masking либо отказ |
-| Google gtag | `www.googletagmanager.com` | Аналитика | Идентификаторы, IP, URL | НЕТ | Высокий | Гейт по согласию |
-| Cloudflare CDN | `cdnjs.cloudflare.com` | FontAwesome | IP, User-Agent | НЕТ | Низкий (ПДн не передаются намеренно) | Самохостинг ресурса |
-| jsDelivr | `cdn.jsdelivr.net` | Библиотеки | IP, User-Agent | НЕТ | Низкий | Самохостинг |
-| Google Fonts | `fonts.googleapis.com`, `fonts.gstatic.com` | Шрифты | IP, User-Agent | НЕТ | Низкий | Самохостинг |
-| Lovable tagger | `cdn.gpteng.co` | Служебный скрипт | Метаданные страницы | НЕТ | Низкий | Проверить отсутствие в прод-сборке |
-| Wildberries | `www.wildberries.ru` | Внешние переходы | Referrer при переходе | РФ | Низкий | Раскрыть в Политике |
-| WhatsApp | `wa.me` | Ссылка на связь | Инициируется пользователем | НЕТ | Низкий | Раскрыть |
-| Хостинг giftboxopt.ru | — | Раздача сайта, access-логи | IP, User-Agent, URL | НЕ ПОДТВЕРЖДЁН | Средний | INFRASTRUCTURE VERIFICATION REQUIRED |
+| Supabase client (публичный) | supabase-js | `js/utils/supabase.js`, `public/env.js`, `js/utils/env.js` | Единый клиент для всего фронта | да | да | Да |
+| Supabase client (React-часть) | supabase-js | `src/integrations/supabase/client.ts`, `src/utils/env.ts` | Клиент React-слоя | да | да | Нет (React-слой в проде не является основным) |
+| JSON-каталог | статический файл | `public/data/products-public.json`, `public/data/catalog-version.json` | Публичный каталог, JSON-first | да | нет | **Да** |
+| Загрузчик снапшота | JS | `js/services/catalogFallbackService.js` | Загрузка и адаптация JSON | да | нет | Да |
+| Сервис товаров | JS | `js/services/productsService.js` | JSON-first для public, Supabase-only для admin | да | нет | Да |
+| Экспортёр снапшота | Node | `scripts/export-catalog-snapshot.mjs` | Генерация JSON из Supabase, таблица `ARTIKUL_PHOTO_REMAP` | да | пишет файлы | Да (build-time) |
+| Аудит медиа | Node | `scripts/audit-media-sync.mjs` | Сверка фото Supabase ↔ локальные | да | нет | Нет |
+| Резолвер медиа | JS | `js/services/mediaResolver.js` | Локальные пути + fallback на Supabase Storage | да | нет | Да |
+| Сервис цен | JS | `js/services/pricesService.js` | `product_prices` + Realtime-канал | да | нет | Средне |
+| Корзина | localStorage | `js/services/cartService.js`, `js/customizer/app.js` | Ключ `cart` | да | да | Да |
+| Согласие на cookie | localStorage | `js/services/cookieConsentService.js` | Ключ `cookieConsent` | да | да | Нет |
+| Черновик кастомайзера | localStorage | `js/customizer/sceneManager.js` | Сохранение сцены | да | да | Средне |
+| Сессия админа (legacy) | sessionStorage | `js/components/adminComponent.js` | `admin_login`, `admin_password` — **мёртвый код** | да | да | Нет |
+| Логин админа (частично живой) | sessionStorage | `js/components/adminProductsComponent.js` (`adminLogin`), `modernAdminComponent.js` (`admin_session`) | Контекст для `set_admin_login_context` | да | да | Да |
+| Supabase Auth | Supabase | `js/components/adminAuthComponent.js` | Вход админа, `has_role` | да | нет | Да |
+| Supabase Storage | Supabase | `js/utils/storageHelper.js`, `js/components/adminProductsComponent.js`, `js/customizer/storageService.js` | Бакет `product-media` | да | да | Да |
+| Supabase Realtime | Supabase | `js/services/productsService.js` L382, `js/services/pricesService.js` L126 | Живое обновление товаров и цен | да | нет | Нет |
+| Edge Functions | Deno | `supabase/functions/*` (10 шт.) | Заказы, уведомления, медиа, PDF, импорт | да | да | Да |
+| Legacy-каталог | JS-модуль | `js/data/products.js` | Захардкоженный каталог, **выведен из эксплуатации** | нет | нет | Нет |
+| Импортные утилиты | HTML/JS | `import-products.html`, `import-script.js`, `run-import.js`, `simple-import.html` | Разовый импорт товаров | да | да | Нет (артефакты) |
+| Внешние сервисы | HTTP | Edge Functions | Telegram, Resend, Google Apps Script | — | да | Да |
+| Аналитика | JS | `index.html` L34-50 | Clarity, gtag | — | да (наружу) | Нет |
 
-Разграничение: CDN и шрифты — это использование иностранного сервиса без намеренной передачи ПДн. Supabase, Telegram, Resend, Google Sheets, Clarity — это фактическая передача ПДн или поведенческих данных за рубеж.
-
----
-
-## 9. Security Audit
-
-- **Неавторизованные привилегированные edge-функции.** `supabase/config.toml` L16-20 объявляет `verify_jwt = false` для `storage-manager` и `media-manager`. Обе создают клиент с `SUPABASE_SERVICE_ROLE_KEY` (`storage-manager/index.ts` L42-44, `media-manager/index.ts` L37-39) и не выполняют ни одной проверки прав. Доступные действия: загрузка, удаление, переименование объектов (`storage-manager` L96, L129, L136, L171), обновление записей товаров (`media-manager` L128-130).
-- **`update-price`** (`verify_jwt = false`, L13-14 config) принимает `admin_login` + `admin_password` в теле запроса и сверяет их через `is_admin_user` (L48-52) — аутентификация по паролю в открытом виде плюс отсутствие защиты от перебора.
-- **Таблица `admins`** содержит колонку `password text`, 2 записи. Функции `is_admin_user`, `set_admin_context`, `set_admin_login_context` работают с plaintext.
-- **Legacy-компонент** `js/components/adminComponent.js` пишет логин и пароль в `sessionStorage` (L315-317). В `js/router.js` он **не импортирован**, маршрут на него не ведёт (L65-93 используют только `AdminAuthComponent` и `AdminLayoutComponent`). Классификация: **DEAD LEGACY CODE**, подлежит удалению, но активной уязвимостью в текущей сборке не является.
-- **RPC `set_admin_login_context`** вызывается из живых компонентов админки (`adminProductsComponent.js` L1064, `adminOrdersComponent.js` L474, `modernAdminComponent.js` L518/846/959, `modernAdminComponent_media.js` L15/229) — параллельный контур авторизации в обход `has_role`.
-- **CORS `Access-Control-Allow-Origin: *`** во всех edge-функциях (`order-processing` L7, `contact-notify` L5, `admin-notify` L4, `update-price` L5, `storage-manager` L5, `media-manager` L5, `generate-design-pdf` L6).
-- **Rate-limit, captcha, антиспам** — отсутствуют на всех публичных формах и edge-функциях.
-- **Логи:** `orderComponent.js` L554-555 печатает `orderData` целиком (ФИО, телефон, email, адрес) в консоль браузера. `order-processing/index.ts` L249 логирует email покупателя, L142 — chat_id, L417 (`order-confirmation`) — все параметры URL. Токены и ключи в логи не попадают — проверки написаны как «есть/нет» (`order-processing` L13, L26).
-- **ПДн в URL:** прямых `?email=`/`?phone=`/`?name=` нет. В ссылке подтверждения заказа используется `order_id` (UUID) — `order-processing` L62, `order-confirmation` L413, L447. Это ссылка одноразового действия, попадающая в почтовый ящик и историю браузера; предсказуемости нет, но токен подтверждения отсутствует — знание `order_id` достаточно для подтверждения заказа.
-- **Anon-ключ в клиентском коде** (`js/utils/supabase.js` L4 и ещё 5 мест) — это штатная публичная величина архитектуры Supabase, утечкой секрета не является. Реальный уровень риска определяется политиками RLS выше.
-- **Audit-логи действий администратора, алерты, incident-мониторинг** — отсутствуют.
+Переменные окружения, связанные с БД: `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_SUPABASE_PROJECT_ID` (`.env`), плюс дублирование значений в `public/env.js`. Серверные секреты Edge Functions: `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_DB_URL`, `RESEND_API_KEY`, `TELEGRAM_TOKEN`, `TELEGRAM_CHAT_ID`, `GOOGLE_SCRIPT_URL`, `GOOGLE_SHEETS_ID`, `ADMIN_EMAIL`, `PUBLIC_SITE_URL`, `LOVABLE_API_KEY`.
 
 ---
 
-## 10. Full Findings Table
+## 4. Supabase Dependency Map
 
-| ID | Sev | Finding | Exact Evidence | Personal Data | Data Flow | Legal Req | Current State | Fix Cat | Lovable Fix | User Action | Owner Approval | Confidence |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| F-01 | P0 | `storage-manager` и `media-manager` — service_role без авторизации | `supabase/config.toml` L16-20; `storage-manager/index.ts` L42-44; `media-manager/index.ts` L37-39 | Косвенно (доступ к бакету с пользовательскими файлами) | Любой → edge → Storage/DB | ст.19 | Открыто | A | Да | — | Нет | Высокая |
-| F-02 | P0 | Анонимный SELECT/UPDATE `designs` | политики `Anyone can read designs`, `Anyone can update designs`, `qual=true`, роль `public`; anon-запрос вернул непустой ответ | Пользовательские макеты, комментарии, ссылки на PDF | anon → REST → БД | ст.7, ст.19 | Открыто | A | Да | — | Нет | Высокая |
-| F-03 | P0 | Локализация ПДн не подтверждена | `js/utils/supabase.js` L3; `supabase/config.toml` L2; заголовок `sb-project-ref` | Все ПДн покупателей | RU-пользователь → Supabase | ч.5 ст.18 | Не подтверждено | C + D | Нет | Да | Да | Высокая (по факту недоказанности) |
-| F-04 | P0 | Пароль администратора в открытом виде + аутентификация по нему | таблица `admins(password text)`, 2 записи; `is_admin_user`; `update-price/index.ts` L35-52 | Учётные данные | Клиент → edge → RPC | ст.19 | Активно | A | Да | — | Да | Высокая |
-| F-05 | P0 | Пользовательские файлы в публичном бакете + открытая `designs` = свободный доступ | `storage.buckets`: `product-media public=true`; `storageService.js` L26/68/92; связка с F-02 | Загруженные изображения, PDF, макеты | Клиент → Storage → публичный URL | ст.7, ст.19 | Открыто | A | Да | — | Да | Высокая |
-| F-06 | P1 | Clarity и gtag стартуют до выбора пользователя | `index.html` L34-50; `cookieConsentService.js` L105 | Поведение, потенциально содержимое полей | Браузер → clarity.ms / googletagmanager.com | ст.9, ст.12 | Открыто | A | Да | Подтвердить необходимость Clarity | Да | Высокая |
-| F-07 | P1 | Cookie-баннер не даёт выбора: авто-accept, «Закрыть» = согласие, отказа нет | `cookieConsentService.js` L74-75, L101, L105 | Флаг согласия | localStorage | ст.9 | Открыто | A | Да | — | Нет | Высокая |
-| F-08 | P1 | Маркетинговый чекбокс предустановлен и не отделён | `orderComponent.js` L234 (`checked`) | Email, телефон | orders.subscribe | ст.9 + ст.18 ФЗ «О рекламе» | Открыто | A | Да | Подтвердить, ведётся ли рассылка | Нет | Высокая |
-| F-09 | P1 | Нет технических доказательств согласия (дата, версия, form ID, источник) | таблица согласий отсутствует в схеме; `order-processing` не пишет метаданные | — | — | ст.9 ч.4 | Отсутствует | A + B | Да | Утвердить тексты согласий | Нет | Высокая |
-| F-10 | P1 | Отдельного документа «Согласие на обработку ПДн» нет | ни одного файла в `js/components/` | — | — | ст.9, редакция с 01.09.2025 | Отсутствует | A + D | Да (страница) | Юр. текст | Нет | Высокая |
-| F-11 | P1 | Полные ПДн клиента в Telegram | `order-processing/index.ts` L203-206, L297, L325-328; `contact-notify/index.ts` L36-39 | ФИО, телефон, email, адрес, PDF | edge → api.telegram.org | ст.12, ст.19 | Активно | A + D | Да | Подтвердить состав чата | Да | Высокая |
-| F-12 | P1 | Политика противоречит реализации | `privacyPolicyComponent.js` L88, L96 (Я.Метрика, «не передаём третьим лицам») | — | — | ст.18.1 | Открыто | A + B | Да (текст) | Реквизиты и подтверждение фактов | Нет | Высокая |
-| F-13 | P2 | Загрузка файлов без MIME/расширения/EXIF/санитизации имени | `canvasController.js` L241-244; `storageService.js` L79-86 | Возможные ПДн в изображениях | Клиент → Storage | ст.19 | Открыто | A | Да | — | Нет | Высокая |
-| F-14 | P2 | ПДн в консоли браузера | `orderComponent.js` L554-555 | ФИО, телефон, email, адрес | Консоль | ст.19 | Открыто | A | Да | — | Нет | Высокая |
-| F-15 | P2 | Email покупателя и параметры URL в логах edge | `order-processing` L249; `order-confirmation` L417 | Email, order_id | Логи Supabase | ст.19 | Открыто | A | Да | — | Нет | Высокая |
-| F-16 | P2 | Анонимный SELECT `wb_clicks` | политика `Admins can read WB clicks` фактически `qual=true`, роль `public`; anon-запрос вернул непустой ответ | UA, referrer (не ПДн в узком смысле) | anon → REST | ст.19 | Открыто | A | Да | — | Нет | Высокая |
-| F-17 | P2 | Политика `Service role can manage b2b clients` назначена роли `public`, ALL, `qual=true` | `pg_policies` | Данные B2B-клиентов | — | ст.7 | Требует перепроверки | A | Да | — | Нет | Средняя |
-| F-18 | P2 | Retention отсутствует | нет cron/cleanup в `supabase/`, `scripts/` | Все ПДн | — | п.7 ч.1 ст.5, ч.4 ст.21 | Отсутствует | A + B | Да (джобы) | RETENTION PERIOD MUST BE DEFINED BY OPERATOR | Да | Высокая |
-| F-19 | P2 | Нет механизма поиска/исправления/удаления данных субъекта | в админке нет операций по email/телефону через все системы | Все ПДн | — | ст.14, ст.20, ст.21 | MANUAL PROCESS REQUIRED | A + B | Частично | Регламент | Нет | Высокая |
-| F-20 | P2 | CORS `*` на всех edge-функциях | все `supabase/functions/*/index.ts`, строки 4-8 | — | — | ст.19 | Открыто | A | Да | — | Нет | Высокая |
-| F-21 | P2 | Нет rate-limit и captcha на публичных формах | `order-processing`, `contact-notify` | — | — | ст.19 | Отсутствует | A | Да | Выбор провайдера captcha | Нет | Высокая |
-| F-22 | P3 | Мёртвый legacy-компонент с паролем в sessionStorage | `adminComponent.js` L315-317; не импортирован в `router.js` | Учётные данные | — | ст.19 | DEAD CODE | A | Да | — | Нет | Высокая |
-| F-23 | P3 | Anon-ключ продублирован в 6 местах | `js/utils/supabase.js` L4; `public/env.js` L4; `contact-service.js` L5; `orderComponent.js` L562; `productComponent.js` L553; `src/integrations/supabase/client.ts` L7 | — | — | — | Не нарушение, гигиена | A | Да | — | Нет | Высокая |
-| F-24 | P3 | Ссылка подтверждения заказа без токена | `order-processing` L62; `order-confirmation` L413 | order_id | Email → браузер | ст.19 | Открыто | A | Да | — | Нет | Высокая |
-| F-25 | P3 | Внешние CDN и шрифты вместо самохостинга | `index.html` L30-31; `customizer.html` L10 | IP, User-Agent | Браузер → CDN | — | Открыто | A | Да | — | Нет | Высокая |
-
-**E — NO ISSUE FOUND:** Яндекс.Метрика в проекте отсутствует; `yandex-verification` — не аналитика. Anon-ключ на клиенте — штатное поведение технологии. Публичность каталожных изображений в `product-media` сама по себе нарушением не является. Анонимное чтение `orders` и `contact_requests` заблокировано — проверено.
-
-**OUTSIDE 152-FZ — ADDITIONAL COMPLIANCE ISSUE:** предустановленный чекбокс рассылки (`orderComponent.js` L234) затрагивает ч.1 ст.18 ФЗ «О рекламе» — требуется предварительное согласие абонента. Отсутствие публичной оферты и реквизитов продавца затрагивает Закон «О защите прав потребителей» и Правила продажи товаров дистанционным способом.
-
----
-
-## 11. LOVABLE CAN FIX NOW
-
-| Priority | Problem | Files | Exact Change | Risk of Change | Dependencies |
+| File | Function/module | Supabase feature | Table/bucket | Operation | Called by |
 |---|---|---|---|---|---|
-| P0 | F-01 | `supabase/config.toml`, `supabase/functions/storage-manager/index.ts`, `supabase/functions/media-manager/index.ts` | Включить `verify_jwt = true`; в начале обработчика извлекать JWT и проверять `has_role(user.id,'admin')`; при отказе — 403 | Админка перестанет работать, пока компоненты не начнут передавать токен Supabase Auth | Полный переход админки на Supabase Auth |
-| P0 | F-02, F-16, F-17 | миграция | Пересоздать политики: `designs` — SELECT/UPDATE только `service_role` либо по владельцу; `wb_clicks` — SELECT только `has_role(...,'admin')`; политику `b2b_clients` переназначить с `public` на `service_role` | Кастомайзер потеряет чтение своего дизайна без серверного посредника | Edge-функция доступа к дизайну |
-| P0 | F-04, F-22 | `supabase/functions/update-price/index.ts`, `supabase/config.toml`, миграция, удалить `js/components/adminComponent.js` | Перевести `update-price` на `verify_jwt = true` + `has_role`; удалить таблицу `admins` и функции `is_admin_user`, `set_admin_context`, `set_admin_login_context`; убрать вызовы `set_admin_login_context` из пяти компонентов админки | Полный отказ legacy-контура авторизации | Проверка, что все админ-операции проходят под Supabase Auth |
-| P0 | F-05 | миграция (новый бакет `user-uploads`, `public=false`), `js/customizer/storageService.js`, `supabase/functions/generate-design-pdf/index.ts` | Развести каталожные ассеты и пользовательский контент; для пользовательских — `createSignedUrl` с коротким TTL вместо `getPublicUrl` | Существующие публичные ссылки на макеты перестанут открываться | Миграция существующих объектов |
-| P1 | F-06, F-07 | `index.html` L34-50, `js/services/cookieConsentService.js` | Вынести Clarity и gtag в функцию, вызываемую только после явного «Принять»; добавить «Отклонить» и «Настроить»; убрать `AUTO_CLOSE_DELAY`; отвязать «Закрыть» от `accept()`; хранить три состояния вместо `'true'`; добавить точку отзыва в футере | Падение объёма аналитики | Решение владельца о судьбе Clarity |
-| P1 | F-08, F-09, F-10 | `js/components/orderComponent.js`, `js/components/contactsComponent.js`, новый компонент страницы согласия, `supabase/functions/order-processing/index.ts`, миграция таблицы `consents` | Снять `checked` с `subscribe`; добавить ссылку на Политику и на текст согласия рядом с кнопкой; на сервере при `subscribe=true` требовать и записывать `consent_version`, `policy_version`, метку времени, `form_id`, `source_url` | Часть покупателей не подпишется на рассылку | Утверждённые владельцем тексты |
-| P1 | F-11 | `supabase/functions/order-processing/index.ts` L203-206/L297/L325-328, `supabase/functions/contact-notify/index.ts` L36-39 | В Telegram отправлять номер заказа и ссылку в админку; ФИО/телефон/email/адрес и PDF не пушить | Менеджеру придётся открывать админку | Решение владельца об операционном процессе |
-| P1 | F-12 | `js/components/privacyPolicyComponent.js` | Переписать §2-§6 под фактический стек; добавить разделы о трансграничной передаче и месте нахождения БД; убрать упоминание Я.Метрики; вставить реквизиты оператора | Юридический текст требует утверждения | Реквизиты и юр. проверка |
-| P2 | F-13 | `js/customizer/canvasController.js` L241, `js/customizer/storageService.js` L78-97 | Whitelist MIME и расширений, перекодирование изображения на canvas для снятия EXIF, генерация безопасного имени файла | Часть форматов перестанет приниматься | — |
-| P2 | F-14, F-15 | `js/components/orderComponent.js` L554-555, `supabase/functions/order-processing/index.ts` L249, `supabase/functions/order-confirmation/index.ts` L417 | Убрать вывод `orderData`, email и дампа параметров URL | Усложнится отладка | — |
-| P2 | F-18 | миграция с `pg_cron` или scheduled edge-функция | Удаление `wb_clicks`, черновиков `designs` со статусом `draft` и закрытых заказов по истечении срока | Безвозвратное удаление | Срок задаёт владелец |
-| P2 | F-19 | новый раздел админки | Поиск по email/телефону во всех таблицах, экспорт выписки, каскадное удаление записи + связанных объектов Storage | Риск ошибочного удаления | Регламент владельца |
-| P2 | F-20 | все `supabase/functions/*/index.ts` | Заменить `*` на `https://giftboxopt.ru` | Отвалятся сторонние вызовы, если они есть | Список легитимных источников |
-| P2 | F-21 | `supabase/functions/order-processing/index.ts`, `contact-notify/index.ts`, формы | Подключить captcha и лимит запросов по IP | Небольшое трение в UX | Выбор провайдера |
-| P3 | F-23 | `js/utils/supabase.js`, `public/env.js`, `contact-service.js`, `orderComponent.js`, `productComponent.js`, `src/integrations/supabase/client.ts` | Единая точка конфигурации | Низкий | — |
-| P3 | F-24 | `supabase/functions/order-processing/index.ts`, `order-confirmation/index.ts`, миграция | Добавить одноразовый токен подтверждения с TTL | Старые письма перестанут работать | — |
-| P3 | F-25 | `index.html` L30-31, `customizer.html` L10 | Перенести FontAwesome и fabric.js в локальную сборку; проверить отсутствие `cdn.gpteng.co` в проде | Рост размера бандла | — |
+| `js/services/productsService.js` | `_fetchProductsFromSupabase` | Database | `products` | SELECT | публичный каталог (только фоллбек), админка |
+| `js/services/productsService.js` | `_loadColorsFromSupabase` | Database | `colors` | SELECT | тот же сервис |
+| `js/services/productsService.js` | загрузка категорий | Database | `categories` | SELECT | каталог |
+| `js/services/productsService.js` L382 | `subscribeToChanges` | Realtime | `products` | подписка | `publicProductsComponent.js` L585 |
+| `js/services/productsService.js` | вызов группировки | Edge Function | `group-products-by-categories` | POST | каталог |
+| `js/services/pricesService.js` | загрузка цен | Database | `product_prices` | SELECT | публичные компоненты |
+| `js/services/pricesService.js` L126 | Realtime-канал | Realtime | `product_prices` | подписка | тот же |
+| `js/services/mediaResolver.js` | fallback URL | Storage | `product-media` | публичный URL | каталог, карточка товара |
+| `js/components/orderComponent.js` L562 | отправка заказа | Edge Function | `order-processing` | POST | форма заказа |
+| `js/services/contact-service.js` | заявка | Database + Edge Function | `contact_requests`, `contact-notify` | INSERT + POST | форма обратной связи |
+| `js/services/orderConfirmationService.js` | подтверждение | Edge Function | `order-confirmation` | GET | ссылка из письма |
+| `js/services/orderConfirmationHandler.js` | обработка ответа | — | — | — | роутер |
+| `js/components/productComponent.js` L553 | трекинг | Database | `wb_clicks` | INSERT | клик по ссылке WB |
+| `js/customizer/designService.js` | макеты | Database | `designs` | INSERT/SELECT/UPDATE | кастомайзер |
+| `js/customizer/storageService.js` | файлы макета | Storage | `product-media` (`designs/**`) | upload + getPublicUrl | кастомайзер |
+| `js/customizer/exportPipeline.js` | PDF | Edge Function | `generate-design-pdf` | invoke | кастомайзер |
+| `js/customizer/app.js` | товар для кастомайзера | Database | `products` | SELECT | страница кастомайзера |
+| `js/components/adminAuthComponent.js` | вход | Auth + RPC | `has_role` | signInWithPassword, rpc | админка |
+| `js/components/adminProductsComponent.js` | CRUD товаров | Database + Storage + Edge | `products`, `product_prices`, `colors`, `categories`, `orders`, `wb_clicks`, `product-media`, `media-manager`, `import-products` | все | админка |
+| `js/components/adminOrdersComponent.js` | заказы | Database + RPC | `orders`, `set_admin_login_context` | SELECT/UPDATE | админка |
+| `js/components/adminClientsComponent.js` | клиенты | Database | `orders`, **`client_analytics`** | SELECT | админка |
+| `js/components/adminAnalyticsComponent.js` | аналитика | Database | `orders` | SELECT | админка |
+| `js/components/adminCategoriesComponent.js` | категории | Database | `categories` | CRUD | админка |
+| `js/components/adminColorsComponent.js` | цвета | Database | `colors` | CRUD | админка |
+| `js/components/mediaManagerComponent.js` | медиа | Database + Edge | `products`, `colors`, `categories`, `media-manager` | CRUD | админка |
+| `js/components/modernAdminComponent.js` | сводная админка | Database + RPC | `products`, `orders`, `colors`, `categories`, `sizes`, `box_types`, `wb_clicks`, `set_admin_login_context` | все | админка |
+| `js/components/modernAdminComponent_media.js` | медиа | Database + Edge | `products`, `media-manager` | UPDATE | админка |
+| `js/utils/storageHelper.js` | папки/файлы | Edge Function | `storage-manager` | invoke ×5 | админка |
+| `js/components/adminComponent.js` | legacy | Database + Edge | `admins`, `update-price` | SELECT/POST | **не подключён к роутеру** |
+| `supabase/functions/order-processing` | приём заказа | Database + внешние | `orders`, `designs` | INSERT/SELECT | форма заказа |
+| `supabase/functions/order-confirmation` | подтверждение | Database | `orders` | SELECT/UPDATE | письмо |
+| `supabase/functions/update-price` | цены | Database + RPC | `product_prices`, `is_admin_user` | UPDATE | админка |
+| `supabase/functions/media-manager` | медиа | Storage + Database | `product-media`, `products` | upload/UPDATE | админка |
+| `supabase/functions/storage-manager` | папки | Storage | `product-media` | create/move/delete | админка |
+| `supabase/functions/generate-design-pdf` | PDF | Storage + Database | `product-media`, `designs` | upload/UPDATE | кастомайзер |
+| `supabase/functions/import-products` | импорт | Database + RPC | `products`, `product_prices`, `is_admin_user` | INSERT | админка |
+| `supabase/functions/group-products-by-categories` | группировка | Database | `products`, `categories` | SELECT | каталог |
+| `supabase/functions/contact-notify` | заявка | внешние | — | POST Telegram | форма |
+| `supabase/functions/admin-notify` | алерты | внешние | — | POST | edge-функции |
+
+### Если Supabase исчезнет завтра
+
+**Продолжит работать:**
+- Главная страница и каталог — читаются из `products-public.json`.
+- Карточка товара — тот же снапшот.
+- Все изображения каталога — локальные `/images/**` (миграция завершена).
+- Корзина — localStorage.
+- Статические страницы, навигация, фильтры, поиск по снапшоту.
+- Кастомайзер как редактор в браузере — до момента сохранения.
+
+**Перестанет работать:**
+- Оформление заказа целиком (`order-processing`).
+- Подтверждение заказа по ссылке из письма.
+- Форма обратной связи.
+- Сохранение макета кастомайзера, генерация PDF, загрузка ассетов.
+- Трекинг кликов Wildberries.
+- Вся админка: вход, товары, заказы, клиенты, категории, цвета, медиа, аналитика.
+- Realtime-обновления цен и товаров.
+- Актуализация цен (`product_prices` читается напрямую, а не из снапшота — **требует проверки**, покрывает ли снапшот все отображаемые цены).
 
 ---
 
-## 12. USER ACTION REQUIRED
+## 5. Database Tables / Entities
 
-| Priority | Action | Why Lovable Cannot Do It | Exact Steps for Owner | Information Needed | Blocking? |
-|---|---|---|---|---|---|
-| P0 | Определить регион проекта Supabase | Регион виден только в панели управления аккаунта | Supabase Dashboard → выбрать проект `bsndismiessofvhglzrv` → Project Settings → General → поле Region | Точное название региона и его страна | Да — блокирует вывод по локализации |
-| P0 | Подтвердить, где физически размещён сайт giftboxopt.ru | Хостинг не описан в репозитории | Панель хостинг-провайдера → раздел с расположением серверов; либо запрос в поддержку провайдера | Название провайдера, страна размещения, наличие ЦОД в РФ | Да |
-| P0 | Установить реквизиты оператора ПДн | Нельзя выдумывать | Подготовить: полное наименование ЮЛ или ФИО ИП, ИНН, ОГРН/ОГРНИП, юридический адрес, email и почтовый адрес для обращений субъектов | Все перечисленные реквизиты | Да — блокирует Политику и Согласие |
-| P0 | Проверить статус уведомления Роскомнадзора | Из кода факт подачи неустановим | Портал персональных данных РКН → реестр операторов → поиск по ИНН. Если сведений нет либо они устарели — подать/актуализировать уведомление | См. раздел ниже | Да |
-| P1 | Раскрыть состав получателей Telegram-уведомлений | chat_id — секрет, участники видны только в мессенджере | Открыть чат, получающий заказы; зафиксировать: приватный или групповой, список участников, есть ли внешние лица | Тип чата и список лиц | Нет |
-| P1 | Подтвердить, ведётся ли фактическая рассылка по `orders.subscribe` | В коде обработчика рассылки нет | Проверить, выгружается ли поле в почтовый сервис или CRM вручную | Да/нет и канал | Нет |
-| P1 | Договоры/поручения на обработку с фактически обнаруженными сервисами | Юридические документы | Оформить или подтвердить наличие поручений с: Supabase, Resend, Microsoft (Clarity), Google (Analytics/Apps Script/Sheets), хостинг-провайдером | Реквизиты договоров | Нет |
-| P1 | Решить судьбу Microsoft Clarity | Отключение аналитики — бизнес-решение | Оценить, нужен ли session replay; при сохранении — включить masking и гейт по согласию | Решение | Нет |
-| P2 | Установить сроки хранения | Закон не задаёт универсального срока | Определить срок для: заказов, заявок обратной связи, макетов кастомайзера, кликов WB, B2B-карточек | Срок по каждой категории | Нет |
-| P2 | Назначить ответственного за организацию обработки ПДн | Организационное действие | Издать приказ о назначении | ФИО и должность | Нет |
-| P2 | Внутренние локальные акты | OWNER / ORGANIZATIONAL ACTION REQUIRED | Разработать: политику обработки ПДн как ЛНА, перечень обрабатываемых ПДн, регламент доступа, порядок уничтожения, порядок работы с обращениями, порядок реагирования на инциденты | Комплект документов | Нет |
-| P2 | Регламент реагирования на инциденты | Организационная процедура | Определить порядок уведомления РКН в установленные сроки, ответственных, каналы связи | Регламент | Нет |
-
-Сведения, которые понадобятся для уведомления Роскомнадзора (собрать заранее):
-
-- оператор: наименование, ИНН, ОГРН, адрес;
-- цели: оформление и исполнение договора купли-продажи, обратная связь, изготовление индивидуальных макетов, рекламная рассылка при наличии согласия, веб-аналитика;
-- категории субъектов: покупатели-физлица, представители юрлиц, посетители сайта;
-- категории ПДн: ФИО, телефон, email, адрес доставки, содержание обращений, изображения и макеты, загруженные пользователем, сетевые идентификаторы;
-- действия: сбор, запись, систематизация, накопление, хранение, уточнение, извлечение, использование, передача, удаление, уничтожение;
-- правовые основания: договор, согласие для рассылки и аналитики;
-- дата начала обработки;
-- меры защиты: перечислить фактически внедрённые после устранения P0;
-- место нахождения базы данных: заполняется по результатам проверки региона Supabase;
-- лицо, ответственное за организацию обработки;
-- трансграничная передача: перечень стран по фактическим получателям.
-
----
-
-## 13. INFRASTRUCTURE VERIFICATION REQUIRED
-
-| Question | Why It Matters | Can Be Determined from Code? | Where I Should Check | Result Needed |
+| Table/entity | Fields used by frontend | CRUD | Related feature | Personal data? |
 |---|---|---|---|---|
-| Регион проекта Supabase | Ключевой факт для ч.5 ст.18 | Нет | Supabase Dashboard → Project Settings → General → Region | Название региона и страна |
-| Регион Supabase Storage | Где лежат пользовательские файлы | Нет | Там же; Storage наследует регион проекта | Подтверждение |
-| Страна размещения хостинга giftboxopt.ru | Access-логи содержат IP | Нет | Панель хостинг-провайдера | Провайдер и страна |
-| Регион почтовой инфраструктуры Resend | Трансграничная передача email | Нет | Dashboard Resend → настройки аккаунта | Регион |
-| Расположение Google-аккаунта со Sheets | Трансграничная передача заказов | Нет | Google Workspace/Drive → сведения об аккаунте | Регион данных |
-| Настройки Microsoft Clarity: masking, retention | Может ли запись содержать значения полей | Нет — в теге параметров нет | Clarity Dashboard → Settings → Masking / Data retention | Текущие значения |
-| Тип потока `G-1HVF***` | GA4 или Google Ads, какие cookie и срок | Нет | Google Analytics/Ads → Admin → Data Streams | Тип и настройки |
-| Настройки бэкапов Supabase | Копии ПДн и их география | Нет | Supabase Dashboard → Database → Backups | Частота, срок, регион |
-| Присутствует ли `cdn.gpteng.co` в прод-сборке | Сторонний скрипт на проде | Частично — есть в `index.html` L31 | Открыть исходный код опубликованной страницы | Да/нет |
-| Наличие CDN перед сайтом | Дополнительные копии и логи | Нет | DNS-записи домена, панель провайдера | Есть/нет, провайдер |
-| Реальные получатели `ADMIN_EMAIL` | Круг лиц с доступом к ПДн | Нет — значение секрета | Supabase → Edge Functions → Secrets | Список адресов |
+| `products` | id, artikul, name, price_rub, id_wb, dimensions, weight, photos, videos, is_active, size, color_hex, category_id | R (public), CRUD (admin) | Каталог, карточка, кастомайзер | Нет |
+| `product_prices` | product_id, price_rub, updated_at | R (public), U (admin через edge) | Цены + Realtime | Нет |
+| `categories` | id, name, slug, is_active, sort_order | R, CRUD (admin) | Категории, группировка | Нет |
+| `colors` | name, russian_name, hex_code, is_active, sort_order | R, CRUD (admin) | Цветовые варианты | Нет |
+| `sizes` | name, value, sort_order, is_active | R (admin) | Справочник | Нет |
+| `box_types` | name, slug, sort_order, is_active | R (admin) | Справочник | Нет |
+| `orders` | name, phone, email, yandex_address, comment, payment, delivery, cart_items, subtotal, discount, total, order_status, order_number, subscribe, client_id, confirmed_at | C (публично), RUD (admin) | Заказы | **Да** |
+| `contact_requests` | name, phone, message | C (публично), R (admin) | Обратная связь | **Да** |
+| `b2b_clients` | email, phone, company_name, contact_name | CRUD (admin/edge) | CRM-заготовка | **Да** |
+| `designs` | product_id, sku, qty, comment, options, objects_mm, preview_urls, production_pdf_url, customized_sides, status | C/R/U (публично) | Кастомайзер | **Да** (комментарии, загруженные изображения) |
+| `wb_clicks` | product_id, user_agent, referrer | C (публично), R (admin) | Трекинг переходов | Сетевые идентификаторы |
+| `admins` | login, password | R (legacy/edge) | Legacy-авторизация | Учётные данные |
+| `user_roles` | user_id, role | R | RBAC | Нет |
+| `site_settings` | key, value | R/W | Настройки | Нет |
+| `products_photos_backup_20260509` | — | — | Разовый бэкап | Нет |
+| **`client_analytics`** | `*`, `last_order_date` | R | Страница клиентов в админке | **Да, вероятно** |
+
+**Schema cannot be fully determined from repository** для `client_analytics`: объект запрашивается в `js/components/adminClientsComponent.js` L49, но **отсутствует в перечне таблиц проекта**. Скорее всего это представление (view) поверх `orders`/`b2b_clients`, но его определение в репозитории не найдено.
+
+Также не выводится из репозитория: фактические типы и ограничения колонок (репозиторий содержит только 7 файлов миграций, что явно меньше текущего состояния схемы), наличие индексов, фактические объёмы строк, состав `cart_items`, `options`, `objects_mm`, `preview_urls`.
+
+### Что нужно достать из Supabase Dashboard
+
+1. Table Editor → полные DDL всех таблиц (`Definition`), особенно `orders`, `designs`, `products`, `b2b_clients`.
+2. SQL Editor → `select table_name, table_type from information_schema.tables where table_schema='public';` — подтвердить, view ли `client_analytics`, и получить её определение.
+3. Database → Indexes → перечень индексов.
+4. Количество строк по каждой таблице.
+5. Database → Backups → настройки и регион копий.
+6. Project Settings → General → **Region**.
+7. Storage → перечень бакетов и суммарный объём, отдельно размер префикса `designs/`.
+8. Edge Functions → Secrets → фактическое значение `ADMIN_EMAIL` (список получателей) — не для отчёта, а для планирования.
 
 ---
 
-## 14. LEGAL REVIEW REQUIRED
+## 6. Personal Data Audit
 
-1. Квалификация правового основания для формы обратной связи (`contactsComponent.js` L74-76): предконтрактное обращение по инициативе пользователя либо обработка на основании согласия. От этого зависит, нужен ли чекбокс.
-2. Допустимость передачи ФИО, телефона, email и адреса покупателя в Telegram как в средство коммуникации, и квалификация Telegram — обработчик или канал связи.
-3. Достаточность договорного основания для передачи заказов в Google Sheets и Resend, необходимость оформления поручений и уведомления о трансграничной передаче по ст.12.
-4. Требуется ли отдельное согласие на веб-аналитику и session replay в текущей практике правоприменения, и в каком объёме.
-5. Возможность признания требований локализации выполненными при любой конфигурации, где Supabase остаётся постоянным местом хранения записей о гражданах РФ. Схема «первичная запись в РФ + постоянная копия в Supabase» **не должна презюмироваться комплаентной** без явного юридического подтверждения.
-6. Срок хранения макетов кастомайзера после завершения заказа.
+| Data field | Where collected | Where sent | Where stored | Third-party | Personal? | Risk |
+|---|---|---|---|---|---|---|
+| ФИО | `orderComponent.js` L212 | `order-processing` | `orders.name` | Supabase, Telegram, Resend, Sheets | Да | **HIGH PRIORITY FOR MIGRATION** |
+| Телефон | `orderComponent.js` L219; `contactsComponent.js` L75 | order-processing / contact-notify | `orders.phone`, `contact_requests.phone` | те же | Да | **HIGH PRIORITY** |
+| Email | `orderComponent.js` L229 | order-processing | `orders.email` | Supabase, Resend, Telegram, Sheets | Да | **HIGH PRIORITY** |
+| Адрес доставки | `orderComponent.js` L241 | order-processing | `orders.yandex_address` | Supabase, Telegram, Sheets | Да | **HIGH PRIORITY** |
+| Комментарий к заказу | `orderComponent.js` L248 | order-processing | `orders.comment` | те же | Да (свободный текст) | **HIGH PRIORITY** |
+| Сообщение обратной связи | `contactsComponent.js` L76 | contact-notify | `contact_requests.message` | Supabase, Telegram | Да | **HIGH PRIORITY** |
+| Согласие на рассылку | `orderComponent.js` L234 | order-processing | `orders.subscribe` | Supabase | Да (связано с email) | NEEDS REVIEW |
+| Состав заказа | корзина | order-processing | `orders.cart_items` | Supabase, Telegram, Sheets | Косвенно | NEEDS REVIEW |
+| Компания, контактное лицо | админка/агрегация | — | `b2b_clients` | Supabase | Да | **HIGH PRIORITY** |
+| Загруженные клиентом изображения | `canvasController.js` L241 | Storage | `product-media/designs/*/assets/` | Supabase | Возможно | **HIGH PRIORITY** |
+| Макет и комментарий к макету | кастомайзер | Storage + DB | `designs`, `product-media/designs/**` | Supabase, Telegram (PDF) | Да | **HIGH PRIORITY** |
+| Производственный PDF | `generate-design-pdf` | Storage → Telegram | `product-media/designs/*/production/` | Supabase, Telegram | Да | **HIGH PRIORITY** |
+| User-Agent, Referrer | `productComponent.js` L546-566 | REST | `wb_clicks` | Supabase | Сетевые идентификаторы | NEEDS REVIEW |
+| IP-адрес | кодом не собирается | — | логи Supabase и хостинга | — | Да, в логах | NEEDS REVIEW — UNKNOWN |
+| Корзина | браузер | — | localStorage `cart` | — | Нет | LOW RISK |
+| Поведение на сайте | Clarity, gtag | clarity.ms, googletagmanager.com | вне проекта | Microsoft, Google | Да | NEEDS REVIEW |
+| Учётные данные админа | форма входа | Supabase Auth; legacy — `admins.password` plaintext | Supabase | — | Да | **HIGH PRIORITY** |
 
----
+Поток:
 
-## 15. REQUIRES OWNER APPROVAL
+```text
+USER → FORM (orderComponent / contactsComponent / customizer)
+     → FRONTEND (браузер, anon-ключ)
+     → EDGE FUNCTION (order-processing / contact-notify / generate-design-pdf)
+     → DATABASE (orders / contact_requests / designs) + STORAGE (product-media)
+     → ADMIN (adminOrdersComponent, adminClientsComponent)
+     → TELEGRAM (полный текст заказа + PDF)
+     → RESEND (письмо покупателю и админу)
+     → GOOGLE SHEETS (полный заказ)
+```
 
-- F-03: любое изменение места хранения ПДн — смена или дополнение базы данных.
-- F-05: перенос пользовательских файлов в приватный бакет — существующие публичные ссылки на макеты перестанут работать.
-- F-04: отключение legacy-контура авторизации — изменение работы админки.
-- F-06: отключение или гейтирование Microsoft Clarity и gtag — потеря части аналитики.
-- F-11: изменение содержимого Telegram-уведомлений — изменение операционного процесса менеджера.
-- F-18: включение автоматического удаления данных по сроку.
-- Отказ от Google Sheets как канала учёта заказов.
-
----
-
-## 16. Recommended Remediation Order
-
-**P0 — сначала (можно начинать без юридических документов):**
-1. F-01 — закрыть `storage-manager` и `media-manager` авторизацией.
-2. F-02 — исправить RLS на `designs`.
-3. F-04 — вывести из эксплуатации plaintext-контур авторизации.
-4. F-05 — приватный бакет и signed URL для пользовательского контента.
-5. F-03 — запросить регион Supabase и хостинга (действие владельца, параллельно).
-
-**P1 — затем:**
-6. F-06, F-07 — гейт аналитики и переработка баннера.
-7. F-08, F-09, F-10 — отделение маркетингового согласия, фиксация доказательств, отдельный документ согласия.
-8. F-11 — минимизация Telegram-уведомлений.
-9. F-12 — актуализация Политики после получения реквизитов.
-
-**P2:**
-10. F-13, F-14, F-15, F-16, F-17, F-18, F-19, F-20, F-21.
-
-**P3:**
-11. F-22, F-23, F-24, F-25.
+Пишутся ли ПДн россиян за пределы РФ: **технически данные уходят в Supabase, Telegram, Resend и Google — все инфраструктурно иностранные сервисы. Регион самого проекта Supabase из репозитория недоказуем — UNKNOWN, requires verification.** Юридический вывод не делается.
 
 ---
 
-## 17. Files That Would Need Changes
+## 7. Product Data vs Customer Data
 
-Frontend:
-- `index.html`
-- `customizer.html`
-- `js/services/cookieConsentService.js`
-- `js/components/orderComponent.js`
-- `js/components/contactsComponent.js`
-- `js/components/privacyPolicyComponent.js`
-- `js/components/termsOfUseComponent.js`
-- `js/components/productComponent.js`
-- `js/components/adminProductsComponent.js`
-- `js/components/adminOrdersComponent.js`
-- `js/components/modernAdminComponent.js`
-- `js/components/modernAdminComponent_media.js`
-- `js/components/adminLayoutComponent.js`
-- `js/customizer/canvasController.js`
-- `js/customizer/storageService.js`
-- `js/customizer/designService.js`
-- `js/utils/supabase.js`
-- `js/services/contact-service.js`
-- `js/router.js`
-- `public/env.js`
-- `src/integrations/supabase/client.ts`
-- Новые: страница «Согласие на обработку персональных данных», страница «Согласие на рекламные рассылки», cookie-нотис, раздел админки для обращений субъектов
-- Удалить: `js/components/adminComponent.js`
+### A. Product data — где реально живёт
 
-Backend:
-- `supabase/config.toml`
-- `supabase/functions/storage-manager/index.ts`
-- `supabase/functions/media-manager/index.ts`
-- `supabase/functions/update-price/index.ts`
-- `supabase/functions/order-processing/index.ts`
-- `supabase/functions/contact-notify/index.ts`
-- `supabase/functions/admin-notify/index.ts`
-- `supabase/functions/order-confirmation/index.ts`
-- `supabase/functions/generate-design-pdf/index.ts`
+Проверено по коду, не по предположению:
 
-Объекты БД:
-- Политики RLS: `public.designs`, `public.wb_clicks`, `public.b2b_clients`
-- Таблица `public.admins` — вывод из эксплуатации
-- Функции `public.is_admin_user`, `public.set_admin_context`, `public.set_admin_login_context` — удаление
-- Новая таблица `public.consents`
-- Новый бакет `user-uploads` с `public = false`
-- Retention-джобы
+| Сущность | Источник истины | Публичное чтение | Примечание |
+|---|---|---|---|
+| Товары | **Supabase `products`** | `products-public.json` | JSON — производный снапшот |
+| Цены | Supabase `products.price_rub` + `product_prices` | цена есть в снапшоте; `pricesService` при этом отдельно ходит в `product_prices` | **дублирование механизмов, требует проверки** |
+| Категории | Supabase `categories` | в снапшоте | — |
+| Цвета | Supabase `colors` | в снапшоте | — |
+| Размеры, типы коробок | Supabase `sizes`, `box_types` | не в снапшоте, только админка | — |
+| Фото | пути в `products.photos`, файлы — **локально `public/images/**`** | локально | ремап зафиксирован в `ARTIKUL_PHOTO_REMAP` |
+| Видео | `products.videos` | локально `/videos/` | — |
+| Остатки | **отсутствуют в схеме** | — | функционала складского учёта нет |
+| Опции кастомизации | геометрия задаётся кодом кастомайзера, не таблицей | — | — |
+
+### B. Customer / transaction data
+
+Полностью в Supabase: `orders`, `contact_requests`, `b2b_clients`, `designs`, `wb_clicks`. Локальных копий нет. Экспорта в JSON нет.
+
+### Проверка исходной гипотезы
+
+Гипотеза «product data JSON-based, customer data Supabase» **подтверждается частично**:
+- Верно, что публичное чтение каталога идёт из JSON и что клиентские данные целиком в Supabase.
+- Неверно, что каталог JSON-based по своей природе: **записи по-прежнему делаются в Supabase**, JSON только читается. Админка работает исключительно через Supabase (`source: 'admin'`, Supabase-only, таймаут 18 с).
 
 ---
 
-## 18. Compliance Score
+## 8. Product CRUD Flow
 
-Техническая оценка готовности, не юридическое заключение.
+```text
+АДМИН (adminProductsComponent / modernAdminComponent / mediaManagerComponent)
+  → supabase.from('products').insert/update/delete       ← прямая запись из браузера
+  → supabase.functions.invoke('media-manager')           ← загрузка фото, обновление products.photos
+  → supabase.functions.invoke('storage-manager')         ← создание/перенос/удаление папок в бакете
+  → supabase.functions.invoke('import-products')         ← массовый импорт
+  → supabase.rpc('set_admin_login_context')              ← параллельный legacy-контур авторизации
+        │
+        ▼
+  Supabase Postgres + Storage  (ИСТОЧНИК ИСТИНЫ)
+        │
+        │  ручной шаг: npm run export:catalog
+        ▼
+  public/data/products-public.json + catalog-version.json
+        │
+        │  ручной шаг: npm run build → загрузка dist/ на Timeweb
+        ▼
+  ПУБЛИЧНЫЙ КАТАЛОГ
+```
 
-| Направление | Оценка |
-|---|---|
-| Technical compliance readiness | 22 / 100 |
-| Consent / Form compliance | 15 / 100 |
-| Data localization confidence | 5 / 100 |
-| Privacy documentation | 25 / 100 |
-| Security controls | 20 / 100 |
-| Operator / organizational readiness | 5 / 100 |
-| **Overall readiness** | **17 / 100** |
+Ответы:
+
+1. **Источник истины** — Supabase Postgres (таблица `products`), плюс бакет `product-media` для файлов, загруженных через админку. Локальные `public/images/**` — источник истины для файлов, которые уже мигрированы.
+2. **Изменяет ли админ-CRUD JSON?** Нет. Ни один компонент админки не пишет в `products-public.json`.
+3. **Пишет ли админ-CRUD в Supabase?** Да, напрямую из браузера и через edge-функции.
+4. **Дублируются ли товары между JSON и Supabase?** Да, но это односторонний снапшот, а не два независимых источника. Расхождение возможно и вероятно.
+5. **Как обрабатываются загруженные изображения?** Через `media-manager` в бакет `product-media`, затем URL дописывается в массив `products.photos`.
+6. **Где хранятся URL изображений?** В `products.photos` / `products.videos` (Supabase) и в снапшоте `products-public.json` в виде локальных путей после ремапа в `scripts/export-catalog-snapshot.mjs`.
+7. **Что после перезагрузки страницы?** Публичный каталог перечитает JSON и покажет состояние на момент последнего экспорта. Изменения админа не появятся.
+8. **Что после деплоя/сборки?** `dist/` содержит снапшот, зафиксированный на момент экспорта. Если экспорт не выполнялся, деплой откатит публичный каталог к более старому состоянию данных.
+9. **Могут ли изменения админа быть перезаписаны деплоем?** Данные в Supabase — нет. **Публичное отображение — да**: деплой со старым JSON визуально «откатит» правки. Это реальный операционный риск текущей схемы.
 
 ---
 
-## 19. Final Answer
+## 9. Storage / Images / Customer Files
 
-**Есть ли сейчас очевидные технические нарушения / риски по 152-ФЗ?**
-Да. Пять проблем уровня P0 подтверждены прямыми доказательствами из кода и метаданных БД.
+Бакет в проекте **один**.
 
-**Какое самое серьёзное обнаруженное нарушение?**
-Два равнозначных. Технически — неавторизованный доступ к привилегированным edge-функциям `storage-manager` и `media-manager` в связке с анонимным чтением и изменением таблицы `designs`, что открывает пользовательский контент. Юридически — отсутствие доказательств выполнения требований локализации ПДн граждан РФ.
+| Bucket | Content | Uploaded by | Public/private | Referenced from |
+|---|---|---|---|---|
+| `product-media` | `images/<размер>/<цвет>/slide*.webp` — каталожные фото | админ / первичный импорт | **public** | `mediaResolver.js` (только как fallback), карточка товара |
+| `product-media` | `videos/*` | админ | public | каталог |
+| `product-media` | `designs/<uuid>/previews/<side>.png` | покупатель | public | `storageService.js` L42 |
+| `product-media` | `designs/<uuid>/scene/scene.json` | покупатель | public | `storageService.js` L56 |
+| `product-media` | `designs/<uuid>/assets/<timestamp>.<ext>` — **файлы, загруженные клиентом** | покупатель | public | `storageService.js` L81 |
+| `product-media` | `designs/<uuid>/production/<filename>` — производственные PDF | edge-функция | public | `generate-design-pdf/index.ts` |
 
-**Что Lovable может исправить без вашего участия?**
-Авторизацию edge-функций, политики RLS, вывод plaintext-контура авторизации, приватный бакет с signed URL, гейт аналитики и переработку cookie-баннера, снятие предустановленного чекбокса рассылки, фиксацию доказательств согласия, минимизацию Telegram-уведомлений, очистку логов, CORS, валидацию загрузок, retention-джобы, раздел админки для обращений субъектов, удаление мёртвого legacy-кода.
+Разделение по чувствительности:
 
-**Что невозможно исправить через Lovable и должны сделать вы?**
-Подтвердить регион Supabase и хостинга, предоставить реквизиты оператора и контакт для обращений, проверить и при необходимости актуализировать уведомление Роскомнадзора, оформить поручения на обработку с фактически используемыми сервисами, определить сроки хранения, назначить ответственного, издать внутренние локальные акты и регламент реагирования на инциденты, утвердить юридические тексты Политики и Согласия.
+- **Публичные фото каталога** — публичность корректна; кроме того, каталог уже читает локальные копии с Timeweb.
+- **Загруженные админом фото товаров** — те же префиксы `images/**`; для 11 артикулов ранее выполнен ремап на локальные файлы.
+- **Файлы, загруженные клиентом** — `designs/*/assets/**`. **Отмечено отдельно: могут содержать логотипы, макеты и иные коммерчески чувствительные данные заказчика.**
+- **Артворк кастомизации** — `designs/*/previews/**`, `scene.json`.
+- **Производственные PDF** — `designs/*/production/**`, дополнительно уходят в Telegram.
 
-**Есть ли основания считать текущую архитектуру хранения ПДн граждан РФ соответствующей требованиям локализации?**
-Нет. Оснований для такого вывода в репозитории не обнаружено. Первичная запись, накопление, хранение, изменение и извлечение выполняются в Supabase, регион которого из проекта недоказуем, а часть данных дополнительно оседает в Google Sheets, Telegram и почтовых ящиках. Статус: **CRITICAL — LOCATION NOT VERIFIED**.
+Все перечисленное лежит в **одном публичном бакете**, доступ по постоянному публичному URL, signed URL не используются. Валидация загрузки — только ограничение 25 МБ (`canvasController.js` L242).
 
 ---
 
-Код не изменялся. Миграции не выполнялись. Реальные записи клиентов не отображались — использовались только счётчики строк и проверки статусов HTTP. Секреты, токены, ключи и значения `.env` в отчёте не приводятся.
+## 10. Authentication / Admin
+
+1. **Существует ли Supabase Auth?** Да. `adminAuthComponent.js` L100 — `signInWithPassword`, затем `rpc('has_role', ...)`; при отсутствии роли выполняется `signOut()` (L117). Сессия проверяется на L168/L191.
+2. **Один админ или несколько?** Модель многопользовательская: `user_roles` + enum `app_role('admin','user')`. **Фактическое число пользователей — UNKNOWN, requires verification** (Dashboard → Authentication → Users). Таблица `admins` содержит записи legacy-контура.
+3. **Нужна ли аутентификация публичному покупателю?** Нет. Заказ, заявка и кастомайзер работают анонимно.
+4. **Какие операции требуют аутентификации?** По RLS — чтение и изменение `orders`, `contact_requests`, `b2b_clients`, `admins`, запись в `products`/`categories`/`colors`/`sizes`/`box_types`. Не требуют: чтение активного каталога, INSERT в `orders`, `contact_requests`, `wb_clicks`, а также **SELECT/INSERT/UPDATE в `designs`** и **SELECT в `wb_clicks`**.
+5. **Есть ли RLS?** Да, включена на всех таблицах. Но политики `designs` (`Anyone can read/update designs`, `qual=true`) и `wb_clicks` (SELECT `qual=true`) фактически открыты для анонимов; политика `Service role can manage b2b clients` назначена роли `public` с `qual=true`.
+6. **Может ли фронтенд напрямую писать в БД?** Да — и публичный (INSERT в `orders`, `contact_requests`, `wb_clicks`, INSERT/UPDATE в `designs`), и админский (полный CRUD по товарам и справочникам).
+
+Риски безопасности (**не исправляются в рамках этой задачи**):
+
+- `storage-manager` и `media-manager`: `verify_jwt = false` + `SUPABASE_SERVICE_ROLE_KEY` + **отсутствие любой проверки прав** → неавторизованное управление бакетом и обновление товаров.
+- `update-price` и `import-products`: аутентификация по логину и паролю в открытом виде через `is_admin_user`.
+- Таблица `admins` хранит пароль в колонке `text`.
+- Параллельный контур `set_admin_login_context` в 5 живых компонентах админки в обход `has_role`.
+- Анонимные чтение и изменение `designs`; анонимное чтение `wb_clicks`.
+- Публичный бакет с клиентскими файлами.
+- CORS `*` во всех edge-функциях, отсутствие rate-limit и captcha.
+- Мёртвый `adminComponent.js` пишет пароль в `sessionStorage` (не в роутинге).
+
+---
+
+## 11. Frontend → Database Access
+
+Браузер **напрямую** обращается к Supabase REST, Storage, Auth и Realtime, используя публичный anon-ключ. Пароль Postgres в браузер не попадает и сейчас, поэтому «утечки кредов БД» в текущей схеме нет — но вся модель доступа держится на RLS, а RLS в двух местах открыта.
+
+Операции из браузера напрямую в БД: SELECT `products`/`colors`/`categories`/`product_prices`; INSERT `orders` (через edge), INSERT `contact_requests`, INSERT `wb_clicks`, INSERT/SELECT/UPDATE `designs`; весь админский CRUD; upload в Storage; подписки Realtime.
+
+Оценка целевой схемы «frontend → API в РФ → Managed PostgreSQL в РФ»: **подходит и является естественным следующим шагом**, потому что:
+
+- публичный каталог уже не требует БД в рантайме, значит API нужен не для чтения каталога, а только для записи и админки — объём эндпоинтов небольшой;
+- прямые записи из браузера уже частично проксируются edge-функциями, то есть шаблон «форма → серверная функция» в коде уже существует и будет заменён один в один;
+- главное следствие — придётся отказаться от Realtime и от Supabase Auth, заменив их на обычный polling и собственную сессионную авторизацию администратора.
+
+---
+
+## 12. Target Architecture Options
+
+### OPTION A — Timeweb Managed PostgreSQL + лёгкий Node.js API (VPS/Cloud Apps)
+
+- **Плюсы:** полный контроль, единый язык с фронтом, прямая замена edge-функций, БД и API в РФ, простая работа с файлами, можно оставить статику на shared-хостинге.
+- **Минусы:** появляется сервер, который надо обновлять и мониторить; нужен процесс-менеджер, TLS, бэкапы конфигурации.
+- **Сложность:** средняя. **Миграция:** средняя. **Поддержка:** средняя.
+- **Совместимость:** высокая — 10 edge-функций переносятся почти построчно.
+
+### OPTION B — Timeweb Managed PostgreSQL + PHP-бэкенд на существующем shared-хостинге
+
+- **Плюсы:** не нужен отдельный сервер и отдельная оплата; shared-хостинг Timeweb штатно поддерживает PHP и подключение к Managed PostgreSQL; ничего не надо администрировать; самая низкая стоимость; в проекте уже обсуждался PHP-слой как способ обхода недоступности внешних сервисов.
+- **Минусы:** PHP как второй язык в проекте; нет фоновых задач и long-running процессов; генерация PDF на shared-хостинге ограничена; предсказуемо потребуется отдельное решение для `generate-design-pdf`.
+- **Сложность:** низкая. **Миграция:** средняя. **Поддержка:** низкая.
+- **Совместимость:** высокая для CRUD и форм, **низкая для PDF-пайплайна кастомайзера**.
+
+### OPTION C — Self-hosted Supabase в РФ
+
+- **Плюсы:** максимальная совместимость с существующим кодом — сохраняются `supabase-js`, RLS, Storage, Auth, Realtime; изменения во фронте минимальны.
+- **Минусы:** Docker и около десяти сервисов, которые надо администрировать и обновлять; нужен полноценный VPS с заметным объёмом ресурсов; вся ответственность за безопасность и бэкапы на владельце; это ровно тот вариант, который в постановке задачи помечен как нежелательный.
+- **Сложность:** высокая. **Миграция:** низкая. **Поддержка:** высокая.
+- **Совместимость:** максимальная.
+
+### Рекомендация
+
+**OPTION B как основа, с одним небольшим Node-сервисом только под PDF, если PHP-решение окажется недостаточным.**
+
+Обоснование: публичный каталог уже статический, поэтому нагрузка на бэкенд сводится к формам, кастомайзеру и админке — это укладывается в возможности PHP на shared-хостинге. Это самый дешёвый и наименее обслуживаемый вариант, он не требует нового сервера и сохраняет текущую схему деплоя. Option A остаётся запасным, если владелец захочет один язык на всём стеке. Option C противоречит заданным ограничениям.
+
+---
+
+## 13. Proposed PostgreSQL Schema (минимальная, только под существующий функционал)
+
+| TABLE | COLUMN | TYPE | NULLABLE | INDEX | RELATION | PURPOSE |
+|---|---|---|---|---|---|---|
+| `categories` | id | uuid PK | нет | PK | — | категория |
+| | slug | text | нет | unique | — | ключ для фронта |
+| | name | text | нет | — | — | название |
+| | sort_order | int default 0 | нет | — | — | порядок |
+| | is_active | bool default true | нет | idx | — | видимость |
+| `colors` | id | uuid PK | нет | PK | — | цвет |
+| | name, russian_name | text | russian_name — да | — | — | названия |
+| | hex_code | text | нет | unique | — | ключ сопоставления |
+| | sort_order, is_active | int / bool | нет | — | — | — |
+| `products` | id | text PK (артикул) | нет | PK | — | товар |
+| | name | text | нет | — | — | — |
+| | category_id | uuid | да | idx | → categories.id | категория |
+| | color_hex | text | нет | idx | → colors.hex_code (логически) | цвет |
+| | size | text | нет | — | — | размер |
+| | price_rub | numeric(10,2) | нет | — | — | цена |
+| | id_wb | text | да | — | — | ссылка на WB |
+| | dimensions | jsonb | нет | — | — | length/width/height |
+| | weight | numeric | нет | — | — | вес |
+| | is_active | bool default true | нет | idx | — | публикация |
+| | created_at, updated_at | timestamptz | нет | — | — | — |
+| `product_images` | id | bigserial PK | нет | PK | — | фото |
+| | product_id | text | нет | idx | → products.id ON DELETE CASCADE | связь |
+| | path | text | нет | — | — | относительный путь |
+| | kind | text ('photo'/'video') | нет | — | — | тип |
+| | position | int | нет | idx(product_id, position) | — | порядок слайдов |
+| `orders` | id | uuid PK | нет | PK | — | заказ |
+| | order_number | text | да | unique | — | MM-N-YYYY |
+| | client_id | uuid | да | idx | → clients.id | связь с клиентом |
+| | name, phone, email | text | нет | idx(phone), idx(email) | — | **ПДн** |
+| | address | text | да | — | — | **ПДн** |
+| | comment | text | да | — | — | **ПДн** |
+| | payment, delivery | text | да | — | — | условия |
+| | subtotal, discount, total | numeric(10,2) | нет | — | — | суммы |
+| | status | text default 'pending' | нет | idx | — | 10 статусов |
+| | subscribe | bool default false | нет | — | — | согласие на рассылку |
+| | created_at, confirmed_at | timestamptz | confirmed_at — да | idx(created_at) | — | — |
+| `order_items` | id | bigserial PK | нет | PK | — | позиция |
+| | order_id | uuid | нет | idx | → orders.id ON DELETE CASCADE | связь |
+| | product_id | text | да | — | → products.id | товар |
+| | sku, name | text | нет | — | — | снимок на момент заказа |
+| | qty | int | нет | — | — | количество |
+| | unit_price, line_total | numeric(10,2) | нет | — | — | цены |
+| | design_id | uuid | да | idx | → designs.id | кастомизация |
+| `clients` | id | uuid PK | нет | PK | — | клиент (замена `b2b_clients`) |
+| | email, phone | text | да | unique(email), idx(phone) | — | **ПДн**, ключи слияния дублей |
+| | company_name, contact_name | text | да | — | — | **ПДн** |
+| | created_at, updated_at | timestamptz | нет | — | — | — |
+| `contact_requests` | id | uuid PK | нет | PK | — | заявка |
+| | name, phone | text | нет | — | — | **ПДн** |
+| | message | text | да | — | — | **ПДн** |
+| | created_at | timestamptz | нет | idx | — | — |
+| `designs` | id | uuid PK | нет | PK | — | макет |
+| | product_id, sku | text | нет | idx | → products.id | товар |
+| | qty | int default 1 | нет | — | — | — |
+| | comment | text | да | — | — | **ПДн** |
+| | options, objects_mm, preview_urls, customized_sides | jsonb | нет, default | — | — | состояние сцены |
+| | production_pdf_path, production_pdf_filename | text | да | — | — | PDF |
+| | status | text default 'saved' | нет | — | — | — |
+| | created_at, updated_at | timestamptz | нет | — | — | — |
+| `design_files` | id | bigserial PK | нет | PK | — | файл клиента |
+| | design_id | uuid | нет | idx | → designs.id ON DELETE CASCADE | связь |
+| | path | text | нет | — | — | путь в приватном хранилище |
+| | original_name, mime, size_bytes | text/int | да | — | — | метаданные |
+| | uploaded_at | timestamptz | нет | — | — | retention |
+| `admin_users` | id | uuid PK | нет | PK | — | администратор |
+| | email | text | нет | unique | — | логин |
+| | password_hash | text | нет | — | — | **только хеш** |
+| | role | text | нет | — | — | роль |
+| | created_at, last_login_at | timestamptz | last_login_at — да | — | — | — |
+| `site_settings` | key | text PK | нет | PK | — | настройки |
+| | value | jsonb | да | — | — | — |
+
+**Не создавать:** `product_variants` — в текущем коде вариант = отдельный товар с собственным артикулом, отдельная таблица вариантов сейчас функционала не добавит; `leads`/`customization_requests` как отдельные сущности — их роль уже выполняют `contact_requests` и `designs`; таблицы складских остатков — функционала нет; аналитические таблицы — по принципу разделения систем аналитика не должна жить в операционной БД.
+
+**Отдельно `wb_clicks`:** это аналитика, а не операционные данные. По заявленному принципу разделения систем её место — не в website DB. Варианты: вынести в отдельную схему/базу либо отказаться в пользу событий веб-аналитики. **Решение за владельцем.**
+
+**Что имеет смысл оставить в JSON:** публичный снапшот каталога (`products-public.json`, `catalog-version.json`) — он остаётся правильным решением независимо от смены БД, потому что даёт мгновенную отдачу со статики и устойчивость к недоступности бэкенда. Геометрию коробок и конфигурацию сторон кастомайзера тоже нет смысла переносить в SQL — это код, а не данные.
+
+---
+
+## 14. Required API
+
+Все пути — под общим префиксом `/api`. Формат ответа — JSON.
+
+| Method | Path | Purpose | Input | Output | Auth | Personal data |
+|---|---|---|---|---|---|---|
+| GET | `/api/catalog/version` | Версия снапшота для инвалидации кэша | — | `{version, generatedAt, productsCount}` | нет | нет |
+| GET | `/api/products` | Каталог (резерв, если снапшот недоступен) | `?category&color&size` | массив товаров | нет | нет |
+| GET | `/api/products/:id` | Карточка | id | товар | нет | нет |
+| POST | `/api/orders` | Создание заказа + сопоставление клиента + уведомления | ФИО, телефон, email, адрес, комментарий, оплата, доставка, позиции, subscribe | `{order_id, order_number}` | нет + rate-limit/captcha | **да** |
+| GET | `/api/orders/confirm` | Подтверждение по ссылке из письма | `order_id`, одноразовый `token` | редирект | по токену | да |
+| POST | `/api/contact-requests` | Заявка обратной связи | имя, телефон, сообщение | `{ok}` | нет + rate-limit/captcha | **да** |
+| POST | `/api/designs` | Сохранение макета | sku, qty, comment, options, objects_mm, стороны | `{design_id}` | нет | **да** |
+| PATCH | `/api/designs/:id` | Обновление макета | те же поля | `{ok}` | владение по серверному токену макета | да |
+| POST | `/api/designs/:id/files` | Загрузка изображения клиента | multipart, whitelist MIME, лимит размера | `{path}` | токен макета | **да** |
+| POST | `/api/designs/:id/pdf` | Генерация производственного PDF | — | `{pdf_path}` | токен макета | да |
+| GET | `/api/designs/:id/file` | Выдача файла макета | `path` | поток | подписанная ссылка с TTL | **да** |
+| POST | `/api/track/wb-click` | Клик по WB (если сохраняем) | product_id | `{ok}` | нет | сетевые идентификаторы |
+| POST | `/api/admin/login` | Вход администратора | email, пароль | httpOnly-cookie сессии | нет | учётные данные |
+| POST | `/api/admin/logout` | Выход | — | `{ok}` | да | нет |
+| GET | `/api/admin/session` | Проверка сессии | — | `{user, role}` | да | нет |
+| GET | `/api/admin/products` | Список для админки | фильтры, пагинация | массив | да | нет |
+| POST | `/api/admin/products` | Создание | поля товара | товар | да | нет |
+| PATCH | `/api/admin/products/:id` | Изменение | поля | товар | да | нет |
+| DELETE | `/api/admin/products/:id` | Удаление | id | `{ok}` | да | нет |
+| POST | `/api/admin/products/:id/images` | Загрузка фото | multipart | пути | да | нет |
+| DELETE | `/api/admin/products/:id/images` | Удаление фото | path | `{ok}` | да | нет |
+| PATCH | `/api/admin/products/:id/images/order` | Порядок слайдов | массив путей | `{ok}` | да | нет |
+| POST | `/api/admin/products/import` | Массовый импорт | массив товаров | отчёт | да | нет |
+| GET/POST/PATCH/DELETE | `/api/admin/categories[/:id]` | Справочник категорий | — | — | да | нет |
+| GET/POST/PATCH/DELETE | `/api/admin/colors[/:id]` | Справочник цветов | — | — | да | нет |
+| GET | `/api/admin/orders` | Список заказов | фильтры, период | массив | да | **да** |
+| GET | `/api/admin/orders/:id` | Карточка заказа | id | заказ + позиции | да | **да** |
+| PATCH | `/api/admin/orders/:id` | Смена статуса | status | заказ | да | да |
+| DELETE | `/api/admin/orders/:id` | Удаление | id | `{ok}` | да | **да** |
+| GET | `/api/admin/contact-requests` | Заявки | период | массив | да | **да** |
+| GET | `/api/admin/clients` | Клиенты с агрегатами (замена `client_analytics`) | — | массив | да | **да** |
+| PATCH | `/api/admin/clients/:id` | Правка клиента | поля | клиент | да | да |
+| POST | `/api/admin/clients/merge` | Слияние дублей | source_id, target_id | `{ok}` | да | **да** |
+| GET | `/api/admin/analytics/summary` | Сводка по продажам | период | агрегаты | да | нет |
+| POST | `/api/admin/catalog/export` | Пересборка публичного снапшота | — | `{version}` | да | нет |
+
+Отдельно: эндпоинт пересборки снапшота закрывает главный операционный разрыв текущей схемы — публикацию правок админа без ручного запуска скрипта и полного деплоя.
+
+---
+
+## 15. Migration Plan
+
+| Фаза | Задача | Файлы | Данные | Сложность | Риск | Откат |
+|---|---|---|---|---|---|---|
+| 0. Бэкап | Полный дамп Supabase (БД + Storage), архив текущего `dist/` | — | все | Низкая | Низкий | — |
+| 1. Достоверная инвентаризация | Получить DDL всех таблиц, определение `client_analytics`, регион проекта, объёмы, число админов | — | метаданные | Низкая | Низкий | — |
+| 2. Создание Managed PostgreSQL | Заказать инстанс в РФ, включить бэкапы, настроить доступ по списку IP и TLS | — | — | Низкая | Низкий | Удалить инстанс |
+| 3. Схема | Применить схему из раздела 13 на пустую БД | новые SQL-миграции | — | Средняя | Низкий | Пересоздать БД |
+| 4. Экспорт из Supabase | Выгрузить `products`, `product_prices`, `categories`, `colors`, `orders`, `contact_requests`, `b2b_clients`, `designs`, при необходимости `wb_clicks` | новый скрипт `scripts/export-supabase-dump.mjs` | все | Средняя | Низкий | Повторить выгрузку |
+| 5. Импорт и трансформация | Развернуть `photos[]` в `product_images`, `cart_items` в `order_items`, `b2b_clients` в `clients`, сверить контрольные суммы по количеству строк и суммам заказов | новый `scripts/import-to-pg.mjs` | все | **Высокая** | **Средний** | Очистить целевую БД и повторить |
+| 6. Перенос файлов | Скачать `designs/**` из бакета, разложить в приватное хранилище на Timeweb; каталожные `images/**` уже локальны | `scripts/` | Storage | Средняя | Средний | Файлы остаются в Supabase до финального шага |
+| 7. Реализация API | Публичные эндпоинты форм и кастомайзера, затем админские, затем экспорт снапшота | новый серверный слой | — | **Высокая** | Средний | API не подключён к фронту, влияния нет |
+| 8. Подключение форм | Переключить заказ, обратную связь, кастомайзер на новый API | `orderComponent.js`, `contact-service.js`, `designService.js`, `storageService.js`, `exportPipeline.js`, `productComponent.js` | новые записи | Средняя | **Высокий** | Вернуть URL edge-функций |
+| 9. Подключение админки | Заменить прямые вызовы Supabase на API, реализовать собственную авторизацию, убрать `set_admin_login_context`, отключить Realtime в пользу periodic refresh | все `js/components/admin*`, `modernAdmin*`, `mediaManagerComponent.js`, `storageHelper.js`, `pricesService.js`, `productsService.js` | — | **Высокая** | Средний | Вернуть предыдущую сборку админки |
+| 10. Тестирование | Сквозные сценарии: заказ, подтверждение, заявка, макет и PDF, CRUD товара с фото, пересборка снапшота, сверка витрины | — | тестовые | Средняя | Низкий | — |
+| 11. Двойная запись (опционально) | Некоторое время писать заказы и в Supabase, и в PostgreSQL для сверки | серверный слой | новые записи | Средняя | Низкий | Отключить второй приёмник |
+| 12. Переключение прода | Деплой, финальная досинхронизация записей, созданных после фазы 5 | `dist/` | все | Средняя | **Высокий** | Откат `dist/` и возврат на Supabase |
+| 13. Наблюдение | 2–4 недели: заказы, письма, Telegram, PDF, витрина | — | — | Низкая | Низкий | — |
+| 14. Вывод Supabase | Финальный архив, удаление проекта | `supabase/**` удаляется из репозитория | все | Низкая | **Высокий, необратимо** | Только из архива |
+
+---
+
+## 16. Files That Will Need Changes
+
+Публичный фронт: `js/services/productsService.js`, `js/services/pricesService.js`, `js/services/catalogFallbackService.js`, `js/services/mediaResolver.js`, `js/services/contact-service.js`, `js/services/orderConfirmationService.js`, `js/services/orderConfirmationHandler.js`, `js/services/notificationService.js`, `js/components/orderComponent.js`, `js/components/productComponent.js`, `js/components/publicProductsComponent.js`, `js/components/contactsComponent.js`.
+
+Кастомайзер: `js/customizer/app.js`, `designService.js`, `storageService.js`, `exportPipeline.js`.
+
+Админка: `adminAuthComponent.js`, `adminProductsComponent.js`, `adminOrdersComponent.js`, `adminClientsComponent.js`, `adminAnalyticsComponent.js`, `adminCategoriesComponent.js`, `adminColorsComponent.js`, `mediaManagerComponent.js`, `modernAdminComponent.js`, `modernAdminComponent_media.js`, `adminLayoutComponent.js`, `js/utils/storageHelper.js`.
+
+Инфраструктура фронта: `js/utils/supabase.js` (удаляется), `js/utils/env.js`, `public/env.js`, `src/integrations/supabase/client.ts`, `src/utils/env.ts`, `.env`, `vercel.json`.
+
+Скрипты: `scripts/export-catalog-snapshot.mjs` (переписывается на новый источник), `scripts/audit-media-sync.mjs`, `package.json`.
+
+Удаляются после миграции: `supabase/functions/**` (10 функций), `supabase/config.toml`, `supabase/migrations/**`, `js/components/adminComponent.js`, `js/data/products.js`, `import-products.html`, `import-script.js`, `run-import.js`, `simple-import.html`.
+
+Создаются: серверный API-слой, скрипты экспорта и импорта, приватное хранилище файлов макетов.
+
+---
+
+## 17. Risks / Edge Cases
+
+- **Заказы, созданные между экспортом и переключением**, могут потеряться. Нужна финальная досинхронизация в фазе 12.
+- **`cart_items` — jsonb произвольной формы.** Реальный набор ключей из репозитория полностью не выводится; разбор в `order_items` может потерять поля кастомизации. Требуется анализ фактических значений перед фазой 5.
+- **`client_analytics` — объект неизвестной природы.** Если это view с нетривиальной логикой, поведение страницы клиентов после миграции изменится.
+- **Потеря Realtime.** `pricesService` и `productsService` подписаны на изменения; после миграции нужен другой механизм обновления.
+- **Публичные ссылки на PDF и превью макетов** перестанут открываться при переходе на приватное хранилище — это затронет уже отправленные клиентам ссылки.
+- **Генерация PDF на shared-хостинге** — главный технический риск Option B.
+- **Отправка email из РФ.** Замена Resend потребует нового провайдера и прогрева домена; иначе письма подтверждения начнут попадать в спам.
+- **Доступность Telegram API с сервера в РФ** — требует проверки перед переключением.
+- **Одновременная смена авторизации админа и источника данных** — если делать в один шаг, диагностика сбоя усложняется. Фазы 8 и 9 стоит разносить.
+- **Кириллица и пробелы в путях изображений** уже вызывали инциденты; при переносе файлов эти же ошибки могут повториться.
+- **Расхождение снапшота и БД** сохранится, пока не появится эндпоинт пересборки.
+- **Дублирование цен** между `products.price_rub` и `product_prices` — перед миграцией нужно решить, какое поле является истиной.
+- **Число активных админов неизвестно** — при переносе учётных записей кого-то можно потерять.
+
+---
+
+## 18. Rollback Plan
+
+- **Фазы 0–7:** прод не затронут, откат — удаление созданных ресурсов.
+- **Фаза 8 (формы):** вернуть предыдущую сборку `dist/`. Supabase к этому моменту жив, edge-функции работают. Заказы, попавшие в новую БД, переносятся обратно вручную.
+- **Фаза 9 (админка):** откат сборки админки независимо от публичной части.
+- **Фаза 12 (переключение):** заранее подготовить архив предыдущего `dist/` и держать Supabase-проект нетронутым минимум 30 дней. Откат — загрузка старого `dist/` плюс перенос записей, созданных за время работы новой схемы.
+- **Фаза 14:** после удаления проекта Supabase откат возможен только из полного архива БД и Storage. **Точка невозврата — выполняется только по явному подтверждению владельца.**
+
+---
+
+## 19. What Lovable Can Do
+
+- SQL-схема и миграции для новой БД.
+- Скрипты экспорта из Supabase и импорта в PostgreSQL, включая разворачивание `photos[]` и `cart_items`.
+- Скрипт переноса файлов бакета.
+- Полная реализация API-слоя из раздела 14, включая валидацию входных данных, rate-limit и сессионную авторизацию администратора.
+- Замена всех клиентских обращений к Supabase на вызовы нового API.
+- Собственная авторизация админки с хешированием паролей.
+- Замена Realtime на периодическое обновление.
+- Эндпоинт пересборки публичного снапшота и переписывание `export-catalog-snapshot.mjs`.
+- Приватная выдача файлов макетов по ссылкам с ограниченным сроком.
+- Валидация загрузок: whitelist MIME, лимит размера, безопасные имена файлов.
+- Скрипты сверки данных до и после миграции.
+- Удаление legacy-кода и артефактов импорта.
+- Документация по деплою.
+
+## 20. What You Must Do Manually
+
+- Аккаунт Timeweb Cloud, заказ Managed PostgreSQL в РФ, оплата.
+- Получение и безопасная передача реквизитов подключения; настройка списка разрешённых IP и TLS.
+- Решение по хостингу бэкенда: PHP на текущем shared-хостинге либо отдельный Cloud Apps/VPS.
+- Выгрузка дампа Supabase и файлов Storage.
+- Выбор и настройка почтового провайдера, верификация домена отправителя.
+- Проверка доступности Telegram API с нового сервера.
+- Настройки DNS и TLS при появлении отдельного хоста для API.
+- Предоставление региона проекта Supabase, числа админов, определения `client_analytics`.
+- Определение сроков хранения данных.
+- Решения по разделению систем: что уходит в Bitrix24, что в аналитику.
+- Юридические решения и документы.
+
+## 21. Requires Owner Approval
+
+- Фаза 5 — перенос реальных заказов и клиентских данных.
+- Фаза 6 — перенос клиентских файлов и последующее закрытие публичного доступа к ним (сломает существующие ссылки).
+- Фаза 12 — переключение прода, возможный простой.
+- Фаза 14 — удаление проекта Supabase, необратимо.
+- Смена почтового провайдера — влияет на доставляемость писем клиентам.
+- Изменение состава Telegram-уведомлений — меняет рабочий процесс менеджера.
+- Решение по `product_prices` — какое поле цены становится истиной.
+- Решение о выносе `wb_clicks` из операционной БД.
+
+---
+
+## 22. Missing Information / Questions
+
+1. Supabase Dashboard → Project Settings → General → **Region** проекта `bsndismiessofvhglzrv`. Пришлите точное название региона.
+2. SQL Editor → выполните `select table_name, table_type from information_schema.tables where table_schema='public' order by 1;` и пришлите результат. Нужно подтвердить, является ли `client_analytics` представлением, и получить его определение (`select pg_get_viewdef('public.client_analytics', true);`).
+3. Table Editor → пришлите DDL таблиц `orders`, `designs`, `products`, `b2b_clients` (кнопка Definition).
+4. SQL Editor → количество строк по каждой таблице: `select relname, n_live_tup from pg_stat_user_tables order by n_live_tup desc;`.
+5. Пришлите 2–3 примера значения `orders.cart_items` **с обезличенными ПДн** — нужен только состав ключей, включая поля кастомизации.
+6. Storage → размер бакета `product-media` и отдельно объём префикса `designs/`.
+7. Authentication → Users → сколько активных администраторов и какие email должны сохраниться после миграции.
+8. Подтвердите: таблицы `orders`, `contact_requests`, `b2b_clients`, `designs` содержат **боевые** данные клиентов, а не тестовые?
+9. Какое поле цены считать истиной — `products.price_rub` или `product_prices.price_rub`? Сейчас используются оба.
+10. Хостинг Timeweb: shared-тариф с поддержкой PHP и внешних подключений к PostgreSQL, или планируется отдельный Cloud Apps/VPS? От этого зависит выбор между Option A и Option B.
+11. Нужен ли Realtime в админке после миграции, или достаточно обновления по кнопке и по таймеру?
+12. `wb_clicks` — переносить в новую БД, вынести в аналитический контур или отказаться?
+13. Нужна ли клиентам возможность открывать ранее выданные публичные ссылки на PDF макетов после миграции?
+
+---
+
+Диагностика завершена. Реализация не начиналась: код не изменялся, данные не мигрировались, ресурсы Supabase не затрагивались, переменные окружения не менялись. Юридические выводы не делались.
