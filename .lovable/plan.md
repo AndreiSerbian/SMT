@@ -118,7 +118,7 @@
 ### `js/services/mockupService.js`
 - загрузка и кэш `mockups.json`;
 - `getModelForProduct(product)` — lookup строго по `product.category_slug`; если у товара нет slug, сервис резолвит его один раз через фактический публичный API категорий, подтверждённый в ходе read-only аудита (не предполагать имя метода), по `category_id` → `slug`. Никаких многоступенчатых «попробуем то, потом это»;
-- `isPreviewAvailable(model)` = модель найдена И есть хотя бы один `view.status === "ready"`;
+- `isPreviewAvailable(model, view = "closed_45")` = `model.views[view]?.status === "ready" && model.views[view]?.asset != null`. Кнопка POC привязана именно к `closed_45`, а не к «любому готовому view»;
 - `getPalette()` — из каталога (см. п.2), fallback-цвет при неизвестном `color_id` (17.1);
 - `validateTwoColor(config, model)` — запрет совпадения `outer_color_id` и `inner_side_color_id` при `two_color.disallow_same_color`; правило не применяется к банту;
 - `estimatePrice(basePrice, model)` = `basePrice * 1.10`. `basePrice` = текущая номинальная цена выбранного товара, которую карточка уже использует в момент открытия POC (не новая цена из отдельного справочника, не минимальная цена категории, не цена другого цветового SKU). Округление через существующий денежный форматтер проекта (никакого `516.999999999`).
