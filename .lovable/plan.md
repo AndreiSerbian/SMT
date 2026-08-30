@@ -33,7 +33,7 @@
       "variant": "default",
       "zones": ["outer", "inner", "side"],
       "views": {
-        "closed_45": { "asset": "/mockups/magnet_box/closed_45.svg", "status": "ready" },
+        "closed_45": { "asset": "/mockups/magnet_box/default/closed_45.svg", "status": "ready" },
         "open_45":   { "asset": null, "status": "planned" }
       },
       "two_color": {
@@ -82,13 +82,13 @@
 
 **Category slugs не выдумывать.** Перед заполнением `product_mapping` прочитать фактические значения из `public/data/products-public.json`. Проверенные на текущий момент slug'и: `bow-box-small`, `bow-box-medium`, `bow-box-big`, `full-cover-small`, `handle-box-small` — при реализации перепроверить и использовать ровно то, что в файле. Если slug изменился — mapping пишется по фактическому.
 
-Схема с `model + variant` заложена сразу: когда пропорции размеров одной конструкции разойдутся (например 21×15×8 против 30×24×10), добавляется отдельный variant со своим SVG — без переделки схемы.
+Схема с `model + variant` заложена сразу: когда пропорции размеров одной конструкции разойдутся (например 21×15×8 против 30×24×10), добавляется отдельный variant со своим SVG — без переделки схемы. Naming convention: `public/mockups/{model}/{variant}/{view}.svg` (например `/mockups/magnet_box/default/closed_45.svg`, будущие `/mockups/magnet_box/small/closed_45.svg`, `/mockups/magnet_box/big/closed_45.svg`). Для POC variant = `default`.
 
 ## 2. Палитра — единственный источник
 
 Палитра берётся из уже существующего `public/data/products-public.json` (блок `colors`) через фактический публичный API `productsService`, подтверждённый в ходе read-only аудита (раздел 0). Не создавать новый источник палитры. Если отдельного метода получения цветов нет — переиспользовать существующую JSON-first логику проекта. `mockupService` только нормализует форму к `{ id, name, hex }` (id = slug/hex-ключ цвета из каталога).
 
-## 3. Ассет — `public/mockups/magnet_box/closed_45.svg`
+## 3. Ассет — `public/mockups/magnet_box/default/closed_45.svg`
 
 Структура:
 
@@ -118,7 +118,7 @@
 ### `js/services/mockupService.js`
 - загрузка и кэш `mockups.json`;
 - `getModelForProduct(product)` — lookup строго по `product.category_slug`; если у товара нет slug, сервис резолвит его один раз через фактический публичный API категорий, подтверждённый в ходе read-only аудита (не предполагать имя метода), по `category_id` → `slug`. Никаких многоступенчатых «попробуем то, потом это»;
-- `isPreviewAvailable(model)` = модель найдена И есть хотя бы один `view.status === "ready"`;
+- `isPreviewAvailable(model, view = "closed_45")` = `model.views[view]?.status === "ready" && model.views[view]?.asset != null`. Кнопка POC привязана именно к `closed_45`, а не к «любому готовому view»;
 - `getPalette()` — из каталога (см. п.2), fallback-цвет при неизвестном `color_id` (17.1);
 - `validateTwoColor(config, model)` — запрет совпадения `outer_color_id` и `inner_side_color_id` при `two_color.disallow_same_color`; правило не применяется к банту;
 - `estimatePrice(basePrice, model)` = `basePrice * 1.10`. `basePrice` = текущая номинальная цена выбранного товара, которую карточка уже использует в момент открытия POC (не новая цена из отдельного справочника, не минимальная цена категории, не цена другого цветового SKU). Округление через существующий денежный форматтер проекта (никакого `516.999999999`).
@@ -138,7 +138,7 @@
 Корзина, заказ, Telegram, Supabase, `products-public.json`, customizer и Storage — не трогаем.
 
 ## 5. Документация — `docs/mockup-system.md`
-Конструкции, зоны по каждой модели, правила цвета (включая исключение для банта), naming convention (`public/mockups/{model}[-{variant}]/{view}.svg`, id зон `zone-{name}`), схема `mockups.json`, схема customization config, чек-лист добавления новой модели/ракурса/зоны.
+Конструкции, зоны по каждой модели, правила цвета (включая исключение для банта), naming convention (`public/mockups/{model}/{variant}/{view}.svg`, id зон `zone-{name}`), схема `mockups.json`, схема customization config, чек-лист добавления новой модели/ракурса/зоны.
 
 ## Customization config (POC, только в памяти модалки)
 
@@ -161,7 +161,7 @@
 - Для реального товара mapped-категории отображается кнопка «Двухцветная коробка — предпросмотр».
 - Для товара без `ready` asset кнопка не отображается.
 - Modal открывается без перехода со страницы.
-- Загружается `magnet_box/closed_45.svg`.
+- Загружается `magnet_box/default/closed_45.svg`.
 - Базовый внешний цвет автоматически соответствует текущему выбранному цвету товара.
 - Второй цвет выбирается из существующей палитры каталога.
 - Цвет, совпадающий с базовым, нельзя подтвердить; UI объясняет причину.
