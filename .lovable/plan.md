@@ -86,7 +86,7 @@
 
 ## 2. Палитра — единственный источник
 
-Палитра берётся из уже существующего `public/data/products-public.json` (блок `colors`) через существующий `productsService.getActiveColors()` (public-путь, JSON-first). Второй копии цветов не заводим. `mockupService` только нормализует форму к `{ id, name, hex }` (id = slug/hex-ключ цвета из каталога).
+Палитра берётся из уже существующего `public/data/products-public.json` (блок `colors`) через фактический публичный API `productsService`, подтверждённый в ходе read-only аудита (раздел 0). Не создавать новый источник палитры. Если отдельного метода получения цветов нет — переиспользовать существующую JSON-first логику проекта. `mockupService` только нормализует форму к `{ id, name, hex }` (id = slug/hex-ключ цвета из каталога).
 
 ## 3. Ассет — `public/mockups/magnet_box/closed_45.svg`
 
@@ -117,11 +117,11 @@
 
 ### `js/services/mockupService.js`
 - загрузка и кэш `mockups.json`;
-- `getModelForProduct(product)` — lookup строго по `product.category_slug`; если у товара нет slug, сервис резолвит его один раз через `productsService.getActiveCategories()` по `category_id` → `slug`. Никаких многоступенчатых «попробуем то, потом это»;
+- `getModelForProduct(product)` — lookup строго по `product.category_slug`; если у товара нет slug, сервис резолвит его один раз через фактический публичный API категорий, подтверждённый в ходе read-only аудита (не предполагать имя метода), по `category_id` → `slug`. Никаких многоступенчатых «попробуем то, потом это»;
 - `isPreviewAvailable(model)` = модель найдена И есть хотя бы один `view.status === "ready"`;
 - `getPalette()` — из каталога (см. п.2), fallback-цвет при неизвестном `color_id` (17.1);
 - `validateTwoColor(config, model)` — запрет совпадения `outer_color_id` и `inner_side_color_id` при `two_color.disallow_same_color`; правило не применяется к банту;
-- `estimatePrice(basePrice, model)` = `basePrice * 1.10`, округление через существующий денежный форматтер проекта (никакого `516.999999999`).
+- `estimatePrice(basePrice, model)` = `basePrice * 1.10`. `basePrice` = текущая номинальная цена выбранного товара, которую карточка уже использует в момент открытия POC (не новая цена из отдельного справочника, не минимальная цена категории, не цена другого цветового SKU). Округление через существующий денежный форматтер проекта (никакого `516.999999999`).
 
 ### `js/components/mockupPreviewModal.js`
 - inline-вставка SVG: `fetch(assetUrl)` → текст → `DOMParser.parseFromString(..., 'image/svg+xml')` → взять `<svg>` → вставить в контейнер → `previewEl.style.setProperty('--zone-side', color.hex)`;
