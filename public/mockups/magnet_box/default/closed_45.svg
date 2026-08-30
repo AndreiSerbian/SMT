@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 380" role="img" aria-label="Коробка на магнитах, закрытая, ракурс 45°">
+  <defs>
+    <!-- Тень под коробкой -->
+    <radialGradient id="ground-shadow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#000" stop-opacity="0.28" />
+      <stop offset="70%" stop-color="#000" stop-opacity="0.10" />
+      <stop offset="100%" stop-color="#000" stop-opacity="0" />
+    </radialGradient>
+    <!-- Лёгкое затенение граней (поверх базового цвета) -->
+    <linearGradient id="shade-front" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fff" stop-opacity="0.16" />
+      <stop offset="100%" stop-color="#000" stop-opacity="0.18" />
+    </linearGradient>
+    <linearGradient id="shade-top" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%" stop-color="#fff" stop-opacity="0.22" />
+      <stop offset="100%" stop-color="#fff" stop-opacity="0.04" />
+    </linearGradient>
+    <linearGradient id="shade-side" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#000" stop-opacity="0.30" />
+      <stop offset="100%" stop-color="#000" stop-opacity="0.12" />
+    </linearGradient>
+    <!-- Блик на верхней грани -->
+    <linearGradient id="highlight-top" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#fff" stop-opacity="0.00" />
+      <stop offset="45%" stop-color="#fff" stop-opacity="0.30" />
+      <stop offset="55%" stop-color="#fff" stop-opacity="0.30" />
+      <stop offset="100%" stop-color="#fff" stop-opacity="0.00" />
+    </linearGradient>
+  </defs>
+
+  <!-- Тень на полу -->
+  <ellipse cx="256" cy="352" rx="225" ry="20" fill="url(#ground-shadow)" />
+
+  <!--
+    Геометрия (кабинетная проекция ~45°):
+      Передняя грань:   A(40,330) B(360,330) C(360,150) D(40,150)
+      Верхняя грань:    D(40,150) C(360,150) C'(473,37) D'(153,37)
+      Боковушка:        B(360,330) C(360,150) C'(473,37) B'(473,217)
+    Смещение глубины: (+113, -113).
+  -->
+
+  <g id="zones">
+    <!-- Верхняя внешняя грань (outer-top) -->
+    <polygon id="zone-outer-top"
+      points="40,150 360,150 473,37 153,37"
+      fill="var(--zone-outer-top, #E5E5E5)" stroke="#1f2937" stroke-width="1.5" stroke-linejoin="round" />
+
+    <!-- Передняя внешняя грань (outer-front) -->
+    <polygon id="zone-outer-front"
+      points="40,330 360,330 360,150 40,150"
+      fill="var(--zone-outer-front, #E5E5E5)" stroke="#1f2937" stroke-width="1.5" stroke-linejoin="round" />
+
+    <!-- Видимая боковушка (side) — единственная перекрашиваемая зона в POC -->
+    <polygon id="zone-side"
+      points="360,330 360,150 473,37 473,217"
+      fill="var(--zone-side, #E5E5E5)" stroke="#1f2937" stroke-width="1.5" stroke-linejoin="round" />
+  </g>
+
+  <g id="lighting">
+    <!-- Затенение и блики поверх граней (полупрозрачные, не перекрывают смену цвета) -->
+    <polygon points="40,330 360,330 360,150 40,150" fill="url(#shade-front)" />
+    <polygon points="40,150 360,150 473,37 153,37" fill="url(#shade-top)" />
+    <polygon points="40,150 360,150 473,37 153,37" fill="url(#highlight-top)" />
+    <polygon points="360,330 360,150 473,37 473,217" fill="url(#shade-side)" />
+
+    <!-- Линия стыка крышки (магнитный замок) — реальный конструктивный элемент -->
+    <line x1="40" y1="168" x2="360" y2="168" stroke="#1f2937" stroke-opacity="0.45" stroke-width="1.2" />
+
+    <!-- Тонкая внутренняя кромка тени на гранях -->
+    <polygon points="40,150 360,150 360,330 40,330" fill="none" stroke="#000" stroke-opacity="0.10" stroke-width="1" />
+  </g>
+</svg>

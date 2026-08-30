@@ -4,6 +4,8 @@ import { productsService } from '../services/productsService.js';
 import SwiperService from '../services/swiperService.js';
 import { resolveImageUrl } from '../services/mediaResolver.js';
 import { getImageAttrsHtml } from '../services/imageSizeService.js';
+import { mockupService } from '../services/mockupService.js';
+import { MockupPreviewModal } from './mockupPreviewModal.js';
 const ProductComponent = {
   eventListeners: [],
   timeouts: [],
@@ -341,12 +343,20 @@ const ProductComponent = {
             >
               Добавить в корзину
             </button>
-            <a 
+            <a
               href="/customizer.html?product_id=${product.artikul}"
               class="w-full block text-center bg-purple-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-purple-600 transition duration-300 mt-2"
             >
               Кастомизировать
             </a>
+            <button
+              type="button"
+              id="mockup-preview-btn"
+              class="w-full bg-teal-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-teal-700 transition duration-300 mt-2"
+              style="display:none"
+            >
+              Двухцветная коробка — предпросмотр
+            </button>
           </div>
         </div>
 
@@ -454,6 +464,21 @@ const ProductComponent = {
       const backButton = container.querySelector('.back-button');
       const closeModalBtn = container.querySelector('.close-modal-btn');
       const imageModal = container.querySelector('#imageModal');
+
+      // Кнопка предпросмотра двухцветной кастомизации (POC)
+      const mockupBtn = container.querySelector('#mockup-preview-btn');
+      if (mockupBtn) {
+        mockupService.getModelForProduct(product)
+          .then(model => {
+            if (model && mockupService.isPreviewAvailable(model, 'closed_45')) {
+              mockupBtn.style.display = 'block';
+              mockupBtn.addEventListener('click', () => {
+                MockupPreviewModal.open(product, mockupBtn);
+              });
+            }
+          })
+          .catch(err => console.error('[mockup] preview availability check failed', err));
+      }
       
       // Обработчик кнопки "Назад"
       if (backButton) {
