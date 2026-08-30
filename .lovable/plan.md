@@ -138,7 +138,7 @@
 Корзина, заказ, Telegram, Supabase, `products-public.json`, customizer и Storage — не трогаем.
 
 ## 5. Документация — `docs/mockup-system.md`
-Конструкции, зоны по каждой модели, правила цвета (включая исключение для банта), naming convention (`public/mockups/{model}[-{variant}]/{view}.svg`, id зон `zone-{name}`), схема `mockups.json`, схема customization config, чек-лист добавления новой модели/ракурса/зоны.
+Конструкции, зоны по каждой модели, правила цвета (включая исключение для банта), naming convention (`public/mockups/{model}/{variant}/{view}.svg`, id зон `zone-{name}`), схема `mockups.json`, схема customization config, чек-лист добавления новой модели/ракурса/зоны.
 
 ## Customization config (POC, только в памяти модалки)
 
