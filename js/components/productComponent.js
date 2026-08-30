@@ -343,12 +343,20 @@ const ProductComponent = {
             >
               Добавить в корзину
             </button>
-            <a 
+            <a
               href="/customizer.html?product_id=${product.artikul}"
               class="w-full block text-center bg-purple-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-purple-600 transition duration-300 mt-2"
             >
               Кастомизировать
             </a>
+            <button
+              type="button"
+              id="mockup-preview-btn"
+              class="w-full bg-teal-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-teal-700 transition duration-300 mt-2"
+              style="display:none"
+            >
+              Двухцветная коробка — предпросмотр
+            </button>
           </div>
         </div>
 
