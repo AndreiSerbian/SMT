@@ -464,6 +464,21 @@ const ProductComponent = {
       const backButton = container.querySelector('.back-button');
       const closeModalBtn = container.querySelector('.close-modal-btn');
       const imageModal = container.querySelector('#imageModal');
+
+      // Кнопка предпросмотра двухцветной кастомизации (POC)
+      const mockupBtn = container.querySelector('#mockup-preview-btn');
+      if (mockupBtn) {
+        mockupService.getModelForProduct(product)
+          .then(model => {
+            if (model && mockupService.isPreviewAvailable(model, 'closed_45')) {
+              mockupBtn.style.display = 'block';
+              mockupBtn.addEventListener('click', () => {
+                MockupPreviewModal.open(product, mockupBtn);
+              });
+            }
+          })
+          .catch(err => console.error('[mockup] preview availability check failed', err));
+      }
       
       // Обработчик кнопки "Назад"
       if (backButton) {
