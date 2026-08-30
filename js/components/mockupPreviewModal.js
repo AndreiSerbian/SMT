@@ -270,9 +270,8 @@ const MockupPreviewModal = {
   },
 
   _esc(s) {
-    return String(s == null ? '' : s)
-      .replace(/&/g, '&').replace(/</g, '<').replace(/>/g, '>')
-      .replace(/"/g, '"').replace(/'/g, '&#39;');
+    const map = { '&': '\u0026amp;', '<': '\u0026lt;', '>': '\u0026gt;', '"': '\u0026quot;', "'": '\u0026#39;' };
+    return String(s == null ? '' : s).replace(/[&<>"']/g, ch => map[ch]);
   }
 };
 
