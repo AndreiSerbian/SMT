@@ -117,7 +117,7 @@
 
 ### `js/services/mockupService.js`
 - загрузка и кэш `mockups.json`;
-- `getModelForProduct(product)` — lookup строго по `product.category_slug`; если у товара нет slug, сервис резолвит его один раз через `productsService.getActiveCategories()` по `category_id` → `slug`. Никаких многоступенчатых «попробуем то, потом это»;
+- `getModelForProduct(product)` — lookup строго по `product.category_slug`; если у товара нет slug, сервис резолвит его один раз через фактический публичный API категорий, подтверждённый в ходе read-only аудита (не предполагать имя метода), по `category_id` → `slug`. Никаких многоступенчатых «попробуем то, потом это»;
 - `isPreviewAvailable(model)` = модель найдена И есть хотя бы один `view.status === "ready"`;
 - `getPalette()` — из каталога (см. п.2), fallback-цвет при неизвестном `color_id` (17.1);
 - `validateTwoColor(config, model)` — запрет совпадения `outer_color_id` и `inner_side_color_id` при `two_color.disallow_same_color`; правило не применяется к банту;
