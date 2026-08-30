@@ -88,7 +88,7 @@
 
 Палитра берётся из уже существующего `public/data/products-public.json` (блок `colors`) через фактический публичный API `productsService`, подтверждённый в ходе read-only аудита (раздел 0). Не создавать новый источник палитры. Если отдельного метода получения цветов нет — переиспользовать существующую JSON-first логику проекта. `mockupService` только нормализует форму к `{ id, name, hex }` (id = slug/hex-ключ цвета из каталога).
 
-## 3. Ассет — `public/mockups/magnet_box/closed_45.svg`
+## 3. Ассет — `public/mockups/magnet_box/default/closed_45.svg`
 
 Структура:
 
