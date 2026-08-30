@@ -61,6 +61,18 @@
   gap: 20px;
 }
 
+/* min-width: 0 на цепочке grid/flex-элементов — иначе min-content
+   (nowrap-палитра) раздувает дорожку и даёт горизонтальный overflow на мобильных */
+.mpm-body,
+.mpm-body > *,
+.mpm-preview-wrap,
+.mpm-preview,
+.mpm-controls-col,
+.mpm-control-group,
+.mpm-palette {
+  min-width: 0;
+}
+
 @media (max-width: 760px) {
   .mpm-body { grid-template-columns: 1fr; }
   .mpm-dialog { padding: 18px; }
