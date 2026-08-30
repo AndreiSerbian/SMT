@@ -82,7 +82,7 @@
 
 **Category slugs не выдумывать.** Перед заполнением `product_mapping` прочитать фактические значения из `public/data/products-public.json`. Проверенные на текущий момент slug'и: `bow-box-small`, `bow-box-medium`, `bow-box-big`, `full-cover-small`, `handle-box-small` — при реализации перепроверить и использовать ровно то, что в файле. Если slug изменился — mapping пишется по фактическому.
 
-Схема с `model + variant` заложена сразу: когда пропорции размеров одной конструкции разойдутся (например 21×15×8 против 30×24×10), добавляется отдельный variant со своим SVG — без переделки схемы.
+Схема с `model + variant` заложена сразу: когда пропорции размеров одной конструкции разойдутся (например 21×15×8 против 30×24×10), добавляется отдельный variant со своим SVG — без переделки схемы. Naming convention: `public/mockups/{model}/{variant}/{view}.svg` (например `/mockups/magnet_box/default/closed_45.svg`, будущие `/mockups/magnet_box/small/closed_45.svg`, `/mockups/magnet_box/big/closed_45.svg`). Для POC variant = `default`.
 
 ## 2. Палитра — единственный источник
 
