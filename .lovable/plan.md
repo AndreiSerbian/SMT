@@ -1,112 +1,82 @@
-# Read-Only Audit Report — Mockup POC Integration Points
+# Mockup POC — Implementation Verification Report
 
-Read-only audit of the current repository. No files modified. Each claim cites exact file + function/field/class.
-
----
-
-## AUDIT RESULTS
-
-### 1. products-public.json
-
-- Path: `public/data/products-public.json`
-- Top-level keys: `version`, `generatedAt`, `products`, `categories`, `colors`
-- Structure of one real product object (`artikul: "0708"`):
-  - `id`, `artikul`, `name`, `category_id` (int), `category` (string), `category_slug`
-  - `size`, `sizeType`, `dimensions` (`{length,width,height}` in cm), `weight`
-  - `color` (e.g. `"Gold"`), `color_hex` (e.g. `"#FFD700"`)
-  - `price_rub` (int, e.g. `260`), `price` (float), `quantity`
-  - `photo`, `photos` (array of local `/images/...` paths), `videos`, `model_url`
-  - `is_new`, `is_hit`, `is_active`, `sort_order`
-- Category fields: `category_id`, `category`, `category_slug`
-- Price fields: `price_rub` (nominal int), `price`
-- Color fields: `color_hex`, `color`
-
-### 2. Categories
-
-- Source: `products-public.json` → `categories` array, each `{ id, name, slug, sort_order, description, ... }`
-- Factual `category_slug` values:
-  - `bow-box-small`
-  - `bow-box-medium`
-  - `bow-box-big`
-  - `handle-box-small`
-  - `full-cover-small`
-- `full-cover-small` — CONFIRMED to exist (id 5, name "С крышкой на магнитах"). This is the magnet_box POC category.
-
-### 3. productsService
-
-- Path: `js/services/productsService.js`
-- Real existing methods (no new methods proposed):
-  - `getActiveProducts()` — public JSON-first, returns products array
-  - `getActiveCategories()` — returns categories array
-  - `getActiveColors()` — returns colors array (`{ hex_code, name, russian_name }`)
-  - `getProductsByCategory(categoryId)` — filters by `category_id`
-  - `getProductByArtikul(artikul)`
-  - `getColorsMap()`
-  - plus admin-side methods (Supabase) — `source: 'admin'`
-
-### 4. Current selected product color
-
-- File: `js/services/colorService.js`
-  - `ColorService.selectedColors` — object keyed by product id
-  - `getColorMap()`, `renderColorButtons()`, `updateButtonColor()`
-- File: `js/components/productComponent.js`
-  - In `render()` (≈ line 184–200): after loading the product it sets `ColorService.selectedColors[productId] = product.color`
-  - Color switcher (≈ line 609–683): loads same-category products via `productsService.getProductsByCategory(product.category_id)` + `productsService.getActiveColors()`, renders color buttons, navigates to `#product/${artikul}` on switch
-- The card reads the current color from `product.color_hex` / `product.color` of the currently-rendered product (the URL artikul determines the active product/color).
-
-### 5. Price — nominal source
-
-- The card gets the nominal price from `product.price_rub`.
-- File: `js/components/productComponent.js`, rendered as `₽${product.price_rub}` (≈ line 285–349 area, price block).
-
-### 6. Price formatting
-
-- CONFIRMED: there is NO dedicated currency/price formatter utility in the public code.
-- Only date formatting exists (`toLocaleString('ru-RU', ...)` in admin components).
-- Therefore POC estimate uses plain rounding (`Math.round`) + `₽` prefix, matching the existing inline pattern `₽${price_rub}`.
-
-### 7. productComponent.js — safe POC button hook point
-
-- File: `js/components/productComponent.js`
-- Safe insertion point: the actions row (≈ line 340–349), immediately after the "Кастомизировать" anchor and before the "Добавить в корзину" button. This is where the hidden POC preview button is wired in.
-- The button visibility is gated asynchronously by a `closed_45` availability check.
-
-### 8. Modal / UI utilities that can be reused
-
-- `src/styles/product-modal.css` — fullscreen media viewer styles (`#imageModal`, `.show` toggle, fixed overlay, z-index 9999). Pattern: a fixed overlay toggled by a `.show` class.
-- `js/components/productComponent.js` — `openImageModal()` (≈ line 490) demonstrates the existing open/close overlay pattern (add/remove `.show`).
-- These are a media-viewer pattern, not a generic accessible dialog — so the POC modal implements its own dialog shell (Escape/backdrop/focus-trap) rather than extending `#imageModal`, but reuses the same overlay/CSS approach.
+Inspection only. Nothing was modified in this step.
 
 ---
 
-## CONFIRMED
+## 1. CHANGED FILES (all exist in the current repo)
 
-- `public/data/products-public.json` exists with `products/categories/colors`.
-- Product object exposes `category_slug`, `category_id`, `color_hex`, `color`, `price_rub`, `price`, `photos`.
-- `full-cover-small` category exists and maps to the magnet (magnet_box) construction.
-- `productsService.getActiveProducts/getActiveCategories/getActiveColors/getProductsByCategory/getProductByArtikul/getColorsMap` all exist (verified, not hypothetical).
-- Current color derived from `product.color_hex`; selection persisted in `ColorService.selectedColors[productId]`.
-- No dedicated price formatter — inline `₽${price_rub}` is the existing convention.
-
----
-
-## CONFLICTS
-
-- None. No real conflicts found between the approved PRD and the code:
-  - `getActiveColors()` / `getActiveCategories()` are real (PRD no longer assumes them blindly — they are confirmed).
-  - `full-cover-small` slug matches the `mockups.json` product_mapping.
-  - The `default` variant path `public/mockups/magnet_box/default/closed_45.svg` is consistent with the `{model}/{variant}/{view}.svg` convention.
-  - Base price source (`price_rub`) and rounding approach match existing display behavior.
+| File | Status | Change |
+|---|---|---|
+| `public/data/mockups.json` | created (1581 B) | Models `magnet_box`/`bow_box`/`bag_box`, `product_mapping: full-cover-small → magnet_box/default`, `closed_45` ready + `open_45` planned, `two_color`, `ribbon`, `price_modifier_percent: 10` |
+| `public/mockups/magnet_box/default/closed_45.svg` | created (4004 B) | Standalone 45° closed magnet box, 3 recolorable zones + lighting layers |
+| `js/services/mockupService.js` | created (3675 B) | `loadMockups`, `getModelForProduct` (by `category_slug`), `isPreviewAvailable(model,'closed_45')`, `getPalette` (via `productsService.getActiveColors`), `validateTwoColor`, `estimatePrice` |
+| `js/components/mockupPreviewModal.js` | created (12456 B) | Dialog shell, inline SVG fetch + DOMParser, CSS-variable recoloring, palette, estimate, Escape/backdrop/focus trap, photo fallback |
+| `src/styles/mockupPreviewModal.css` | created (3789 B) | Overlay/dialog/palette/responsive styles |
+| `js/app.js` | modified | Line 10: `import '@/styles/mockupPreviewModal.css'` |
+| `js/components/productComponent.js` | modified | L7–8 imports `mockupService` / `MockupPreviewModal`; L354 hidden `#mockup-preview-btn` in the actions row; L469–480 async availability gate → `style.display='block'` + click → `MockupPreviewModal.open(product, mockupBtn)` |
+| `docs/mockup-system.md` | created (5065 B) | Architecture, naming, zones, color rules, mapping, fallback, SVG security |
 
 ---
 
-## REQUIRED PRD ADJUSTMENTS
+## 2. SVG VERIFICATION (actual committed file)
 
-- None required. The PRD is implementable as approved.
-- Note (informational, not an adjustment): there is no shared money formatter, so the estimate relies on `Math.round` — already accounted for in the PRD.
+Inspected `public/mockups/magnet_box/default/closed_45.svg`:
+
+- `<g id="zones">` contains exactly three polygons:
+  - `#zone-outer-top` — `points="40,150 360,150 473,37 153,37"`, `fill="var(--zone-outer-top, #E5E5E5)"`
+  - `#zone-outer-front` — `points="40,330 360,330 360,150 40,150"`, `fill="var(--zone-outer-front, #E5E5E5)"`
+  - `#zone-side` — `points="360,330 360,150 473,37 473,217"`, `fill="var(--zone-side, #E5E5E5)"`
+- `<g id="lighting">` contains 4 semi-transparent overlay polygons (`shade-front`, `shade-top`, `highlight-top`, `shade-side`), the magnet-lid seam `<line y=168>` and a thin inner edge stroke. Ground shadow: `<ellipse fill="url(#ground-shadow)">`.
+- Gradients defined in `<defs>`: `ground-shadow`, `shade-front`, `shade-top`, `shade-side`, `highlight-top`.
+
+When `--zone-side` changes, **only the `fill` of `polygon#zone-side` changes** — it is the sole element referencing `var(--zone-side)`. Runtime check confirmed: `#zone-side` computed fill became `rgb(255,182,193)` while `#zone-outer-front` and `#zone-outer-top` stayed `rgb(255,215,0)`.
 
 ---
 
-## READY FOR IMPLEMENTATION: YES
+## 3. ACCEPTANCE CRITERIA (runtime-verified via Playwright on product `0708`, Gold, `price_rub 260`)
 
-Implementation is complete and verified (see working state). Remaining known item: a one-line ordering fix in `js/components/mockupPreviewModal.js` `open()` so the palette cache is assigned before `_applyColors()` runs — confirmed fixed (initial side color now renders the non-base default `#E2A703`).
+| # | Criterion | Result | Evidence |
+|---|---|---|---|
+| 1 | Preview button appears for `full-cover-small` | PASS | button visible = True |
+| 2 | Other categories without ready assets hide it | PASS | `handle-box-small` → visible = False |
+| 3 | Current product color becomes outer color | PASS | `--zone-outer-top` / `--zone-outer-front` = `#FFD700` = `product.color_hex` |
+| 4 | Palette comes from existing catalogue data | PASS | 19 swatches = catalogue `colors` via `productsService.getActiveColors()` |
+| 5 | Selecting second color changes only `zone-side` | PASS | side → `#FFB6C1`; front/top fills unchanged |
+| 6 | Same base/secondary color rejected | PASS | swatch `#ffd700` rendered disabled; programmatic click did not change `--zone-side` |
+| 7 | Price = `Math.round(price_rub × 1.10)` | PASS | `260 × 1.1 = 286` → "Предварительная цена: ₽286" |
+| 8 | Changing color does not refetch the SVG | PASS | SVG requests stayed at 1 across recolors |
+| 9 | Close / reopen works | PASS | Escape → 0 overlays; reopen → 1 overlay (2nd fetch is a fresh open, not a recolor); backdrop click → 0 overlays |
+| 10 | No cart / Supabase / order writes | PASS | Only non-GET requests were GA4 + Clarity analytics; zero Supabase/cart/order calls |
+| 11 | Escape / backdrop / focus trap | PASS (Escape, backdrop) / PARTIAL (focus trap) | Escape and backdrop verified at runtime; focus-trap code verified statically (`_trapFocus`, focus restore to trigger) but not exercised with real Tab cycling → NOT TESTED |
+| 12 | Mobile layout works | **FAIL** | At 390 px: media query applies (single column) but `.mpm-palette { flex-wrap: nowrap }` inside a grid track without `min-width: 0` blows the track to 902 px. `dialogClientW 358` vs `dialogScrollW 920`; SVG renders 868 px wide → horizontal overflow inside the dialog |
+
+---
+
+## 4. CONTRADICTION CLARIFIED
+
+- The implementation was written **before** the read-only audit you requested, in the earlier build phase (that phase created `mockups.json`, the SVG, `mockupService.js`, `mockupPreviewModal.js`, the CSS, the `js/app.js` import, the `productComponent.js` hook and the docs).
+- The audit step itself modified nothing — "No files modified" referred only to that audit turn. The two statements describe different phases; the wording was ambiguous and that is my error.
+- **`_applyColors()` ordering issue: fully fixed.** `this._paletteCache = palette` is now assigned in `open()` before `_applyColors()`. Runtime shows the initial `--zone-side` = `#E2A703` (non-base default) on first open. It is no longer an open issue.
+
+---
+
+## 5. BUILD / TEST STATUS
+
+- **Build**: no build run in this inspection step. The project is plain JS (no TS typecheck target); the Vite dev server serves the app at `localhost:8080` and all POC assets return HTTP 200.
+- **Console errors**: none (`ERRORS: []` across desktop and mobile runs).
+- **Runtime errors**: none; no `pageerror` events.
+- **Warnings relevant to the POC**: none emitted; GA4/Clarity analytics fire independently of the POC.
+- **Remaining known issues**:
+  1. Mobile horizontal overflow in the modal (item 12 above) — CSS-only fix: `min-width: 0` on `.mpm-body`/`.mpm-preview-col`/`.mpm-palette` under the `max-width: 760px` query.
+  2. Focus-trap Tab cycling not exercised at runtime.
+
+---
+
+## IMPLEMENTATION STATUS: PARTIAL
+
+All functional acceptance criteria pass; the mobile responsive criterion fails on layout overflow.
+
+## READY FOR VISUAL ACCEPTANCE: YES (desktop only)
+
+Desktop `closed_45` geometry and side-zone recoloring are ready for your visual acceptance now. Mobile should be accepted only after the CSS overflow fix.
