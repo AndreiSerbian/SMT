@@ -33,7 +33,7 @@
       "variant": "default",
       "zones": ["outer", "inner", "side"],
       "views": {
-        "closed_45": { "asset": "/mockups/magnet_box/closed_45.svg", "status": "ready" },
+        "closed_45": { "asset": "/mockups/magnet_box/default/closed_45.svg", "status": "ready" },
         "open_45":   { "asset": null, "status": "planned" }
       },
       "two_color": {
