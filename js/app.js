@@ -7,6 +7,7 @@ import 'swiper/swiper-bundle.css';
 // 3) Custom styles (last — highest priority, can override both)
 import '@/styles/grouped-products.css';
 import '@/styles/product-modal.css';
+import '@/styles/mockupPreviewModal.css';
 
 // 4) Admin CSS — грузить/выгружать при смене hash
 const loadAdminCss = () => {
