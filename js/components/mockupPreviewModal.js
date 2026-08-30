@@ -51,6 +51,9 @@ const MockupPreviewModal = {
     const basePrice = Number(product.price_rub || product.price || 0);
     const estimated = mockupService.estimatePrice(basePrice, model);
 
+    // Палитру кэшируем ДО _applyColors, иначе начальный второй цвет считается неизвестным
+    this._paletteCache = palette;
+
     this._buildShell(product, model, config, palette, baseColorHex, estimated);
     await this._loadSvg(model, product);
     this._applyColors(config, baseColorHex);
