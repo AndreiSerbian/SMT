@@ -1,60 +1,157 @@
 # Мокап-система двухцветной кастомизации — Этап 0 + POC
 
-Подтверждённые решения: конструкция — **коробка на магнитах**, ракурс — **45° закрытая**, первая зона — **боковушка (side)**, источник мокапа — **векторный SVG**.
+Подтверждённые решения: конструкция — **коробка на магнитах**, ракурс — **45° закрытая**, первая зона — **боковушка (side)**, источник мокапа — **векторный SVG** (SVG сам является мокапом, без фотоподложки и растровых масок).
 
-## Что делаем
+Ревью учтено: палитра не дублируется, правила `two_color` и `ribbon` разделены, добавлен `view.status`, mapping идёт по фактическим `category_slug`, схема заложена под `model + variant`.
 
-### 1. Справочник мокап-моделей (данные, без Supabase)
-Новый статический файл `public/data/mockups.json` — источник правды для мокап-системы, грузится как обычный JSON (независимо от Supabase, NFR-3):
+## 1. Справочник мокап-моделей — `public/data/mockups.json`
 
-- `models` — три конструктивных типа с зонами:
-  - `magnet_box` — зоны `outer`, `inner`, `side`
-  - `bow_box` — зоны `outer`, `inner`, `side`, `ribbon`
-  - `bag_box` — зоны `outer`, `side`, `handle`
-  - у каждой модели: `views` (сейчас только `closed_45`), путь к SVG-ассету, правила двухцветности (`two_color_zones`, `allow_same_color: false`, `ribbon_independent: true`), `price_modifier_percent: 10`
-- `product_mapping` — привязка мокап-модели к категориям каталога (по `category_slug`, не по артикулу, чтобы одна модель покрывала все SKU конструкции):
-  - `full-cover-small` → `magnet_box`
-  - `bow-box-small` / `bow-box-medium` / `bow-box-big` → `bow_box`
-  - `handle-box-small` → `bag_box`
-- `palette` — палитра `{id, name, hex}`, для POC — статичная копия цветов из каталога (`products-public.json` уже содержит блок `colors`); позже синхронизируется тем же экспорт-скриптом.
+Статический файл, никаких запросов к Supabase (NFR-3). Содержит **только** модели, зоны, ассеты и mapping. **Палитры внутри нет.**
 
-В POC реально заполняем ассетом только `magnet_box / closed_45`; остальные модели описаны как метаданные без ассетов и просто не запускают предпросмотр (Edge case 17.2).
+```json
+{
+  "models": [
+    {
+      "id": "magnet_box",
+      "variant": "default",
+      "zones": ["outer", "inner", "side"],
+      "views": {
+        "closed_45": { "asset": "/mockups/magnet_box/closed_45.svg", "status": "ready" },
+        "open_45":   { "asset": null, "status": "planned" }
+      },
+      "two_color": {
+        "enabled": true,
+        "outer_zone": "outer",
+        "secondary_zones": ["inner", "side"],
+        "disallow_same_color": true
+      },
+      "ribbon": { "enabled": false },
+      "price_modifier_percent": 10
+    },
+    {
+      "id": "bow_box",
+      "variant": "default",
+      "zones": ["outer", "inner", "side", "ribbon"],
+      "views": { "closed_45": { "asset": null, "status": "planned" } },
+      "two_color": {
+        "enabled": true,
+        "outer_zone": "outer",
+        "secondary_zones": ["inner", "side"],
+        "disallow_same_color": true
+      },
+      "ribbon": { "enabled": true, "independent": true, "allow_same_color": true },
+      "price_modifier_percent": 10
+    },
+    {
+      "id": "bag_box",
+      "variant": "default",
+      "zones": ["outer", "side", "handle"],
+      "views": { "closed_45": { "asset": null, "status": "planned" } },
+      "two_color": {
+        "enabled": true,
+        "outer_zone": "outer",
+        "secondary_zones": ["side"],
+        "disallow_same_color": true
+      },
+      "ribbon": { "enabled": false },
+      "price_modifier_percent": 10
+    }
+  ],
+  "product_mapping": [
+    { "category_slug": "full-cover-small", "model": "magnet_box", "variant": "default" }
+  ]
+}
+```
 
-### 2. Ассет: векторный мокап 45° закрытая
-`public/mockups/magnet_box/closed_45.svg` — чистый вектор коробки на магнитах в изометрии 45°:
-- каждая видимая грань — отдельный `<path>` c `id`: `zone-outer-top`, `zone-outer-front`, `zone-side`, плюс слои теней/бликов поверх (`overlay-shadow`, `overlay-highlight`) с полупрозрачными градиентами, чтобы перекраска не убивала объём;
-- заливка зон через CSS-переменные (`fill: var(--zone-side, #E5E5E5)`), тени — отдельным слоем `multiply`/`overlay` сверху;
-- боковушка = только видимый прямоугольник боковой панели (п. 11.3), треугольные/клеевые элементы не выделяются в зону.
+**Category slugs не выдумывать.** Перед заполнением `product_mapping` прочитать фактические значения из `public/data/products-public.json`. Проверенные на текущий момент slug'и: `bow-box-small`, `bow-box-medium`, `bow-box-big`, `full-cover-small`, `handle-box-small` — при реализации перепроверить и использовать ровно то, что в файле. Если slug изменился — mapping пишется по фактическому.
 
-Перекраска — мгновенная смена CSS-переменной, без canvas, без AI, без ре-рендера (NFR-1/2).
+Схема с `model + variant` заложена сразу: когда пропорции размеров одной конструкции разойдутся (например 21×15×8 против 30×24×10), добавляется отдельный variant со своим SVG — без переделки схемы.
 
-### 3. Frontend-модуль предпросмотра
-- `js/services/mockupService.js` — загрузка и кэш `mockups.json`, `getModelForProduct(product)` (по `category_id`/`category_slug`), `getPalette()`, валидация «цвета не совпадают», расчёт ориентировочной цены `+10%`. Fallback-цвет при неизвестном `color_id` (17.1).
-- `js/components/mockupPreviewModal.js` — модальное окно поверх карточки товара:
-  - inline-вставка SVG (fetch + innerHTML), чтобы управлять зонами;
-  - список цветов палитры для второго цвета; выбранный базовый цвет товара — как цвет 1 (read-only в POC);
-  - подпись текущей конфигурации + ориентировочная цена;
-  - кнопка закрытия, блокировка скролла, мобильная раскладка (палитра прокручиваемой лентой снизу);
-  - если SVG не загрузился — показываем существующее фото товара как статичный preview и сообщение, интерфейс не падает (17.4).
-- В `js/components/productComponent.js` рядом с кнопкой «Кастомизировать» добавляется кнопка «Двухцветная коробка — предпросмотр», отображаемая только если для товара найдена мокап-модель с готовым ассетом.
+## 2. Палитра — единственный источник
 
-Ничего в корзине, заказе, Telegram, Supabase и `products-public.json` не меняется — конфигурация в POC только отображается.
+Палитра берётся из уже существующего `public/data/products-public.json` (блок `colors`) через существующий `productsService.getActiveColors()` (public-путь, JSON-first). Второй копии цветов не заводим. `mockupService` только нормализует форму к `{ id, name, hex }` (id = slug/hex-ключ цвета из каталога).
 
-### 4. Документация
-`docs/mockup-system.md`: конструкции, зоны по каждой модели, правила цвета (включая исключение для банта), naming convention ассетов (`public/mockups/{model}/{view}.svg`, зоны `zone-{name}`), структура `mockups.json` и `customization config`, чек-лист добавления новой модели.
+## 3. Ассет — `public/mockups/magnet_box/closed_45.svg`
 
-## Технические детали
+Структура:
 
-- Всё статично: JSON + SVG из `public/`, никаких запросов к Supabase — работает и при блокировках.
-- Структура customization config (пока только в памяти модалки):
-  `{ type: "two_color", product_id, mockup_model, outer_color_id, inner_side_color_id, ribbon_color_id, estimated_price_modifier_percent: 10 }`
-- Архитектура расширения: новый ракурс = новый SVG + запись в `views`; новая зона = новый `id` в SVG + запись в `zones`; логика не меняется.
+```text
+<svg>
+  <g id="zones">
+    <path id="zone-outer-top" />
+    <path id="zone-outer-front" />
+    <path id="zone-side" />
+  </g>
+  <g id="lighting"> ... градиенты, тени, блики ... </g>
+</svg>
+```
 
-## Приёмка POC
+- заливка: `#zone-side { fill: var(--zone-side, #E5E5E5); }`, аналогично для outer-зон;
+- объём моделируется собственными средствами SVG: linearGradient/radialGradient, полупрозрачные shadow-полигоны, highlight-полигоны. `mix-blend-mode` допустим как дополнение, но критической зависимости от него нет (кросс-браузерная стабильность);
+- боковушка = только видимый прямоугольник боковой панели (п. 11.3 PRD); клеевые и треугольные элементы зонами не являются;
+- `zone-inner` в closed_45 отсутствует — внутренняя часть не видна. `inner` живёт в модели как семантическая зона; в closed_45 второй цвет применяется только к `zone-side`, в будущем open_45 тот же `inner_side_color_id` применится к `zone-inner` и `zone-side` одновременно;
+- в ассете запрещены `<script>`, внешние `href`, `foreignObject`.
 
-- Открытие карточки товара категории `full-cover-small` → кнопка предпросмотра видна.
-- В модалке отображается SVG-мокап 45° закрытая.
-- Выбор второго цвета мгновенно перекрашивает только боковушку; грани, тени и форма сохраняются.
-- Совпадение с базовым цветом подсвечивается как ошибка.
-- Товары других категорий кнопку не показывают (ассетов ещё нет).
-- Мобильная раскладка проверяется отдельно.
+Перекраска выполняется локально изменением CSS custom properties на корневом SVG — без повторной загрузки ассета, без Canvas и без сетевого запроса.
+
+Критерий качества первого SVG: пользователь однозначно видит, что боковая поверхность стала другого цвета. Фотореализм — задача второго этапа.
+
+## 4. Frontend
+
+### `js/services/mockupService.js`
+- загрузка и кэш `mockups.json`;
+- `getModelForProduct(product)` — lookup строго по `product.category_slug`; если у товара нет slug, сервис резолвит его один раз через `productsService.getActiveCategories()` по `category_id` → `slug`. Никаких многоступенчатых «попробуем то, потом это»;
+- `isPreviewAvailable(model)` = модель найдена И есть хотя бы один `view.status === "ready"`;
+- `getPalette()` — из каталога (см. п.2), fallback-цвет при неизвестном `color_id` (17.1);
+- `validateTwoColor(config, model)` — запрет совпадения `outer_color_id` и `inner_side_color_id` при `two_color.disallow_same_color`; правило не применяется к банту;
+- `estimatePrice(basePrice, model)` = `basePrice * 1.10`, округление через существующий денежный форматтер проекта (никакого `516.999999999`).
+
+### `js/components/mockupPreviewModal.js`
+- inline-вставка SVG: `fetch(assetUrl)` → текст → `DOMParser.parseFromString(..., 'image/svg+xml')` → взять `<svg>` → вставить в контейнер → `previewEl.style.setProperty('--zone-side', color.hex)`;
+- палитра второго цвета; базовый внешний цвет = текущий выбранный цвет товара (read-only в POC);
+- совпадающий с базовым цвет нельзя подтвердить, UI явно объясняет причину;
+- подпись текущей конфигурации + «Предварительная цена: 517 ₽ · Финальная стоимость подтверждается менеджером»;
+- accessibility: `role="dialog"`, `aria-modal="true"`, закрытие по Escape и по backdrop, focus trap, возврат фокуса на кнопку запуска, body scroll lock;
+- мобильная раскладка: палитра прокручиваемой лентой снизу, preview на всю ширину;
+- fallback при сбое SVG: показываем фото товара и мягкое сообщение «Не удалось загрузить предпросмотр. Попробуйте открыть его ещё раз.»; технические детали (404, parse error, network) — только в console.
+
+### `js/components/productComponent.js`
+Кнопка «Двухцветная коробка — предпросмотр» рядом с «Кастомизировать», рендерится только если `isPreviewAvailable`.
+
+Корзина, заказ, Telegram, Supabase, `products-public.json`, customizer и Storage — не трогаем.
+
+## 5. Документация — `docs/mockup-system.md`
+Конструкции, зоны по каждой модели, правила цвета (включая исключение для банта), naming convention (`public/mockups/{model}[-{variant}]/{view}.svg`, id зон `zone-{name}`), схема `mockups.json`, схема customization config, чек-лист добавления новой модели/ракурса/зоны.
+
+## Customization config (POC, только в памяти модалки)
+
+```json
+{
+  "type": "two_color",
+  "product_id": "0629",
+  "mockup_model": "magnet_box",
+  "variant": "default",
+  "view": "closed_45",
+  "outer_color_id": "white",
+  "inner_side_color_id": "red",
+  "ribbon_color_id": null,
+  "estimated_price_modifier_percent": 10
+}
+```
+
+## Acceptance Criteria (POC)
+
+- Для реального товара mapped-категории отображается кнопка «Двухцветная коробка — предпросмотр».
+- Для товара без `ready` asset кнопка не отображается.
+- Modal открывается без перехода со страницы.
+- Загружается `magnet_box/closed_45.svg`.
+- Базовый внешний цвет автоматически соответствует текущему выбранному цвету товара.
+- Второй цвет выбирается из существующей палитры каталога.
+- Цвет, совпадающий с базовым, нельзя подтвердить; UI объясняет причину.
+- Смена второго цвета перекрашивает только видимую боковушку; `outer-top`, `outer-front`, геометрия, границы, блики и тени не меняются.
+- Смена цвета не инициирует повторную загрузку SVG.
+- Отображается предварительная цена `base × 1.10` с корректным округлением.
+- Никаких записей в Supabase / корзину / заказ.
+- Закрытие и повторное открытие модалки не ломает карточку товара.
+- При отсутствующем или невалидном SVG карточка товара продолжает работать.
+- Desktop и mobile проходят ручной smoke-test (включая Escape, backdrop, focus trap).
