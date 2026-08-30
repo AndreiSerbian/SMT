@@ -1,0 +1,53 @@
+{
+  "version": "1.0.0",
+  "models": [
+    {
+      "id": "magnet_box",
+      "variant": "default",
+      "zones": ["outer", "inner", "side"],
+      "views": {
+        "closed_45": { "asset": "/mockups/magnet_box/default/closed_45.svg", "status": "ready" },
+        "open_45": { "asset": null, "status": "planned" }
+      },
+      "two_color": {
+        "enabled": true,
+        "outer_zone": "outer",
+        "secondary_zones": ["inner", "side"],
+        "disallow_same_color": true
+      },
+      "ribbon": { "enabled": false },
+      "price_modifier_percent": 10
+    },
+    {
+      "id": "bow_box",
+      "variant": "default",
+      "zones": ["outer", "inner", "side", "ribbon"],
+      "views": { "closed_45": { "asset": null, "status": "planned" } },
+      "two_color": {
+        "enabled": true,
+        "outer_zone": "outer",
+        "secondary_zones": ["inner", "side"],
+        "disallow_same_color": true
+      },
+      "ribbon": { "enabled": true, "independent": true, "allow_same_color": true },
+      "price_modifier_percent": 10
+    },
+    {
+      "id": "bag_box",
+      "variant": "default",
+      "zones": ["outer", "side", "handle"],
+      "views": { "closed_45": { "asset": null, "status": "planned" } },
+      "two_color": {
+        "enabled": true,
+        "outer_zone": "outer",
+        "secondary_zones": ["side"],
+        "disallow_same_color": true
+      },
+      "ribbon": { "enabled": false },
+      "price_modifier_percent": 10
+    }
+  ],
+  "product_mapping": [
+    { "category_slug": "full-cover-small", "model": "magnet_box", "variant": "default" }
+  ]
+}
