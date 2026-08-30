@@ -121,7 +121,7 @@
 - `isPreviewAvailable(model)` = модель найдена И есть хотя бы один `view.status === "ready"`;
 - `getPalette()` — из каталога (см. п.2), fallback-цвет при неизвестном `color_id` (17.1);
 - `validateTwoColor(config, model)` — запрет совпадения `outer_color_id` и `inner_side_color_id` при `two_color.disallow_same_color`; правило не применяется к банту;
-- `estimatePrice(basePrice, model)` = `basePrice * 1.10`, округление через существующий денежный форматтер проекта (никакого `516.999999999`).
+- `estimatePrice(basePrice, model)` = `basePrice * 1.10`. `basePrice` = текущая номинальная цена выбранного товара, которую карточка уже использует в момент открытия POC (не новая цена из отдельного справочника, не минимальная цена категории, не цена другого цветового SKU). Округление через существующий денежный форматтер проекта (никакого `516.999999999`).
 
 ### `js/components/mockupPreviewModal.js`
 - inline-вставка SVG: `fetch(assetUrl)` → текст → `DOMParser.parseFromString(..., 'image/svg+xml')` → взять `<svg>` → вставить в контейнер → `previewEl.style.setProperty('--zone-side', color.hex)`;
