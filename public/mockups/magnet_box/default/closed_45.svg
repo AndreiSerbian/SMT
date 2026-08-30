@@ -1,73 +1,141 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 380" role="img" aria-label="Коробка на магнитах, закрытая, ракурс 45°">
+  <!--
+    Геометрия (кабинетная проекция ~45°, смещение глубины +113,-113 для крышки и +108,-108 для корпуса).
+
+    Крышка (шире корпуса, свес 5 units):
+      верх:        40,150  360,150  473,37  153,37
+      торец фронт: 40,150  360,150  360,164  40,164
+      торец бок:   360,150 473,37   473,51   360,164
+
+    Корпус (инсет 5 units):
+      фронт: 45,164  355,164  355,330  45,330
+      бок:   355,164 463,56   463,222  355,330
+
+    Зоны:
+      #zone-outer-top   — верх крышки
+      #zone-outer-front — торец крышки спереди + фронт корпуса
+      #zone-side        — торец крышки сбоку + бок корпуса
+    Все кромки наследуют цвет своей зоны; объём даётся только полупрозрачными overlay.
+  -->
   <defs>
-    <!-- Тень под коробкой -->
     <radialGradient id="ground-shadow" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#000" stop-opacity="0.28" />
-      <stop offset="70%" stop-color="#000" stop-opacity="0.10" />
+      <stop offset="0%" stop-color="#000" stop-opacity="0.30" />
+      <stop offset="65%" stop-color="#000" stop-opacity="0.10" />
       <stop offset="100%" stop-color="#000" stop-opacity="0" />
     </radialGradient>
-    <!-- Лёгкое затенение граней (поверх базового цвета) -->
+    <radialGradient id="contact-shadow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#000" stop-opacity="0.42" />
+      <stop offset="100%" stop-color="#000" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Базовое затенение поверхностей -->
     <linearGradient id="shade-front" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#fff" stop-opacity="0.16" />
+      <stop offset="0%" stop-color="#fff" stop-opacity="0.10" />
+      <stop offset="55%" stop-color="#000" stop-opacity="0.06" />
+      <stop offset="100%" stop-color="#000" stop-opacity="0.22" />
+    </linearGradient>
+    <linearGradient id="shade-top" x1="0" y1="1" x2="0.25" y2="0">
+      <stop offset="0%" stop-color="#fff" stop-opacity="0.26" />
+      <stop offset="100%" stop-color="#fff" stop-opacity="0.06" />
+    </linearGradient>
+    <linearGradient id="shade-side" x1="0" y1="0" x2="1" y2="0.6">
+      <stop offset="0%" stop-color="#000" stop-opacity="0.34" />
+      <stop offset="60%" stop-color="#000" stop-opacity="0.22" />
+      <stop offset="100%" stop-color="#000" stop-opacity="0.14" />
+    </linearGradient>
+    <linearGradient id="highlight-top" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#fff" stop-opacity="0" />
+      <stop offset="42%" stop-color="#fff" stop-opacity="0.28" />
+      <stop offset="58%" stop-color="#fff" stop-opacity="0.26" />
+      <stop offset="100%" stop-color="#fff" stop-opacity="0" />
+    </linearGradient>
+
+    <!-- Торцы крышки (толщина картона) -->
+    <linearGradient id="lid-edge-front" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fff" stop-opacity="0.14" />
+      <stop offset="60%" stop-color="#000" stop-opacity="0.10" />
+      <stop offset="100%" stop-color="#000" stop-opacity="0.26" />
+    </linearGradient>
+    <linearGradient id="lid-edge-side" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#000" stop-opacity="0.32" />
       <stop offset="100%" stop-color="#000" stop-opacity="0.18" />
     </linearGradient>
-    <linearGradient id="shade-top" x1="0" y1="1" x2="0" y2="0">
-      <stop offset="0%" stop-color="#fff" stop-opacity="0.22" />
-      <stop offset="100%" stop-color="#fff" stop-opacity="0.04" />
+
+    <!-- Тень под свесом крышки -->
+    <linearGradient id="under-lid-front" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#000" stop-opacity="0.34" />
+      <stop offset="100%" stop-color="#000" stop-opacity="0" />
     </linearGradient>
-    <linearGradient id="shade-side" x1="0" y1="0" x2="1" y2="1">
+    <linearGradient id="under-lid-side" x1="0.15" y1="0" x2="0.85" y2="1">
       <stop offset="0%" stop-color="#000" stop-opacity="0.30" />
-      <stop offset="100%" stop-color="#000" stop-opacity="0.12" />
+      <stop offset="100%" stop-color="#000" stop-opacity="0" />
     </linearGradient>
-    <!-- Блик на верхней грани -->
-    <linearGradient id="highlight-top" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%" stop-color="#fff" stop-opacity="0.00" />
-      <stop offset="45%" stop-color="#fff" stop-opacity="0.30" />
-      <stop offset="55%" stop-color="#fff" stop-opacity="0.30" />
-      <stop offset="100%" stop-color="#fff" stop-opacity="0.00" />
+
+    <!-- Фаски -->
+    <linearGradient id="bevel-vertical" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#fff" stop-opacity="0.22" />
+      <stop offset="55%" stop-color="#fff" stop-opacity="0.05" />
+      <stop offset="100%" stop-color="#000" stop-opacity="0.18" />
+    </linearGradient>
+    <linearGradient id="bevel-lid-top" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fff" stop-opacity="0.30" />
+      <stop offset="100%" stop-color="#fff" stop-opacity="0" />
+    </linearGradient>
+    <linearGradient id="bevel-base" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#000" stop-opacity="0" />
+      <stop offset="100%" stop-color="#000" stop-opacity="0.26" />
     </linearGradient>
   </defs>
 
-  <!-- Тень на полу -->
-  <ellipse cx="256" cy="352" rx="225" ry="20" fill="url(#ground-shadow)" />
-
-  <!--
-    Геометрия (кабинетная проекция ~45°):
-      Передняя грань:   A(40,330) B(360,330) C(360,150) D(40,150)
-      Верхняя грань:    D(40,150) C(360,150) C'(473,37) D'(153,37)
-      Боковушка:        B(360,330) C(360,150) C'(473,37) B'(473,217)
-    Смещение глубины: (+113, -113).
-  -->
+  <!-- Тени на полу -->
+  <ellipse cx="258" cy="350" rx="222" ry="19" fill="url(#ground-shadow)" />
+  <ellipse cx="230" cy="336" rx="150" ry="9" fill="url(#contact-shadow)" />
 
   <g id="zones">
-    <!-- Верхняя внешняя грань (outer-top) -->
+    <!-- Верх крышки -->
     <polygon id="zone-outer-top"
       points="40,150 360,150 473,37 153,37"
-      fill="var(--zone-outer-top, #E5E5E5)" stroke="#1f2937" stroke-width="1.5" stroke-linejoin="round" />
+      fill="var(--zone-outer-top, #E5E5E5)" stroke="#1f2937" stroke-width="1.4" stroke-linejoin="round" />
 
-    <!-- Передняя внешняя грань (outer-front) -->
-    <polygon id="zone-outer-front"
-      points="40,330 360,330 360,150 40,150"
-      fill="var(--zone-outer-front, #E5E5E5)" stroke="#1f2937" stroke-width="1.5" stroke-linejoin="round" />
+    <!-- Фронт: торец крышки + передняя стенка корпуса -->
+    <path id="zone-outer-front"
+      d="M40,150 L360,150 L360,164 L40,164 Z M45,164 L355,164 L355,330 L45,330 Z"
+      fill="var(--zone-outer-front, #E5E5E5)" fill-rule="evenodd"
+      stroke="#1f2937" stroke-width="1.4" stroke-linejoin="round" />
 
-    <!-- Видимая боковушка (side) — единственная перекрашиваемая зона в POC -->
-    <polygon id="zone-side"
-      points="360,330 360,150 473,37 473,217"
-      fill="var(--zone-side, #E5E5E5)" stroke="#1f2937" stroke-width="1.5" stroke-linejoin="round" />
+    <!-- Боковушка: торец крышки сбоку + боковая стенка корпуса -->
+    <path id="zone-side"
+      d="M360,150 L473,37 L473,51 L360,164 Z M355,164 L463,56 L463,222 L355,330 Z"
+      fill="var(--zone-side, #E5E5E5)" fill-rule="evenodd"
+      stroke="#1f2937" stroke-width="1.4" stroke-linejoin="round" />
   </g>
 
   <g id="lighting">
-    <!-- Затенение и блики поверх граней (полупрозрачные, не перекрывают смену цвета) -->
-    <polygon points="40,330 360,330 360,150 40,150" fill="url(#shade-front)" />
+    <!-- Базовое затенение поверхностей -->
     <polygon points="40,150 360,150 473,37 153,37" fill="url(#shade-top)" />
     <polygon points="40,150 360,150 473,37 153,37" fill="url(#highlight-top)" />
-    <polygon points="360,330 360,150 473,37 473,217" fill="url(#shade-side)" />
+    <polygon points="45,164 355,164 355,330 45,330" fill="url(#shade-front)" />
+    <polygon points="355,164 463,56 463,222 355,330" fill="url(#shade-side)" />
 
-    <!-- Линия стыка крышки (магнитный замок) — реальный конструктивный элемент -->
-    <line x1="40" y1="168" x2="360" y2="168" stroke="#1f2937" stroke-opacity="0.45" stroke-width="1.2" />
+    <!-- Толщина картона крышки -->
+    <polygon points="40,150 360,150 360,164 40,164" fill="url(#lid-edge-front)" />
+    <polygon points="360,150 473,37 473,51 360,164" fill="url(#lid-edge-side)" />
 
-    <!-- Тонкая внутренняя кромка тени на гранях -->
-    <polygon points="40,150 360,150 360,330 40,330" fill="none" stroke="#000" stroke-opacity="0.10" stroke-width="1" />
+    <!-- Светлая кромка на верхнем ребре крышки -->
+    <polygon points="40,150 360,150 360,153 40,153" fill="url(#bevel-lid-top)" />
+
+    <!-- Тень под свесом крышки -->
+    <polygon points="45,164 355,164 355,186 45,186" fill="url(#under-lid-front)" />
+    <polygon points="355,164 463,56 463,74 355,182" fill="url(#under-lid-side)" />
+
+    <!-- Тонкая тёмная линия стыка крышка/корпус -->
+    <path d="M40,164 L360,164" stroke="#000" stroke-opacity="0.34" stroke-width="1.2" fill="none" />
+    <path d="M360,164 L473,51" stroke="#000" stroke-opacity="0.28" stroke-width="1.2" fill="none" />
+
+    <!-- Фаски рёбер -->
+    <polygon points="349,168 355,164 355,330 349,330" fill="url(#bevel-vertical)" />
+    <polygon points="355,150 360,150 360,164 355,168" fill="url(#bevel-vertical)" />
+    <polygon points="45,318 355,318 355,330 45,330" fill="url(#bevel-base)" />
   </g>
 </svg>
