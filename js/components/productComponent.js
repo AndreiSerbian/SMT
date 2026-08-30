@@ -4,6 +4,8 @@ import { productsService } from '../services/productsService.js';
 import SwiperService from '../services/swiperService.js';
 import { resolveImageUrl } from '../services/mediaResolver.js';
 import { getImageAttrsHtml } from '../services/imageSizeService.js';
+import { mockupService } from '../services/mockupService.js';
+import { MockupPreviewModal } from './mockupPreviewModal.js';
 const ProductComponent = {
   eventListeners: [],
   timeouts: [],
