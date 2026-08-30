@@ -6,8 +6,8 @@
     вертикальные плоскости низкие (высота ~8 см против 21×15 основания).
 
     Опорные вершины:
-      A_top 59,170   Back_top 247,95   B_top 488,192   F_top 300,267
-      A     59,228                     B     488,250   F     300,325
+      A_top 59,155   Back_top 247,80   B_top 488,177   F_top 300,252
+      A     59,243                     B     488,265   F     300,340
 
     Зоны:
       #zone-outer-top   — верхняя панель складной оболочки
@@ -93,54 +93,54 @@
   </defs>
 
   <!-- Ground shadow: вторичная, объём читается по самой коробке -->
-  <ellipse cx="280" cy="336" rx="235" ry="17" fill="url(#ground-shadow)" />
-  <ellipse cx="270" cy="330" rx="150" ry="8" fill="url(#contact-shadow)" />
+  <ellipse cx="280" cy="352" rx="235" ry="17" fill="url(#ground-shadow)" />
+  <ellipse cx="270" cy="346" rx="150" ry="8" fill="url(#contact-shadow)" />
 
   <g id="zones">
     <!-- Верхняя панель -->
     <polygon id="zone-outer-top"
-      points="59,170 247,95 488,192 300,267"
-      fill="var(--zone-outer-top, #E5E5E5)" stroke="#1f2937" stroke-width="1.1" stroke-linejoin="round" />
+      points="59,155 247,80 488,177 300,252"
+      fill="var(--zone-outer-top, #E5E5E5)" stroke="#111827" stroke-opacity="0.55" stroke-width="1.1" stroke-linejoin="round" />
 
     <!-- Closing panel + узкая полоса front wall под её кромкой -->
     <path id="zone-outer-front"
-      d="M59,170 L300,267 L300,321 L59,224 Z M59,224 L300,321 L300,325 L59,228 Z"
+      d="M59,155 L300,252 L300,336 L59,239 Z M59,239 L300,336 L300,340 L59,243 Z"
       fill="var(--zone-outer-front, #E5E5E5)"
-      stroke="#1f2937" stroke-width="1.1" stroke-linejoin="round" />
+      stroke="#111827" stroke-opacity="0.55" stroke-width="1.1" stroke-linejoin="round" />
 
     <!-- Боковая грань -->
     <polygon id="zone-side"
-      points="300,267 488,192 488,250 300,325"
-      fill="var(--zone-side, #E5E5E5)" stroke="#1f2937" stroke-width="1.1" stroke-linejoin="round" />
+      points="300,252 488,177 488,265 300,340"
+      fill="var(--zone-side, #E5E5E5)" stroke="#111827" stroke-opacity="0.55" stroke-width="1.1" stroke-linejoin="round" />
   </g>
 
   <g id="lighting" pointer-events="none">
     <!-- Разделение поверхностей по свету -->
-    <polygon points="59,170 247,95 488,192 300,267" fill="url(#shade-top)" />
-    <polygon points="59,170 247,95 488,192 300,267" fill="url(#sheen-top)" />
-    <polygon points="59,170 300,267 300,325 59,228" fill="url(#shade-front)" />
-    <polygon points="300,267 488,192 488,250 300,325" fill="url(#shade-side)" />
+    <polygon points="59,155 247,80 488,177 300,252" fill="url(#shade-top)" />
+    <polygon points="59,155 247,80 488,177 300,252" fill="url(#sheen-top)" />
+    <polygon points="59,155 300,252 300,340 59,243" fill="url(#shade-front)" />
+    <polygon points="300,252 488,177 488,265 300,340" fill="url(#shade-side)" />
 
     <!-- Толщина картона по верхнему ребру -->
-    <polygon points="59,170 300,267 300,272 59,175" fill="url(#card-edge-front)" />
-    <polygon points="300,267 488,192 488,197 300,272" fill="url(#card-edge-side)" />
+    <polygon points="59,155 300,252 300,257 59,160" fill="url(#card-edge-front)" />
+    <polygon points="300,252 488,177 488,182 300,257" fill="url(#card-edge-side)" />
 
     <!-- Контактная тень сразу под верхним ребром -->
-    <polygon points="59,175 300,272 300,288 59,191" fill="url(#under-top-front)" />
-    <polygon points="300,272 488,197 488,211 300,286" fill="url(#under-top-side)" />
+    <polygon points="59,160 300,257 300,275 59,178" fill="url(#under-top-front)" />
+    <polygon points="300,257 488,182 488,198 300,273" fill="url(#under-top-side)" />
 
     <!-- Стык closing panel ↔ front wall: нижняя кромка панели -->
-    <polygon points="59,221 300,318 300,325 59,228" fill="url(#panel-seam)" />
-    <path d="M59,224 L300,321" stroke="#000" stroke-opacity="0.26" stroke-width="1" fill="none" />
+    <polygon points="59,236 300,333 300,340 59,243" fill="url(#panel-seam)" />
+    <path d="M59,239 L300,336" stroke="#000" stroke-opacity="0.26" stroke-width="1" fill="none" />
 
     <!-- Вертикальное ребро front ↔ side -->
-    <polygon points="293,264 307,269 307,325 293,323" fill="url(#corner-seam)" />
+    <polygon points="293,249 307,254 307,340 293,338" fill="url(#corner-seam)" />
 
     <!-- Тонкая кромка панели по левому вертикальному ребру -->
-    <polygon points="59,170 63,172 63,226 59,224" fill="#fff" fill-opacity="0.12" />
+    <polygon points="59,155 63,157 63,241 59,239" fill="#fff" fill-opacity="0.12" />
 
     <!-- Нижний кант -->
-    <polygon points="59,216 300,313 300,325 59,228" fill="url(#bottom-edge)" fill-opacity="0.55" />
-    <polygon points="300,313 488,238 488,250 300,325" fill="url(#bottom-edge)" fill-opacity="0.55" />
+    <polygon points="59,231 300,328 300,340 59,243" fill="url(#bottom-edge)" fill-opacity="0.55" />
+    <polygon points="300,328 488,253 488,265 300,340" fill="url(#bottom-edge)" fill-opacity="0.55" />
   </g>
 </svg>
