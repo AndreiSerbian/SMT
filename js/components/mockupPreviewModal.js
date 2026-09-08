@@ -102,7 +102,7 @@ const MockupPreviewModal = {
       <div class="mpm-backdrop" data-mpm-close></div>
       <div class="mpm-dialog" tabindex="-1">
         <button class="mpm-close" type="button" aria-label="Закрыть предпросмотр" data-mpm-close>×</button>
-        <h2 id="mockup-preview-title" class="mpm-title">Коробка с бантом — предпросмотр</h2>
+        <h2 id="mockup-preview-title" class="mpm-title">Коробка с лентой — предпросмотр</h2>
         <div class="mpm-body">
           <div class="mpm-preview-col">
             <div class="mpm-preview-wrap">
