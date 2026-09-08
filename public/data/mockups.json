@@ -7,14 +7,6 @@
       "zones": ["outer", "inner", "side"],
       "views": {
         "closed_45": { "asset": "/mockups/magnet_box/default/closed_45.svg", "status": "ready" },
-        "photo_closed_45": {
-          "status": "ready",
-          "type": "photo_masks",
-          "source": "/mockups/magnet_box/default/photo_closed_45/source.png",
-          "zone_map": "/mockups/magnet_box/default/photo_closed_45/zone_map.png",
-          "shading": "/mockups/magnet_box/default/photo_closed_45/shading.png",
-          "zones": ["main", "side", "bow"]
-        },
         "open_45": { "asset": null, "status": "planned" }
       },
       "two_color": {
@@ -23,15 +15,24 @@
         "secondary_zones": ["inner", "side"],
         "disallow_same_color": true
       },
-      "ribbon": { "enabled": true, "independent": true, "allow_same_color": true },
-
+      "ribbon": { "enabled": false },
       "price_modifier_percent": 10
     },
     {
       "id": "bow_box",
       "variant": "default",
       "zones": ["outer", "inner", "side", "ribbon"],
-      "views": { "closed_45": { "asset": null, "status": "planned" } },
+      "views": {
+        "closed_45": { "asset": null, "status": "planned" },
+        "photo_closed_45": {
+          "status": "ready",
+          "type": "photo_masks",
+          "source": "/mockups/bow_box/default/photo_closed_45/source.png",
+          "zone_map": "/mockups/bow_box/default/photo_closed_45/zone_map.png",
+          "shading": "/mockups/bow_box/default/photo_closed_45/shading.png",
+          "zones": ["main", "side", "bow"]
+        }
+      },
       "two_color": {
         "enabled": true,
         "outer_zone": "outer",
@@ -57,6 +58,10 @@
     }
   ],
   "product_mapping": [
-    { "category_slug": "full-cover-small", "model": "magnet_box", "variant": "default" }
+    { "category_slug": "full-cover-small", "model": "magnet_box", "variant": "default" },
+    { "category_slug": "bow-box-small", "model": "bow_box", "variant": "default" },
+    { "category_slug": "bow-box-medium", "model": "bow_box", "variant": "default" },
+    { "category_slug": "bow-box-big", "model": "bow_box", "variant": "default" }
   ]
+
 }
