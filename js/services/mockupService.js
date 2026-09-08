@@ -42,8 +42,20 @@ async function getModelForProduct(product) {
 function isPreviewAvailable(model, view = 'closed_45') {
   if (!model || !model.views || !model.views[view]) return false;
   const v = model.views[view];
-  return v.status === 'ready' && v.asset != null;
+  if (v.status !== 'ready') return false;
+  return v.asset != null || v.zone_map != null;
 }
+
+/**
+ * Фото-мокап (3 зоны: MAIN / SIDE / BOW) для модели, если он готов.
+ */
+function getPhotoView(model, view = 'photo_closed_45') {
+  if (!model || !model.views) return null;
+  const v = model.views[view];
+  if (!v || v.status !== 'ready' || v.type !== 'photo_masks') return null;
+  return v;
+}
+
 
 /**
  * Палитра из существующего каталога. Нормализуем к { id, name, hex }.
