@@ -99,9 +99,11 @@ export const mockupService = {
   loadMockups,
   getModelForProduct,
   isPreviewAvailable,
+  getPhotoView,
   getPalette,
   validateTwoColor,
   estimatePrice
 };
+
 
 export default mockupService;
