@@ -141,7 +141,7 @@ const MockupPreviewModal = {
     const paint = () => {
       renderer.render(canvas, { main: state.main.hex, side: state.side.hex, bow: state.bow.hex });
       overlay.querySelector('#mpm-caption').textContent =
-        `Вид: закрытая 45° · Корпус: ${state.main.name} · Боковушка: ${state.side.name} · Бант: ${state.bow.name}`;
+        `Вид: закрытая 45° · Корпус: ${state.main.name} · Боковушка: ${state.side.name} · Лента: ${state.bow.name}`;
       ['main', 'side', 'bow'].forEach(z => {
         const el = overlay.querySelector(`#mpm-name-${z}`);
         if (el) el.textContent = state[z].name;
@@ -189,7 +189,7 @@ const MockupPreviewModal = {
   _zoneLabel(zone) {
     return zone === 'main' ? 'Основной цвет корпуса'
       : zone === 'side' ? 'Цвет боковушки'
-      : 'Цвет банта';
+      : 'Цвет ленты';
   },
 
 
