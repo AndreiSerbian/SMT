@@ -70,6 +70,130 @@ const MockupPreviewModal = {
     this._attachListeners();
   },
 
+  /**
+   * Фото-мокап с бантом: 3 независимые зоны (корпус / боковушка / бант).
+   * Ограничений на совпадение цветов нет.
+   */
+  async _openPhoto(product, model, view) {
+    const palette = await mockupService.getPalette().catch(() => []);
+    this._paletteCache = palette;
+
+    const baseHex = product.color_hex || (palette[0] && palette[0].hex) || '#FFFFFF';
+    const baseId = String(baseHex).toLowerCase();
+    const pick = (id) => palette.find(c => c.id === id) || { id: baseId, name: product.color || 'Текущий цвет', hex: baseHex };
+
+    const state = {
+      main: pick(baseId),
+      side: pick(baseId),
+      bow: palette.find(c => c.id !== baseId) || pick(baseId)
+    };
+
+    const basePrice = Number(product.price_rub || product.price || 0);
+    const estimated = mockupService.estimatePrice(basePrice, model);
+
+    this._closeExisting();
+    const overlay = document.createElement('div');
+    overlay.id = 'mockup-preview-overlay';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-labelledby', 'mockup-preview-title');
+    overlay.className = 'mpm-overlay';
+    overlay.innerHTML = `
+      <div class="mpm-backdrop" data-mpm-close></div>
+      <div class="mpm-dialog" tabindex="-1">
+        <button class="mpm-close" type="button" aria-label="Закрыть предпросмотр" data-mpm-close>×</button>
+        <h2 id="mockup-preview-title" class="mpm-title">Коробка с бантом — предпросмотр</h2>
+        <div class="mpm-body">
+          <div class="mpm-preview-col">
+            <div class="mpm-preview-wrap">
+              <div class="mpm-preview">
+                <canvas id="mpm-canvas" class="mpm-canvas" role="img"
+                  aria-label="Предпросмотр коробки с бантом"></canvas>
+              </div>
+            </div>
+            <p class="mpm-caption" id="mpm-caption"></p>
+          </div>
+          <div class="mpm-controls-col">
+            ${['main', 'side', 'bow'].map(zone => `
+              <div class="mpm-control-group">
+                <div class="mpm-control-label">${this._zoneLabel(zone)}</div>
+                <div class="mpm-palette" id="mpm-palette-${zone}" role="radiogroup"
+                  aria-label="${this._zoneLabel(zone)}"></div>
+                <div class="mpm-base-name" id="mpm-name-${zone}"></div>
+              </div>
+            `).join('')}
+            <div class="mpm-price-block">
+              <p class="mpm-price">Предварительная цена: ₽${estimated} · Финальная стоимость подтверждается менеджером</p>
+            </div>
+            <p class="mpm-disclaimer">Это предварительный предпросмотр. Реальный результат зависит от материалов и подтверждается менеджером при оформлении.</p>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    this._overlay = overlay;
+    document.body.style.overflow = 'hidden';
+    requestAnimationFrame(() => overlay.querySelector('.mpm-dialog').focus());
+    this._attachListeners();
+
+    const canvas = overlay.querySelector('#mpm-canvas');
+    const renderer = createPhotoRenderer(view);
+    const paint = () => {
+      renderer.render(canvas, { main: state.main.hex, side: state.side.hex, bow: state.bow.hex });
+      overlay.querySelector('#mpm-caption').textContent =
+        `Вид: закрытая 45° · Корпус: ${state.main.name} · Боковушка: ${state.side.name} · Бант: ${state.bow.name}`;
+      ['main', 'side', 'bow'].forEach(z => {
+        const el = overlay.querySelector(`#mpm-name-${z}`);
+        if (el) el.textContent = state[z].name;
+      });
+    };
+
+    ['main', 'side', 'bow'].forEach(zone => {
+      const container = overlay.querySelector(`#mpm-palette-${zone}`);
+      container.innerHTML = palette.map(c => `
+        <button type="button" role="radio"
+          aria-checked="${c.id === state[zone].id}"
+          aria-label="${this._esc(c.name)}"
+          title="${this._esc(c.name)}"
+          class="mpm-swatch-btn ${c.id === state[zone].id ? 'mpm-swatch-selected' : ''}"
+          style="background-color:${c.hex}"
+          data-color-id="${this._esc(c.id)}"></button>
+      `).join('');
+      container.addEventListener('click', (e) => {
+        const btn = e.target.closest('.mpm-swatch-btn');
+        if (!btn) return;
+        const color = palette.find(c => c.id === btn.getAttribute('data-color-id'));
+        if (!color) return;
+        state[zone] = color;
+        container.querySelectorAll('.mpm-swatch-btn').forEach(b => {
+          const sel = b === btn;
+          b.classList.toggle('mpm-swatch-selected', sel);
+          b.setAttribute('aria-checked', String(sel));
+        });
+        paint();
+      });
+    });
+
+    try {
+      await renderer.load();
+      paint();
+    } catch (e) {
+      console.error('[mockupPreview] photo assets load failed', e);
+      const wrap = overlay.querySelector('.mpm-preview');
+      if (wrap) {
+        wrap.innerHTML = `<p class="mpm-fallback-msg">Не удалось загрузить предпросмотр. Попробуйте открыть его ещё раз.</p>`;
+      }
+    }
+  },
+
+  _zoneLabel(zone) {
+    return zone === 'main' ? 'Основной цвет корпуса'
+      : zone === 'side' ? 'Цвет боковушки'
+      : 'Цвет банта';
+  },
+
+
+
   _buildShell(product, model, config, palette, baseColorHex, estimated) {
     this._closeExisting();
     const overlay = document.createElement('div');
