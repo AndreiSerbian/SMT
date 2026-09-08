@@ -27,9 +27,16 @@ const MockupPreviewModal = {
       this._renderFallback(product);
       return;
     }
+    const photoView = mockupService.getPhotoView(model, 'photo_closed_45');
+    if (photoView) {
+      await this._openPhoto(product, model, photoView);
+      return;
+    }
+
     if (!model || !mockupService.isPreviewAvailable(model, 'closed_45')) {
       return; // кнопка не должна была показываться
     }
+
 
     const palette = await mockupService.getPalette().catch(() => []);
     const baseColorHex = product.color_hex || '#E5E5E5';
