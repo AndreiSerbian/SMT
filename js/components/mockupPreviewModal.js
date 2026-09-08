@@ -1,5 +1,7 @@
 import { mockupService } from '../services/mockupService.js';
 import { resolveImageUrl } from '../services/mediaResolver.js';
+import { createPhotoRenderer } from '../services/mockupPhotoRenderer.js';
+
 
 /**
  * mockupPreviewModal — POC двухцветной кастомизации.
