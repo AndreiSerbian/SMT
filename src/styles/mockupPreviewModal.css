@@ -94,6 +94,8 @@
 
 .mpm-preview { width: 100%; display: flex; align-items: center; justify-content: center; }
 .mpm-preview svg { max-width: 100%; height: auto; display: block; }
+.mpm-canvas { max-width: 100%; width: 100%; height: auto; display: block; }
+
 
 .mpm-preview-fallback { text-align: center; }
 .mpm-preview-fallback-img { max-width: 220px; width: 100%; height: auto; border-radius: 8px; margin: 0 auto 12px; display: block; }
