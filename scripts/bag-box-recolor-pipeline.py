@@ -122,8 +122,9 @@ def image(array):
 
 
 def font(size):
-    # Pillow accepts the installed family name on Linux; require Cyrillic for QA.
-    return ImageFont.truetype('DejaVuSans.ttf', size)
+    import subprocess
+    path = subprocess.check_output(['fc-match', '-f', '%{file}', 'DejaVu Sans'], text=True).strip()
+    return ImageFont.truetype(path, size)
 
 
 def sheet(tiles, labels, cols, tile_size=(480, 480), heading=None):
