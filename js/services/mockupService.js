@@ -52,7 +52,8 @@ function isPreviewAvailable(model, view = 'closed_45') {
 function getPhotoView(model, view = 'photo_closed_45') {
   if (!model || !model.views) return null;
   const v = model.views[view];
-  if (!v || v.status !== 'ready' || v.type !== 'photo_masks') return null;
+  if (!v || v.status !== 'ready') return null;
+  if (v.type !== 'photo_masks' && v.type !== 'photo_bag_maps') return null;
   return v;
 }
 
