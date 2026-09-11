@@ -472,7 +472,11 @@ const ProductComponent = {
           .then(model => {
             const hasPhoto = model && mockupService.getPhotoView(model, 'photo_closed_45');
             if (model && (hasPhoto || mockupService.isPreviewAvailable(model, 'closed_45'))) {
-              if (hasPhoto) mockupBtn.textContent = 'Коробка с лентой — предпросмотр';
+              if (hasPhoto) {
+                mockupBtn.textContent = hasPhoto.type === 'photo_bag_maps'
+                  ? 'Коробка-сумка — предпросмотр'
+                  : 'Коробка с лентой — предпросмотр';
+              }
               mockupBtn.style.display = 'block';
 
               mockupBtn.addEventListener('click', () => {
