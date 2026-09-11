@@ -46,7 +46,22 @@
       "id": "bag_box",
       "variant": "default",
       "zones": ["outer", "side", "handle"],
-      "views": { "closed_45": { "asset": null, "status": "planned" } },
+      "views": {
+        "closed_45": { "asset": null, "status": "planned" },
+        "photo_closed_45": {
+          "status": "ready",
+          "type": "photo_bag_maps",
+          "zones": ["main", "side", "handles"],
+          "maps": {
+            "source": "/mockups/bag_box/default/photo_closed_45/web/source.png",
+            "form": "/mockups/bag_box/default/photo_closed_45/web/form.png",
+            "aux": "/mockups/bag_box/default/photo_closed_45/web/aux.png",
+            "weights": "/mockups/bag_box/default/photo_closed_45/web/weights.png",
+            "mix": "/mockups/bag_box/default/photo_closed_45/web/mix.png",
+            "detail": "/mockups/bag_box/default/photo_closed_45/web/detail.png"
+          }
+        }
+      },
       "two_color": {
         "enabled": true,
         "outer_zone": "outer",
@@ -61,7 +76,8 @@
     { "category_slug": "full-cover-small", "model": "magnet_box", "variant": "default" },
     { "category_slug": "bow-box-small", "model": "bow_box", "variant": "default" },
     { "category_slug": "bow-box-medium", "model": "bow_box", "variant": "default" },
-    { "category_slug": "bow-box-big", "model": "bow_box", "variant": "default" }
+    { "category_slug": "bow-box-big", "model": "bow_box", "variant": "default" },
+    { "category_slug": "handle-box-small", "model": "bag_box", "variant": "default" }
   ]
 
 }

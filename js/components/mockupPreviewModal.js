@@ -1,6 +1,7 @@
 import { mockupService } from '../services/mockupService.js';
 import { resolveImageUrl } from '../services/mediaResolver.js';
 import { createPhotoRenderer } from '../services/mockupPhotoRenderer.js';
+import { createBagRenderer } from '../services/bagPhotoRenderer.js';
 
 
 /**
@@ -82,11 +83,13 @@ const MockupPreviewModal = {
     const baseId = String(baseHex).toLowerCase();
     const pick = (id) => palette.find(c => c.id === id) || { id: baseId, name: product.color || 'Текущий цвет', hex: baseHex };
 
-    const state = {
-      main: pick(baseId),
-      side: pick(baseId),
-      bow: palette.find(c => c.id !== baseId) || pick(baseId)
-    };
+    const zones = Array.isArray(view.zones) && view.zones.length ? view.zones : ['main', 'side', 'bow'];
+    const accentZone = zones[zones.length - 1];
+    const state = {};
+    zones.forEach(z => { state[z] = pick(baseId); });
+    state[accentZone] = palette.find(c => c.id !== baseId) || pick(baseId);
+    const isBag = view.type === 'photo_bag_maps';
+    const title = isBag ? 'Коробка-сумка — предпросмотр' : 'Коробка с лентой — предпросмотр';
 
     const basePrice = Number(product.price_rub || product.price || 0);
     const estimated = mockupService.estimatePrice(basePrice, model);
@@ -102,19 +105,19 @@ const MockupPreviewModal = {
       <div class="mpm-backdrop" data-mpm-close></div>
       <div class="mpm-dialog" tabindex="-1">
         <button class="mpm-close" type="button" aria-label="Закрыть предпросмотр" data-mpm-close>×</button>
-        <h2 id="mockup-preview-title" class="mpm-title">Коробка с лентой — предпросмотр</h2>
+        <h2 id="mockup-preview-title" class="mpm-title">${title}</h2>
         <div class="mpm-body">
           <div class="mpm-preview-col">
             <div class="mpm-preview-wrap">
               <div class="mpm-preview">
                 <canvas id="mpm-canvas" class="mpm-canvas" role="img"
-                  aria-label="Предпросмотр коробки с бантом"></canvas>
+                  aria-label="${this._esc(title)}"></canvas>
               </div>
             </div>
             <p class="mpm-caption" id="mpm-caption"></p>
           </div>
           <div class="mpm-controls-col">
-            ${['main', 'side', 'bow'].map(zone => `
+            ${zones.map(zone => `
               <div class="mpm-control-group">
                 <div class="mpm-control-label">${this._zoneLabel(zone)}</div>
                 <div class="mpm-palette" id="mpm-palette-${zone}" role="radiogroup"
@@ -137,18 +140,20 @@ const MockupPreviewModal = {
     this._attachListeners();
 
     const canvas = overlay.querySelector('#mpm-canvas');
-    const renderer = createPhotoRenderer(view);
+    const renderer = isBag ? createBagRenderer(view) : createPhotoRenderer(view);
     const paint = () => {
-      renderer.render(canvas, { main: state.main.hex, side: state.side.hex, bow: state.bow.hex });
+      const colors = {};
+      zones.forEach(z => { colors[z] = state[z].hex; });
+      renderer.render(canvas, colors);
       overlay.querySelector('#mpm-caption').textContent =
-        `Вид: закрытая 45° · Корпус: ${state.main.name} · Боковушка: ${state.side.name} · Лента: ${state.bow.name}`;
-      ['main', 'side', 'bow'].forEach(z => {
+        'Вид: закрытая 45° · ' + zones.map(z => `${this._zoneLabel(z)}: ${state[z].name}`).join(' · ');
+      zones.forEach(z => {
         const el = overlay.querySelector(`#mpm-name-${z}`);
         if (el) el.textContent = state[z].name;
       });
     };
 
-    ['main', 'side', 'bow'].forEach(zone => {
+    zones.forEach(zone => {
       const container = overlay.querySelector(`#mpm-palette-${zone}`);
       container.innerHTML = palette.map(c => `
         <button type="button" role="radio"
@@ -189,6 +194,7 @@ const MockupPreviewModal = {
   _zoneLabel(zone) {
     return zone === 'main' ? 'Основной цвет корпуса'
       : zone === 'side' ? 'Цвет боковушки'
+      : zone === 'handles' ? 'Цвет ручек'
       : 'Цвет ленты';
   },
 
