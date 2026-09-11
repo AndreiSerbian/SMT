@@ -275,6 +275,18 @@ def clean_handle_pinholes():
         if size <= 14:
             cleaned[component] = 255
             filled_pixels += size
+    # Repair isolated low-alpha specks that are fully inside the handle. This
+    # does not touch the outer antialiased edge or the intentional open gaps.
+    distance = distance_transform_edt(solid)
+    local_median = median_filter(cleaned, size=5)
+    dim = (distance >= 2) & (cleaned.astype(np.int16)+18 < local_median.astype(np.int16))
+    dim_labels, dim_count = label(dim)
+    for index in range(1, dim_count+1):
+        component = dim_labels == index
+        size = int(component.sum())
+        if size <= 8:
+            cleaned[component] = local_median[component]
+            filled_pixels += size
     if filled_pixels:
         Image.fromarray(cleaned).save(path)
     return filled_pixels
