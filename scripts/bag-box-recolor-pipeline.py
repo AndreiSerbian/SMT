@@ -13,7 +13,7 @@ import zipfile
 
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
-from scipy.ndimage import binary_erosion, gaussian_filter
+from scipy.ndimage import binary_erosion, binary_fill_holes, distance_transform_edt, gaussian_filter, label, median_filter
 
 ROOT = Path(__file__).resolve().parents[1]
 BASE = ROOT / 'public/mockups/bag_box/default/photo_closed_45'
@@ -24,6 +24,14 @@ CASES = (
     ('red_black', 'Красный корпус / чёрные ручки', ('#D62027', '#D62027', '#151515')),
     ('white_red', 'Белый корпус / красные ручки', ('#F2F2F2', '#F2F2F2', '#CF1F2A')),
     ('blue_white', 'Синий корпус / белые ручки', ('#1F3F7A', '#1F3F7A', '#F5F5F5')),
+)
+REAL_CASES = (
+    ('r1', 'Чёрный / бордовая боковина / золотые ручки', ('#151515', '#6E1028', '#C8A24A')),
+    ('r2', 'Изумрудный / кремовая боковина / золотые ручки', ('#07583A', '#E9E3D1', '#C8A24A')),
+    ('r3', 'Бордовый / чёрная боковина / чёрные ручки', ('#7A112D', '#151515', '#151515')),
+    ('r4', 'Тёмно-синий / серебряная боковина / белые ручки', ('#172E5B', '#B9BEC5', '#F5F5F5')),
+    ('r5', 'Белый / бордовая боковина / бордовые ручки', ('#F4F4F2', '#77122C', '#77122C')),
+    ('r6', 'Пудровый розовый / золотая боковина / белые ручки', ('#DCAFB9', '#C3A047', '#F5F5F5')),
 )
 LABELS = {'A': 'A · Multiply', 'B': 'B · Компенсация света', 'C': 'C · Подложка + свет + фактура'}
 
@@ -48,12 +56,20 @@ def load():
     if src.shape != masks.shape:
         raise ValueError('Source and masks must have matching dimensions')
     lum = src @ np.array([.2126, .7152, .0722])
-    low = gaussian_filter(lum, 3)
-    detail = np.clip(lum-low, -.12, .12)
+    low = gaussian_filter(lum, 12)
+    detail = np.asarray(Image.open(BASE/'maps'/'details.webp').convert('L'), dtype=float)/255-.5
+    detail = gaussian_filter(np.clip(detail, -.16, .16), .7)
+    shadows = np.asarray(Image.open(BASE/'maps'/'shadows.webp').convert('L'), dtype=float)/255
+    highlights = np.asarray(Image.open(BASE/'maps'/'highlights.webp').convert('L'), dtype=float)/255
     coverage = np.clip(masks.sum(2), 0, 1)
     # Keep the existing silhouette and its outer AA exactly. Normalize only
     # supported interior coverage: no dilation, new silhouette or hole filling.
-    interior = binary_erosion(coverage > .5, iterations=1)
+    body = np.clip(masks[:, :, 0]+masks[:, :, 1], 0, 1)
+    # The photographed body is a continuous base under the zone boundary.
+    # Filling only enclosed body gaps prevents the white source from showing
+    # through fractional MAIN/SIDE antialiasing without changing its silhouette.
+    body_filled = binary_fill_holes(body > .02)
+    interior = binary_erosion(body_filled | (masks[:, :, 2] > .08), iterations=1)
     alpha = np.where(interior, 1., coverage)
     # Fixed source-specific slot ROI, not runtime segmentation. Only dark
     # photographic slit material is protected; no source mask is rewritten.
@@ -69,6 +85,7 @@ def load():
     weights[:, :, 0] += np.maximum(0, alpha-coverage)
     weights /= np.maximum(weights.sum(2), 1e-12)[..., None]
     return dict(src=src, masks=masks, raw=raw, lum=lum, low=low, detail=detail,
+                shadows=shadows, highlights=highlights, body_filled=body_filled,
                 coverage=coverage, interior=interior, alpha=alpha,
                 slots=slots, weights=weights, fingerprints=fingerprints)
 
@@ -79,22 +96,42 @@ def surface(data, colour, zone, variant):
         # Reconstructed source-luminance multiply reference, not a claim to
         # reproduce the unavailable historical bag proof generator exactly.
         return np.clip(colour[None, None, :] * (1.02*l)[..., None], 0, 1)
-    reference = .985 if zone == 2 else .98
-    gain = 3.4 if zone == 2 else 1.35
-    # Invert WHITE-SOURCE brightness into a shadow deficit, not final RGB:
-    # white => deficit 0 => full target colour; no white screen overlay.
-    deficit = np.clip(1-low/reference, 0, 1)
-    shade = np.clip(1-gain*deficit, .12, 1)
+    brightness = float(colour @ np.array([.2126, .7152, .0722]))
+    zone_mask = data['masks'][:, :, zone] > .5
+    samples = low[zone_mask]
+    lo, hi = np.percentile(samples, (3, 97)) if samples.size else (.7, 1.)
+    form = np.clip((low-lo)/max(hi-lo, .04), 0, 1)
+    authored_shadow = np.clip(data['shadows']/max(float(data['shadows'][zone_mask].max()), .08), 0, 1)
+    authored_highlight = np.clip(data['highlights'], 0, 1)
+    if brightness < .35:
+        # Dark inks need coloured highlight lift; multiplying an almost-black
+        # target by the source alone collapses every plane to a flat silhouette.
+        shade = .58 + .82*form + .18*authored_highlight - .16*authored_shadow
+    elif brightness > .78:
+        # Light colours retain cleanliness while shallow photographic shadows
+        # keep the planes and folds legible.
+        shade = .90 + .13*form + .035*authored_highlight - .10*authored_shadow
+    else:
+        shade = .70 + .48*form + .08*authored_highlight - .14*authored_shadow
+    if zone == 1:
+        # The inset panel receives extra edge occlusion so it reads as a recess.
+        distance = distance_transform_edt(zone_mask)
+        edge_depth = np.clip(distance/18, 0, 1)
+        shade *= .72 + .28*edge_depth
+    if zone == 2:
+        # Preserve broad textile folds but suppress isolated source compression
+        # speckles which become holes on gold and other saturated colours.
+        handle_luma = median_filter(l, size=5)
+        handle_form = np.clip((gaussian_filter(handle_luma, 2)-.68)/.31, 0, 1)
+        shade = .62 + (.50 if brightness < .45 else .34)*handle_form
     if variant == 'B':
         return np.clip(colour[None, None, :] * shade[..., None], 0, 1)
-    shade = np.clip(shade + detail*(3.0 if zone == 2 else 1.35), .05, 1.03)
-    brightness = float(colour @ np.array([.2126, .7152, .0722]))
-    # Bounded sheen preserves folds on black without washing out saturated
-    # colours. Existing highlights map is deliberately NOT added as white:
-    # on this white source it is mostly albedo/overexposure, not specularity.
-    sheen = np.clip((low-.85)/.15, 0, 1) * (.06 if zone == 2 else .028) * (1-brightness)**2
-    sheen += np.maximum(detail, 0) * (.22 if zone == 2 else .08) * (1-brightness)**2
-    return np.clip(colour[None, None, :] * shade[..., None] + sheen[..., None], 0, 1)
+    detail_gain = .16 if zone == 2 else (.34 if zone == 1 else .46)
+    shade = np.clip(shade + detail*detail_gain, .42 if brightness < .35 else .68, 1.48)
+    # Highlights remain target-coloured, never a white screen layer.
+    chroma_lift = colour[None, None, :] * authored_highlight[..., None]
+    lift = (.12 if brightness < .35 else .025) * (1-brightness)
+    return np.clip(colour[None, None, :] * shade[..., None] + chroma_lift*lift, 0, 1)
 
 
 def render(data, colours, variant=DEFAULT_PIPELINE):
@@ -112,7 +149,11 @@ def render(data, colours, variant=DEFAULT_PIPELINE):
             out = out*(1-w)+layer*w
     # Protected slit detail is independent of handles; stays darker than the
     # body instead of becoming gold/red/white or an unrealistically grey stripe.
-    slit_rgb = np.minimum(data['src']*.25, colours[0][None, None, :]*.22+.008)
+    # Slots inherit MAIN hue and the source's local gradient: a dark recessed
+    # part of the top plane rather than a flat neutral decal.
+    slot_light = np.clip(.13+.15*gaussian_filter(data['lum'], 2), .16, .28)
+    slit_rgb = colours[0][None, None, :]*(.18+.28*slot_light[..., None])
+    slit_rgb += slot_light[..., None]*.035
     out = out*(1-data['slots'][..., None])+slit_rgb*data['slots'][..., None]
     return np.clip(out, 0, 1)
 
@@ -219,8 +260,87 @@ def export(output):
     print('Artifacts:', output)
 
 
+def clean_handle_pinholes():
+    """Fill only tiny enclosed holes; preserve all open gaps and silhouette."""
+    path = BASE/'masks'/'mask_handles.png'
+    original = np.asarray(Image.open(path).convert('L'))
+    solid = original >= 128
+    holes = binary_fill_holes(solid) & ~solid
+    labels, count = label(holes)
+    cleaned = original.copy()
+    filled_pixels = 0
+    for index in range(1, count+1):
+        component = labels == index
+        size = int(component.sum())
+        if size <= 14:
+            cleaned[component] = 255
+            filled_pixels += size
+    # Repair isolated low-alpha specks that are fully inside the handle. This
+    # does not touch the outer antialiased edge or the intentional open gaps.
+    distance = distance_transform_edt(solid)
+    local_median = median_filter(cleaned, size=5)
+    dim = (distance >= 2) & (cleaned.astype(np.int16)+18 < local_median.astype(np.int16))
+    dim_labels, dim_count = label(dim)
+    for index in range(1, dim_count+1):
+        component = dim_labels == index
+        size = int(component.sum())
+        if size <= 8:
+            cleaned[component] = local_median[component]
+            filled_pixels += size
+    if filled_pixels:
+        Image.fromarray(cleaned).save(path)
+    return filled_pixels
+
+
+def export_real(output):
+    output.mkdir(parents=True, exist_ok=True)
+    filled = clean_handle_pinholes()
+    data = load()
+    renders = []
+    labels_text = []
+    metrics = {}
+    for slug, label_text, colours in REAL_CASES:
+        rendered = render(data, colours, 'C')
+        rendered_image = image(rendered)
+        rendered_image.save(output/f'{slug}.png')
+        renders.append(rendered_image)
+        labels_text.append(label_text)
+        luma = rendered @ np.array([.2126, .7152, .0722])
+        metrics[slug] = {
+            'main_luma_p95_minus_p5': round(float(np.percentile(luma[data['masks'][:, :, 0]>.98], 95)-np.percentile(luma[data['masks'][:, :, 0]>.98], 5)), 4),
+            'side_luma_p95_minus_p5': round(float(np.percentile(luma[data['masks'][:, :, 1]>.98], 95)-np.percentile(luma[data['masks'][:, :, 1]>.98], 5)), 4),
+            'handles_luma_p95_minus_p5': round(float(np.percentile(luma[data['masks'][:, :, 2]>.98], 95)-np.percentile(luma[data['masks'][:, :, 2]>.98], 5)), 4),
+        }
+    sheet(renders, labels_text, 3, (500, 500), 'Recolor с реальными цветами — финальная версия').save(output/'palette_real.png')
+    crop_specs = {
+        'qa_handles_4x.png': (220, 90, 535, 265),
+        'qa_main_side_seam_4x.png': (25, 180, 170, 720),
+        'qa_dark_top_4x.png': (20, 85, 735, 300),
+        'qa_light_body_3x.png': (25, 170, 735, 735),
+    }
+    qa_source = {'qa_handles_4x.png': renders[0], 'qa_main_side_seam_4x.png': renders[0],
+                 'qa_dark_top_4x.png': renders[0], 'qa_light_body_3x.png': renders[4]}
+    for filename, box in crop_specs.items():
+        crop = qa_source[filename].crop(box)
+        scale = 4 if '4x' in filename else 3
+        crop.resize((crop.width*scale, crop.height*scale), Image.Resampling.NEAREST).save(output/filename)
+    sheet([Image.open(output/name) for name in crop_specs],
+          ['Ручки', 'Стык MAIN / SIDE', 'Тёмная верхняя плоскость', 'Светлый корпус'],
+          2, (760, 520), 'QA — ключевые зоны').save(output/'qa_contact_sheet.png')
+    report = {
+        'cases': REAL_CASES,
+        'handle_pinholes_filled': filled,
+        'metrics': metrics,
+        'validation': validate(data),
+        'technique': 'zone-specific tonal transfer, continuous body underlay, coloured slot shading',
+    }
+    (output/'qa.json').write_text(json.dumps(report, ensure_ascii=False, indent=2)+'\n')
+    print(json.dumps(report, ensure_ascii=False, indent=2))
+
+
 if __name__ == '__main__':
     parser = ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, default=Path('/mnt/documents/bag_recolor'))
+    parser.add_argument('--real', action='store_true', help='export the six approved real-colour combinations and QA crops')
     args = parser.parse_args()
-    export(args.output)
+    export_real(args.output) if args.real else export(args.output)
