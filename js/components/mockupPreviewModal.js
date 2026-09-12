@@ -157,6 +157,7 @@ const MockupPreviewModal = {
         const el = overlay.querySelector(`#mpm-name-${z}`);
         if (el) el.textContent = state[z].name;
       });
+      this._updatePhotoContrast(state);
     };
 
     zones.forEach(zone => {
