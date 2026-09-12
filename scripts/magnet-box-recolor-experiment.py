@@ -221,6 +221,20 @@ def diagnostic_image(values, alpha, invert=False):
     return Image.fromarray(np.dstack((gray, gray, gray, np.rint(alpha * 255).astype(np.uint8))), 'RGBA')
 
 
+def bow_reference(color_hex):
+    """Render the approved bow-box formula as a visual quality reference."""
+    base = ROOT / 'public/mockups/bow_box/default/photo_closed_45'
+    zone = np.asarray(Image.open(base / 'zone_map.png').convert('RGBA'), dtype=np.float64) / 255
+    shading = np.asarray(Image.open(base / 'shading.png').convert('L'), dtype=np.float64) / 255
+    color = hex_rgb(color_hex)
+    weights = zone[..., :3]
+    alpha = np.clip(weights.sum(axis=2), 0, 1)
+    shade = shading * 2.2
+    painted = np.clip(color[None, None, :] * shade[..., None], 0, 1)
+    rgba = np.dstack((painted, alpha))
+    return composite(Image.fromarray(np.rint(rgba * 255).astype(np.uint8), 'RGBA'))
+
+
 def metrics_for(data, rgb_linear, slug):
     srgb = linear_to_srgb(rgb_linear)
     luma = srgb @ LUMA
@@ -268,6 +282,12 @@ def export(output=DEFAULT_OUTPUT):
           'Магнитная коробка: A/B/C/D на одинаковых масках').save(output / 'comparison_ABCD.png')
     sheet([final_images[slug] for slug, _, _ in COLORS], [label for _, label, _ in COLORS], 3, 430,
           'Финальный D: естественный свет, объём и фактура').save(output / 'final_palette.png')
+    reference_tiles, reference_labels = [], []
+    for slug, label, color in COLORS:
+        reference_tiles.extend((bow_reference(color), final_images[slug]))
+        reference_labels.extend((f'{label} · коробка с бантом', f'{label} · магнитная коробка D'))
+    sheet(reference_tiles, reference_labels, 2, 460,
+          'Контроль качества: успешный photo recolor и выбранный D').save(output / 'bow_reference_comparison.png')
 
     # QA crops show top/front/side on dark and light bodies at native-detail enlargement.
     crop_specs = {
@@ -287,6 +307,20 @@ def export(output=DEFAULT_OUTPUT):
         qa_labels.append(filename.replace('_3x.png', '').replace('_', ' '))
     sheet(qa_tiles, qa_labels, 2, 620, 'QA: тёмные и светлые плоскости').save(output / 'qa_contact_sheet.png')
 
+    acceptance = {
+        'dark_main_depth_better_than_inverted_B': all(
+            all_metrics[slug]['D']['main']['luma_p95_minus_p05'] > all_metrics[slug]['B']['main']['luma_p95_minus_p05']
+            for slug in ('black', 'burgundy', 'emerald', 'navy')
+        ),
+        'dark_side_depth_better_than_direct_A': all(
+            all_metrics[slug]['D']['side']['luma_p95_minus_p05'] > all_metrics[slug]['A']['side']['luma_p95_minus_p05']
+            for slug in ('black', 'burgundy', 'emerald', 'navy')
+        ),
+        'white_cleanliness_above_0_93': all_metrics['white']['D']['light_cleanliness'] > .93,
+        'powder_cleanliness_above_0_68': all_metrics['powder']['D']['light_cleanliness'] > .68,
+    }
+    if not all(acceptance.values()):
+        raise AssertionError(f'Photometric acceptance failed: {acceptance}')
     checks = {
         'input_sha256': data['fingerprints'],
         'main_side_overlap_pixels': int(((data['masks'][..., 0] > 0) & (data['masks'][..., 1] > 0)).sum()),
@@ -296,24 +330,25 @@ def export(output=DEFAULT_OUTPUT):
         'zone_percentiles_linear': {name: data['maps'][i]['percentiles'] for i, name in enumerate(ZONES)},
         'metrics': all_metrics,
         'selected_method': 'D',
+        'acceptance': acceptance,
     }
     (output / 'qa.json').write_text(json.dumps(checks, ensure_ascii=False, indent=2) + '\n')
-    changelog = """# Magnetic box recolor experiment
+    changelog = """# Эксперимент recolor магнитной коробки
 
-## Tested
+## Проверенные варианты
 
-- A — direct source-luminance multiply: retains some source shading but compresses dark colours and makes light colours dirty.
-- B — inverted brightness compensation: opens dark pixels, but partially reverses natural lighting and weakens plane separation.
-- C — independent shadows, midtones and highlights: restores broad depth, but does not retain enough surface microtexture.
-- D — selected: linear-light, zone-normalized photo transfer with separate tonal shoulders, coloured highlight lift and bounded high-frequency detail.
+- A — прямое умножение на яркость исходника: сохраняет часть теней, но сжимает тёмные цвета и загрязняет светлые.
+- B — инверсия/компенсация яркости: открывает тёмные пиксели, но частично переворачивает естественный свет и ослабляет разделение плоскостей.
+- C — отдельные shadows, midtones и highlights: возвращает общий объём, но недостаточно сохраняет микрофактуру.
+- D — выбран: смешивание в linear-light, отдельная нормализация зон, раздельные тональные диапазоны, цветной подъём бликов и ограниченная высокочастотная фактура.
 
-## Selected logic
+## Выбранная логика
 
-Method D separates broad photographic form from microtexture. MAIN and SIDE receive independent percentile normalization. Dark targets gain hue-preserving highlights instead of a white overlay; light targets use a clean base with shallow source shadows. SIDE keeps a restrained recess factor. Existing cutout alpha and mask geometry are unchanged.
+Метод D отделяет крупную светотеневую форму от микрофактуры. MAIN и SIDE получают независимую percentile-нормализацию. Тёмные цвета получают сохраняющие оттенок блики вместо белой экранной засветки; светлые используют чистую базу с мягкими исходными тенями. SIDE сохраняет умеренное затемнение углублённой плоскости. Alpha cutout и геометрия масок не менялись.
 
-## Scope
+## Объём изменений
 
-This is an offline experiment only. The existing magnetic-box SVG preview, UI, catalog, pricing and Supabase are unchanged.
+Это только изолированный эксперимент. Существующий SVG-предпросмотр магнитной коробки, интерфейс, каталог, цены и Supabase не изменены.
 """
     (output / 'CHANGELOG.md').write_text(changelog)
     archive = output.with_suffix('.zip')
