@@ -1,0 +1,12 @@
+{
+  "size": [
+    786,
+    1020
+  ],
+  "detail_scale": 5.0,
+  "fingerprints": {
+    "cutout.png": "90309c303fb6b564feb8f9fa219061d9d9397c6418f61eda32ad03f79ed31215",
+    "mask_main.png": "8f79a3338ff8f398450552858fc5b2a2fdd9b6e996a73966151a2334984a4855",
+    "mask_side.png": "6533709b205fe7e28438d30bdc027c5c0a452ff9e4291b3ff6a3b7804207e107"
+  }
+}
