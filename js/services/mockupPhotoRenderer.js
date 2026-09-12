@@ -75,6 +75,7 @@ export function createPhotoRenderer(view) {
       const wm = zone[p] / 255;
       const ws = zone[p + 1] / 255;
       const wb = zone[p + 2] / 255;
+      const alpha = 1 - (1 - wm) * (1 - ws) * (1 - wb);
       const sh = (shade[p] / 255) * SHADE_MAX;
       let r = 255, g = 255, b = 255;
       if (wm > 0) {
@@ -92,7 +93,17 @@ export function createPhotoRenderer(view) {
         g = g * (1 - wb) + Math.min(255, bow[1] * sh) * wb;
         b = b * (1 - wb) + Math.min(255, bow[2] * sh) * wb;
       }
-      d[p] = r; d[p + 1] = g; d[p + 2] = b; d[p + 3] = 255;
+      // Карта раньше была сведена с белым фоном. Возвращаем цвет силуэта
+      // из этой композиции и оставляем фон прозрачным, чтобы единый фон
+      // preview-area был виден также у коробки с лентой.
+      if (alpha > 0) {
+        d[p] = Math.max(0, Math.min(255, (r - 255 * (1 - alpha)) / alpha));
+        d[p + 1] = Math.max(0, Math.min(255, (g - 255 * (1 - alpha)) / alpha));
+        d[p + 2] = Math.max(0, Math.min(255, (b - 255 * (1 - alpha)) / alpha));
+        d[p + 3] = Math.round(alpha * 255);
+      } else {
+        d[p] = d[p + 1] = d[p + 2] = d[p + 3] = 0;
+      }
     }
     canvas.getContext('2d').putImageData(out, 0, 0);
   }

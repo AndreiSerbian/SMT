@@ -128,10 +128,17 @@ export function createBagRenderer(view) {
         b = b * (1 - slots) + (m[2] * k + add) * slots;
       }
 
-      d[p] = Math.max(0, Math.min(255, r * 255));
-      d[p + 1] = Math.max(0, Math.min(255, g * 255));
-      d[p + 2] = Math.max(0, Math.min(255, b * 255));
-      d[p + 3] = 255;
+      // У исходного фото был белый фон. Убираем его из результата и
+      // оставляем только силуэт, чтобы общий preview background работал
+      // одинаково для сумки, банта и магнитной коробки.
+      if (alpha > 0) {
+        d[p] = Math.max(0, Math.min(255, ((r - (1 - alpha)) / alpha) * 255));
+        d[p + 1] = Math.max(0, Math.min(255, ((g - (1 - alpha)) / alpha) * 255));
+        d[p + 2] = Math.max(0, Math.min(255, ((b - (1 - alpha)) / alpha) * 255));
+        d[p + 3] = Math.round(alpha * 255);
+      } else {
+        d[p] = d[p + 1] = d[p + 2] = d[p + 3] = 0;
+      }
     }
     canvas.getContext('2d').putImageData(out, 0, 0);
   }
