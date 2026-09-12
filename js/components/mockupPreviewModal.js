@@ -287,6 +287,7 @@ const MockupPreviewModal = {
     // базовый цвет
     overlay.querySelector('#mpm-base-swatch').style.backgroundColor = baseColorHex;
     overlay.querySelector('#mpm-base-name').textContent = product.color || 'Текущий цвет';
+    this._updateSvgContrast(config, palette);
 
     const dialog = overlay.querySelector('.mpm-dialog');
     requestAnimationFrame(() => dialog.focus());
