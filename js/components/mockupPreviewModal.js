@@ -144,7 +144,9 @@ const MockupPreviewModal = {
     this._attachListeners();
 
     const canvas = overlay.querySelector('#mpm-canvas');
-    const renderer = isBag ? createBagRenderer(view) : createPhotoRenderer(view);
+    const renderer = isBag ? createBagRenderer(view)
+      : isMagnet ? createMagnetRenderer(view)
+      : createPhotoRenderer(view);
     const paint = () => {
       const colors = {};
       zones.forEach(z => { colors[z] = state[z].hex; });
