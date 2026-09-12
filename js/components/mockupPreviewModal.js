@@ -157,6 +157,7 @@ const MockupPreviewModal = {
         const el = overlay.querySelector(`#mpm-name-${z}`);
         if (el) el.textContent = state[z].name;
       });
+      this._updatePhotoContrast(state);
     };
 
     zones.forEach(zone => {
@@ -202,6 +203,34 @@ const MockupPreviewModal = {
       : zone === 'side' ? 'Цвет боковушки'
       : zone === 'handles' ? 'Цвет ручек'
       : 'Цвет ленты';
+  },
+
+  /**
+   * Общая логика контрастного фона: включается только при белом MAIN.
+   * Работает для коробки с бантом, коробки-сумки и магнитной коробки.
+   * Не затрагивает side/bow/handles — только основной цвет корпуса.
+   */
+  _isWhiteMain(color) {
+    if (!color) return false;
+    const name = String(color.name || '').toLowerCase();
+    const hex = String(color.hex || '').toLowerCase();
+    return name.startsWith('бел') || hex === '#ffffff' || hex === '#f8f8ff';
+  },
+
+  _setContrastForColor(color) {
+    const wrap = this._overlay && this._overlay.querySelector('.mpm-preview-wrap');
+    if (!wrap) return;
+    wrap.classList.toggle('mpm-preview-wrap--contrast', this._isWhiteMain(color));
+  },
+
+  _updatePhotoContrast(state) {
+    this._setContrastForColor(state && state.main);
+  },
+
+  _updateSvgContrast(config, palette) {
+    const paletteCache = palette || this._paletteCache || [];
+    const main = paletteCache.find(c => c.id === config.outer_color_id);
+    this._setContrastForColor(main);
   },
 
 
@@ -258,6 +287,7 @@ const MockupPreviewModal = {
     // базовый цвет
     overlay.querySelector('#mpm-base-swatch').style.backgroundColor = baseColorHex;
     overlay.querySelector('#mpm-base-name').textContent = product.color || 'Текущий цвет';
+    this._updateSvgContrast(config, palette);
 
     const dialog = overlay.querySelector('.mpm-dialog');
     requestAnimationFrame(() => dialog.focus());
@@ -303,6 +333,7 @@ const MockupPreviewModal = {
     svg.style.setProperty('--zone-outer-front', baseColorHex);
     svg.style.setProperty('--zone-side', secondHex);
     this._updateCaption(config, second);
+    this._updateSvgContrast(config);
   },
 
   _updateCaption(config, second) {

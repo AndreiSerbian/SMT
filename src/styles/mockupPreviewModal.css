@@ -90,6 +90,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: background 150ms ease;
+}
+
+.mpm-preview-wrap--contrast {
+  background: #D9DDE3;
 }
 
 .mpm-preview { width: 100%; display: flex; align-items: center; justify-content: center; }
