@@ -475,7 +475,9 @@ const ProductComponent = {
               if (hasPhoto) {
                 mockupBtn.textContent = hasPhoto.type === 'photo_bag_maps'
                   ? 'Коробка-сумка — предпросмотр'
-                  : 'Коробка с лентой — предпросмотр';
+                  : hasPhoto.type === 'photo_magnet_maps'
+                    ? 'Двухцветная коробка — предпросмотр'
+                    : 'Коробка с лентой — предпросмотр';
               }
               mockupBtn.style.display = 'block';
 
