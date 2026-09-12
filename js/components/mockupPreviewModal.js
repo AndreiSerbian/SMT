@@ -333,6 +333,7 @@ const MockupPreviewModal = {
     svg.style.setProperty('--zone-outer-front', baseColorHex);
     svg.style.setProperty('--zone-side', secondHex);
     this._updateCaption(config, second);
+    this._updateSvgContrast(config);
   },
 
   _updateCaption(config, second) {
