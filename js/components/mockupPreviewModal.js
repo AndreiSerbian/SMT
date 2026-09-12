@@ -205,6 +205,34 @@ const MockupPreviewModal = {
       : 'Цвет ленты';
   },
 
+  /**
+   * Общая логика контрастного фона: включается только при белом MAIN.
+   * Работает для коробки с бантом, коробки-сумки и магнитной коробки.
+   * Не затрагивает side/bow/handles — только основной цвет корпуса.
+   */
+  _isWhiteMain(color) {
+    if (!color) return false;
+    const name = String(color.name || '').toLowerCase();
+    const hex = String(color.hex || '').toLowerCase();
+    return name.startsWith('бел') || hex === '#ffffff' || hex === '#f8f8ff';
+  },
+
+  _setContrastForColor(color) {
+    const wrap = this._overlay && this._overlay.querySelector('.mpm-preview-wrap');
+    if (!wrap) return;
+    wrap.classList.toggle('mpm-preview-wrap--contrast', this._isWhiteMain(color));
+  },
+
+  _updatePhotoContrast(state) {
+    this._setContrastForColor(state && state.main);
+  },
+
+  _updateSvgContrast(config, palette) {
+    const paletteCache = palette || this._paletteCache || [];
+    const main = paletteCache.find(c => c.id === config.outer_color_id);
+    this._setContrastForColor(main);
+  },
+
 
 
   _buildShell(product, model, config, palette, baseColorHex, estimated) {
