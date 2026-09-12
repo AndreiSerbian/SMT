@@ -2,6 +2,7 @@ import { mockupService } from '../services/mockupService.js';
 import { resolveImageUrl } from '../services/mediaResolver.js';
 import { createPhotoRenderer } from '../services/mockupPhotoRenderer.js';
 import { createBagRenderer } from '../services/bagPhotoRenderer.js';
+import { createMagnetRenderer } from '../services/magnetPhotoRenderer.js';
 
 
 /**
@@ -89,7 +90,10 @@ const MockupPreviewModal = {
     zones.forEach(z => { state[z] = pick(baseId); });
     state[accentZone] = palette.find(c => c.id !== baseId) || pick(baseId);
     const isBag = view.type === 'photo_bag_maps';
-    const title = isBag ? 'Коробка-сумка — предпросмотр' : 'Коробка с лентой — предпросмотр';
+    const isMagnet = view.type === 'photo_magnet_maps';
+    const title = isBag ? 'Коробка-сумка — предпросмотр'
+      : isMagnet ? 'Двухцветная коробка — предпросмотр'
+      : 'Коробка с лентой — предпросмотр';
 
     const basePrice = Number(product.price_rub || product.price || 0);
     const estimated = mockupService.estimatePrice(basePrice, model);
