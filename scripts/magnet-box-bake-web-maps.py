@@ -86,6 +86,14 @@ def main():
 
     seam_dark, seam_light = structure(data['lum'], data['alpha'])
 
+    # the lid frame runs along the SIDE panel border: a recess shadow inside the
+    # panel and a lit lip on the surrounding lid wall make the closure readable
+    side = (data['masks'][..., 1] > 0.5).astype(np.float64)
+    soft = gaussian_filter(side, 2.2)
+    border = np.clip(1 - np.abs(soft * 2 - 1), 0, 1) ** 2
+    recess = border * side
+    lip = border * (1 - side) * (data['alpha'] > 0.5)
+
     for zone, name in enumerate(('tone_main', 'tone_side')):
         m = data['maps'][zone]
         mask = (data['masks'][..., zone] > 0.5).astype(np.float64)
@@ -96,12 +104,12 @@ def main():
             channels.append(flatten_panel(smooth_tone(m[ch]), mask, interior))
         normalized, shadows, highlights, midtones = channels
         # re-assert the construction: seams darken, their lit lip keeps a highlight
-        shadows = np.clip(shadows + 0.85 * seam_dark, 0, 1)
-        highlights = np.clip(highlights + 0.45 * seam_light, 0, 1)
+        shadows = np.clip(shadows + 0.85 * seam_dark + 0.55 * recess, 0, 1)
+        highlights = np.clip(highlights + 0.45 * seam_light + 0.30 * lip, 0, 1)
         img = np.dstack([to_u8(normalized), to_u8(shadows),
-
                          to_u8(highlights), to_u8(midtones)])
         Image.fromarray(img, 'RGBA').save(OUT / f'{name}.png')
+
 
     detail = np.clip(clean_detail(data['detail']) * DETAIL_SCALE + 0.5, 0, 1)
     mix = np.dstack([
