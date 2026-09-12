@@ -62,6 +62,24 @@ def structure(lum, alpha):
     return gaussian_filter(dark, 0.35), gaussian_filter(light, 0.35)
 
 
+def masked_blur(channel, mask, sigma):
+    """Normalised convolution: blur inside the zone without pulling outside tones."""
+    num = gaussian_filter(channel * mask, sigma)
+    den = gaussian_filter(mask, sigma)
+    return np.where(den > 1e-4, num / np.maximum(den, 1e-4), channel)
+
+
+def flatten_panel(channel, mask, interior, sigma=22.0, strength=0.80):
+    """Let each panel keep its lighting gradient but lose low-frequency stains.
+
+    Inside the panel the map is pulled toward its own broad average; near the
+    borders the original values stay so edges, rims and seams are untouched.
+    """
+    broad = masked_blur(channel, mask, sigma)
+    w = interior * strength
+    return np.clip(channel * (1 - w) + broad * w, 0, 1)
+
+
 def main():
     data = exp.load_inputs()
     OUT.mkdir(parents=True, exist_ok=True)
@@ -70,14 +88,18 @@ def main():
 
     for zone, name in enumerate(('tone_main', 'tone_side')):
         m = data['maps'][zone]
-        normalized = smooth_tone(m['normalized'])
-        shadows = smooth_tone(m['shadows'])
-        highlights = smooth_tone(m['highlights'])
-        midtones = smooth_tone(m['midtones'])
+        mask = (data['masks'][..., zone] > 0.5).astype(np.float64)
+        # interior = away from every panel border, so rims keep their contrast
+        interior = np.clip(gaussian_filter(mask, 5.0) * 1.6 - 0.6, 0, 1) * mask
+        channels = []
+        for ch in ('normalized', 'shadows', 'highlights', 'midtones'):
+            channels.append(flatten_panel(smooth_tone(m[ch]), mask, interior))
+        normalized, shadows, highlights, midtones = channels
         # re-assert the construction: seams darken, their lit lip keeps a highlight
         shadows = np.clip(shadows + 0.85 * seam_dark, 0, 1)
         highlights = np.clip(highlights + 0.45 * seam_light, 0, 1)
         img = np.dstack([to_u8(normalized), to_u8(shadows),
+
                          to_u8(highlights), to_u8(midtones)])
         Image.fromarray(img, 'RGBA').save(OUT / f'{name}.png')
 
