@@ -7,6 +7,16 @@
       "zones": ["outer", "inner", "side"],
       "views": {
         "closed_45": { "asset": "/mockups/magnet_box/default/closed_45.svg", "status": "ready" },
+        "photo_closed_45": {
+          "status": "ready",
+          "type": "photo_magnet_maps",
+          "zones": ["main", "side"],
+          "maps": {
+            "tone_main": "/mockups/magnet_box/default/photo_closed_45/web/tone_main.png",
+            "tone_side": "/mockups/magnet_box/default/photo_closed_45/web/tone_side.png",
+            "mix": "/mockups/magnet_box/default/photo_closed_45/web/mix.png"
+          }
+        },
         "open_45": { "asset": null, "status": "planned" }
       },
       "two_color": {

@@ -11,12 +11,6 @@
 const LUMA = [0.2126, 0.7152, 0.0722];
 const DETAIL_SCALE = 5;
 
-const TO_LINEAR = new Float32Array(256);
-for (let i = 0; i < 256; i++) {
-  const v = i / 255;
-  TO_LINEAR[i] = v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
-}
-
 function linearToSrgb(v) {
   if (v <= 0) return 0;
   if (v >= 1) return 255;

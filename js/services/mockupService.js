@@ -53,7 +53,7 @@ function getPhotoView(model, view = 'photo_closed_45') {
   if (!model || !model.views) return null;
   const v = model.views[view];
   if (!v || v.status !== 'ready') return null;
-  if (v.type !== 'photo_masks' && v.type !== 'photo_bag_maps') return null;
+  if (v.type !== 'photo_masks' && v.type !== 'photo_bag_maps' && v.type !== 'photo_magnet_maps') return null;
   return v;
 }
 
