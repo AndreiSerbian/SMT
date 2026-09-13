@@ -10,7 +10,7 @@
  */
 
 const SHADE_MAX = 2.2;
-const BOW_SHADE_MAX = 1.25;
+const BOW_SHADE_MAX = 1.30;
 
 function hexToRgb(hex) {
   const h = String(hex || '#cccccc').replace('#', '');
@@ -45,6 +45,7 @@ export function createPhotoRenderer(view) {
   let zone = null;
   let shade = null;
   let bowShade = null;
+  let bowHighlights = null;
   let width = 0;
   let height = 0;
   let out = null;
@@ -55,7 +56,11 @@ export function createPhotoRenderer(view) {
       loadImage(view.shading)
     ];
     if (view.bow_shading) imageLoads.push(loadImage(view.bow_shading));
-    const [zImg, sImg, bImg] = await Promise.all(imageLoads);
+    if (view.bow_highlights) imageLoads.push(loadImage(view.bow_highlights));
+    const loaded = await Promise.all(imageLoads);
+    const [zImg, sImg] = loaded;
+    const bImg = view.bow_shading ? loaded[2] : null;
+    const hImg = view.bow_highlights ? loaded[view.bow_shading ? 3 : 2] : null;
     const z = readPixels(zImg);
     const s = readPixels(sImg);
     width = z.width;
@@ -63,13 +68,16 @@ export function createPhotoRenderer(view) {
     zone = z.data;
     shade = s.data;
     bowShade = bImg ? readPixels(bImg).data : null;
+    bowHighlights = hImg ? readPixels(hImg).data : null;
     out = new ImageData(width, height);
   }
 
-  function ribbonChannel(base, factor) {
-    const highlight = Math.max(0, factor - 1);
-    const colouredLift = (255 - base) * highlight * 0.18;
-    return Math.min(255, base * factor + colouredLift);
+  function ribbonChannel(base, factor, specular) {
+    const shaded = Math.min(255, base * factor);
+    // Screen-like, colour-preserving satin reflection. It remains visible on
+    // dark ribbon, while light ribbon approaches the photographed white silk.
+    const lift = (255 - shaded) * specular * (0.12 + (1 - base / 255) * 0.16);
+    return Math.min(255, shaded + lift);
   }
 
   function render(canvas, colors) {
@@ -106,9 +114,10 @@ export function createPhotoRenderer(view) {
         const ribbonShade = bowShade
           ? (bowShade[p] / 255) * BOW_SHADE_MAX
           : sh;
-        r = r * (1 - wb) + ribbonChannel(bow[0], ribbonShade) * wb;
-        g = g * (1 - wb) + ribbonChannel(bow[1], ribbonShade) * wb;
-        b = b * (1 - wb) + ribbonChannel(bow[2], ribbonShade) * wb;
+        const ribbonHighlight = bowHighlights ? bowHighlights[p] / 255 : 0;
+        r = r * (1 - wb) + ribbonChannel(bow[0], ribbonShade, ribbonHighlight) * wb;
+        g = g * (1 - wb) + ribbonChannel(bow[1], ribbonShade, ribbonHighlight) * wb;
+        b = b * (1 - wb) + ribbonChannel(bow[2], ribbonShade, ribbonHighlight) * wb;
       }
       // Карта раньше была сведена с белым фоном. Возвращаем цвет силуэта
       // из этой композиции и оставляем фон прозрачным, чтобы единый фон

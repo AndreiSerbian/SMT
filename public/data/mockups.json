@@ -41,6 +41,7 @@
           "zone_map": "/mockups/bow_box/default/photo_closed_45/zone_map.png",
           "shading": "/mockups/bow_box/default/photo_closed_45/shading.png",
           "bow_shading": "/mockups/bow_box/default/photo_closed_45/bow_shading.png",
+          "bow_highlights": "/mockups/bow_box/default/photo_closed_45/bow_highlights.png",
           "zones": ["main", "side", "bow"]
         }
       },
