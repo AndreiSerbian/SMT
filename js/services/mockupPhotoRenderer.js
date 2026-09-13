@@ -10,6 +10,7 @@
  */
 
 const SHADE_MAX = 2.2;
+const BOW_SHADE_MAX = 1.25;
 
 function hexToRgb(hex) {
   const h = String(hex || '#cccccc').replace('#', '');
@@ -43,22 +44,32 @@ function readPixels(img) {
 export function createPhotoRenderer(view) {
   let zone = null;
   let shade = null;
+  let bowShade = null;
   let width = 0;
   let height = 0;
   let out = null;
 
   async function load() {
-    const [zImg, sImg] = await Promise.all([
+    const imageLoads = [
       loadImage(view.zone_map),
       loadImage(view.shading)
-    ]);
+    ];
+    if (view.bow_shading) imageLoads.push(loadImage(view.bow_shading));
+    const [zImg, sImg, bImg] = await Promise.all(imageLoads);
     const z = readPixels(zImg);
     const s = readPixels(sImg);
     width = z.width;
     height = z.height;
     zone = z.data;
     shade = s.data;
+    bowShade = bImg ? readPixels(bImg).data : null;
     out = new ImageData(width, height);
+  }
+
+  function ribbonChannel(base, factor) {
+    const highlight = Math.max(0, factor - 1);
+    const colouredLift = (255 - base) * highlight * 0.18;
+    return Math.min(255, base * factor + colouredLift);
   }
 
   function render(canvas, colors) {
@@ -89,9 +100,15 @@ export function createPhotoRenderer(view) {
         b = b * (1 - ws) + Math.min(255, side[2] * sh) * ws;
       }
       if (wb > 0) {
-        r = r * (1 - wb) + Math.min(255, bow[0] * sh) * wb;
-        g = g * (1 - wb) + Math.min(255, bow[1] * sh) * wb;
-        b = b * (1 - wb) + Math.min(255, bow[2] * sh) * wb;
+        // The photographed ribbon needs softer continuous folds than the box.
+        // Its dedicated map removes baked tonal steps while preserving the
+        // approved silhouette, knot, loops and tails pixel-for-pixel.
+        const ribbonShade = bowShade
+          ? (bowShade[p] / 255) * BOW_SHADE_MAX
+          : sh;
+        r = r * (1 - wb) + ribbonChannel(bow[0], ribbonShade) * wb;
+        g = g * (1 - wb) + ribbonChannel(bow[1], ribbonShade) * wb;
+        b = b * (1 - wb) + ribbonChannel(bow[2], ribbonShade) * wb;
       }
       // Карта раньше была сведена с белым фоном. Возвращаем цвет силуэта
       // из этой композиции и оставляем фон прозрачным, чтобы единый фон
