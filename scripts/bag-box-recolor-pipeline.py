@@ -58,8 +58,13 @@ def load():
     lum = src @ np.array([.2126, .7152, .0722])
     low = gaussian_filter(lum, 12)
     detail = np.asarray(Image.open(BASE/'maps'/'details.webp').convert('L'), dtype=float)/255-.5
-    detail = gaussian_filter(np.clip(detail, -.16, .16), .7)
+    # The photographed board is very smooth. Keep broad material variation but
+    # remove compression grain that becomes coloured dirt after recolouring.
+    detail = gaussian_filter(np.clip(detail, -.11, .11), 1.15)
     shadows = np.asarray(Image.open(BASE/'maps'/'shadows.webp').convert('L'), dtype=float)/255
+    # shadows.webp has a narrow 8-bit range. Smooth before normalization so its
+    # quantization steps are not amplified into visible bands on dark colours.
+    shadows = gaussian_filter(shadows, 1.25)
     highlights = np.asarray(Image.open(BASE/'maps'/'highlights.webp').convert('L'), dtype=float)/255
     coverage = np.clip(masks.sum(2), 0, 1)
     # Keep the existing silhouette and its outer AA exactly. Normalize only
@@ -114,19 +119,29 @@ def surface(data, colour, zone, variant):
     else:
         shade = .70 + .48*form + .08*authored_highlight - .14*authored_shadow
     if zone == 1:
-        # The inset panel receives extra edge occlusion so it reads as a recess.
-        distance = distance_transform_edt(zone_mask)
-        edge_depth = np.clip(distance/18, 0, 1)
-        shade *= .72 + .28*edge_depth
+        # SIDE is a single side plane, not a recessed insert. Use only the
+        # broad photographed directional gradient; omit all-around edge depth.
+        side_form = gaussian_filter(l, 16)
+        side_samples = side_form[zone_mask]
+        side_lo, side_hi = np.percentile(side_samples, (4, 96)) if side_samples.size else (.7, 1.)
+        side_tone = np.clip((side_form-side_lo)/max(side_hi-side_lo, .04), 0, 1)
+        if brightness < .35:
+            shade = .76 + .30*side_tone
+        elif brightness > .78:
+            shade = .93 + .09*side_tone
+        else:
+            shade = .82 + .20*side_tone
     if zone == 2:
         # Preserve broad textile folds but suppress isolated source compression
         # speckles which become holes on gold and other saturated colours.
-        handle_luma = median_filter(l, size=5)
-        handle_form = np.clip((gaussian_filter(handle_luma, 2)-.68)/.31, 0, 1)
-        shade = .62 + (.50 if brightness < .45 else .34)*handle_form
+        handle_luma = gaussian_filter(median_filter(l, size=5), 2)
+        handle_samples = handle_luma[zone_mask]
+        handle_lo, handle_hi = np.percentile(handle_samples, (3, 97)) if handle_samples.size else (.82, 1.)
+        handle_form = np.clip((handle_luma-handle_lo)/max(handle_hi-handle_lo, .04), 0, 1)
+        shade = .68 + (.46 if brightness < .45 else .30)*handle_form
     if variant == 'B':
         return np.clip(colour[None, None, :] * shade[..., None], 0, 1)
-    detail_gain = .16 if zone == 2 else (.34 if zone == 1 else .46)
+    detail_gain = .10 if zone == 2 else (.10 if zone == 1 else .26)
     shade = np.clip(shade + detail*detail_gain, .42 if brightness < .35 else .68, 1.48)
     # Highlights remain target-coloured, never a white screen layer.
     chroma_lift = colour[None, None, :] * authored_highlight[..., None]
