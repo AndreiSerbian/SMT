@@ -46,18 +46,17 @@ def main():
     forms[2] = np.clip((handle_luma-handle_lo)/max(handle_hi-handle_lo, .04), 0, 1)
 
     side_mask = d['masks'][:, :, 1] > .5
-    side_form = gaussian_filter(lum, 7)
+    side_form = gaussian_filter(lum, 16)
     side_samples = side_form[side_mask]
     side_lo, side_hi = np.percentile(side_samples, (4, 96)) if side_samples.size else (.7, 1.)
     side_tone = np.clip((side_form-side_lo)/max(side_hi-side_lo, .04), 0, 1)
-    side_factor = np.clip(.94 + .08*side_tone, 0, 1)
 
     ashadow = np.clip(d['shadows'] / max(float(d['shadows'][d['masks'][:, :, 0] > .5].max()), .08), 0, 1)
     ahigh = np.clip(d['highlights'], 0, 1)
     slot_light = np.clip(.13 + .15 * gaussian_filter(lum, 2), .16, .28)
 
     Image.fromarray(np.dstack([u8(f) for f in forms])).save(OUT / 'form.png')
-    Image.fromarray(np.dstack([u8(ashadow), u8(ahigh), u8(side_factor)])).save(OUT / 'aux.png')
+    Image.fromarray(np.dstack([u8(ashadow), u8(ahigh), u8(side_tone)])).save(OUT / 'aux.png')
     Image.fromarray(np.dstack([u8(d['weights'][:, :, z]) for z in range(3)])).save(OUT / 'weights.png')
     Image.fromarray(np.dstack([u8(d['alpha']), u8(d['slots']), u8((slot_light - .16) / .12)])).save(OUT / 'mix.png')
     Image.fromarray(u8((d['detail'] / .11 + 1) / 2)).save(OUT / 'detail.png')

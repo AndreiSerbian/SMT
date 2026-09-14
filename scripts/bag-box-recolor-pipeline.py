@@ -119,13 +119,18 @@ def surface(data, colour, zone, variant):
     else:
         shade = .70 + .48*form + .08*authored_highlight - .14*authored_shadow
     if zone == 1:
-        # SIDE is a visible side plane, not a recessed insert. Preserve the
-        # photographed directional tone instead of adding an isotropic vignette.
-        side_form = gaussian_filter(l, 7)
+        # SIDE is a single side plane, not a recessed insert. Use only the
+        # broad photographed directional gradient; omit all-around edge depth.
+        side_form = gaussian_filter(l, 16)
         side_samples = side_form[zone_mask]
         side_lo, side_hi = np.percentile(side_samples, (4, 96)) if side_samples.size else (.7, 1.)
         side_tone = np.clip((side_form-side_lo)/max(side_hi-side_lo, .04), 0, 1)
-        shade *= np.clip(.94 + .08*side_tone, 0, 1)
+        if brightness < .35:
+            shade = .76 + .30*side_tone
+        elif brightness > .78:
+            shade = .93 + .09*side_tone
+        else:
+            shade = .82 + .20*side_tone
     if zone == 2:
         # Preserve broad textile folds but suppress isolated source compression
         # speckles which become holes on gold and other saturated colours.
@@ -136,7 +141,7 @@ def surface(data, colour, zone, variant):
         shade = .68 + (.46 if brightness < .45 else .30)*handle_form
     if variant == 'B':
         return np.clip(colour[None, None, :] * shade[..., None], 0, 1)
-    detail_gain = .10 if zone == 2 else (.22 if zone == 1 else .26)
+    detail_gain = .10 if zone == 2 else (.10 if zone == 1 else .26)
     shade = np.clip(shade + detail*detail_gain, .42 if brightness < .35 else .68, 1.48)
     # Highlights remain target-coloured, never a white screen layer.
     chroma_lift = colour[None, None, :] * authored_highlight[..., None]
