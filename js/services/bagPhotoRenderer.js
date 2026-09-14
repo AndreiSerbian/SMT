@@ -66,7 +66,7 @@ export function createBagRenderer(view) {
       c,
       brightness,
       dark: brightness < 0.35,
-      handleGain: brightness < 0.45 ? 0.5 : 0.34,
+      handleGain: brightness < 0.45 ? 0.46 : 0.30,
       detailGain: zone === 2 ? 0.10 : (zone === 1 ? 0.22 : 0.26),
       shadeMin: brightness < 0.35 ? 0.42 : 0.68,
       lift: (brightness < 0.35 ? 0.12 : 0.025) * (1 - brightness)

@@ -125,7 +125,7 @@ def surface(data, colour, zone, variant):
         side_samples = side_form[zone_mask]
         side_lo, side_hi = np.percentile(side_samples, (4, 96)) if side_samples.size else (.7, 1.)
         side_tone = np.clip((side_form-side_lo)/max(side_hi-side_lo, .04), 0, 1)
-        shade *= .94 + .08*side_tone
+        shade *= np.clip(.94 + .08*side_tone, 0, 1)
     if zone == 2:
         # Preserve broad textile folds but suppress isolated source compression
         # speckles which become holes on gold and other saturated colours.
