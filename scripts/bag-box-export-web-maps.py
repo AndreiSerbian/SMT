@@ -10,7 +10,7 @@ import sys
 
 import numpy as np
 from PIL import Image
-from scipy.ndimage import distance_transform_edt, gaussian_filter, median_filter
+from scipy.ndimage import gaussian_filter, median_filter
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import importlib.util
@@ -39,22 +39,28 @@ def main():
         samples = low[zone_mask]
         lo, hi = np.percentile(samples, (3, 97)) if samples.size else (.7, 1.)
         forms.append(np.clip((low - lo) / max(hi - lo, .04), 0, 1))
-    handle_luma = median_filter(lum, size=5)
-    forms[2] = np.clip((gaussian_filter(handle_luma, 2) - .68) / .31, 0, 1)
+    handle_luma = gaussian_filter(median_filter(lum, size=5), 2)
+    handle_mask = d['masks'][:, :, 2] > .5
+    handle_samples = handle_luma[handle_mask]
+    handle_lo, handle_hi = np.percentile(handle_samples, (3, 97)) if handle_samples.size else (.82, 1.)
+    forms[2] = np.clip((handle_luma-handle_lo)/max(handle_hi-handle_lo, .04), 0, 1)
 
     side_mask = d['masks'][:, :, 1] > .5
-    edge_depth = np.clip(distance_transform_edt(side_mask) / 18, 0, 1)
-    edge_factor = .72 + .28 * edge_depth  # 0.72 .. 1.0
+    side_form = gaussian_filter(lum, 7)
+    side_samples = side_form[side_mask]
+    side_lo, side_hi = np.percentile(side_samples, (4, 96)) if side_samples.size else (.7, 1.)
+    side_tone = np.clip((side_form-side_lo)/max(side_hi-side_lo, .04), 0, 1)
+    side_factor = np.clip(.94 + .08*side_tone, 0, 1)
 
     ashadow = np.clip(d['shadows'] / max(float(d['shadows'][d['masks'][:, :, 0] > .5].max()), .08), 0, 1)
     ahigh = np.clip(d['highlights'], 0, 1)
     slot_light = np.clip(.13 + .15 * gaussian_filter(lum, 2), .16, .28)
 
     Image.fromarray(np.dstack([u8(f) for f in forms])).save(OUT / 'form.png')
-    Image.fromarray(np.dstack([u8(ashadow), u8(ahigh), u8((edge_factor - .72) / .28)])).save(OUT / 'aux.png')
+    Image.fromarray(np.dstack([u8(ashadow), u8(ahigh), u8(side_factor)])).save(OUT / 'aux.png')
     Image.fromarray(np.dstack([u8(d['weights'][:, :, z]) for z in range(3)])).save(OUT / 'weights.png')
     Image.fromarray(np.dstack([u8(d['alpha']), u8(d['slots']), u8((slot_light - .16) / .12)])).save(OUT / 'mix.png')
-    Image.fromarray(u8((d['detail'] / .16 + 1) / 2)).save(OUT / 'detail.png')
+    Image.fromarray(u8((d['detail'] / .11 + 1) / 2)).save(OUT / 'detail.png')
     Image.fromarray(u8(d['src'])).save(OUT / 'source.png')
     print('written to', OUT)
 

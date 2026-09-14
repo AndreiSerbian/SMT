@@ -67,7 +67,7 @@ export function createBagRenderer(view) {
       brightness,
       dark: brightness < 0.35,
       handleGain: brightness < 0.45 ? 0.5 : 0.34,
-      detailGain: zone === 2 ? 0.16 : (zone === 1 ? 0.34 : 0.46),
+      detailGain: zone === 2 ? 0.10 : (zone === 1 ? 0.22 : 0.26),
       shadeMin: brightness < 0.35 ? 0.42 : 0.68,
       lift: (brightness < 0.35 ? 0.12 : 0.025) * (1 - brightness)
     };
@@ -87,9 +87,9 @@ export function createBagRenderer(view) {
       const slotLight = 0.16 + (mix[p + 2] / 255) * 0.12;
       const ash = aux[p] / 255;
       const ahl = aux[p + 1] / 255;
-      const edge = 0.72 + (aux[p + 2] / 255) * 0.28;
+      const sideTone = aux[p + 2] / 255;
       const det = (detail[p] / 255) * 2 - 1;
-      const texture = det * 0.16;
+      const texture = det * 0.11;
 
       let pr = 0, pg = 0, pb = 0;
       for (let z = 0; z < 3; z++) {
@@ -99,7 +99,7 @@ export function createBagRenderer(view) {
         const f = form[p + z] / 255;
         let shade;
         if (z === 2) {
-          shade = 0.62 + q.handleGain * f;
+          shade = 0.68 + q.handleGain * f;
         } else if (q.dark) {
           shade = 0.58 + 0.82 * f + 0.18 * ahl - 0.16 * ash;
         } else if (q.brightness > 0.78) {
@@ -107,7 +107,7 @@ export function createBagRenderer(view) {
         } else {
           shade = 0.70 + 0.48 * f + 0.08 * ahl - 0.14 * ash;
         }
-        if (z === 1) shade *= edge;
+        if (z === 1) shade *= sideTone;
         shade = Math.min(1.48, Math.max(q.shadeMin, shade + texture * q.detailGain));
         const lift = ahl * q.lift;
         pr += w * Math.min(1, q.c[0] * shade + q.c[0] * lift);
