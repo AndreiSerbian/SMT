@@ -71,7 +71,11 @@ def reassign_edge(zone_stack, matte, core_thr=0.985):
     core = binary_erosion(core, iterations=1) | (core & ~binary_dilation(~core, iterations=1))
     if not core.any():
         core = zone_stack.max(axis=2) > 0.5
-    owner = zone_stack.argmax(axis=2)
+    # MAIN is a continuous underlay beneath the other planes, so plain argmax
+    # would hand every tie to MAIN and paint its colour over SIDE / HANDLES
+    # edges. Later zones win ties instead.
+    priority = np.arange(zone_stack.shape[2], dtype=np.float32) * 1e-3
+    owner = (zone_stack + priority).argmax(axis=2)
     _, idx = distance_transform_edt(~core, return_indices=True)
     nearest = owner[idx[0], idx[1]]
     out = np.zeros_like(zone_stack)
