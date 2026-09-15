@@ -84,6 +84,22 @@ def reassign_edge(zone_stack, matte, core_thr=0.985):
         keep = core & (owner == z)
         take = band & (nearest == z)
         out[..., z] = np.where(keep | take, 1.0, 0.0)
+    # A plane whose mask stops a few pixels short of the contour used to leave
+    # a MAIN-coloured rim trapped between that plane and the background.
+    # Such trapped slivers belong to the adjacent plane, not to the underlay.
+    others = out[..., 1:].max(axis=2) > 0.5 if zone_stack.shape[2] > 1 else None
+    if others is not None and others.any():
+        d_other = distance_transform_edt(~others)
+        d_out = distance_transform_edt(inside)
+        sliver = inside & ~others & (d_other <= 4) & (d_out <= 4)
+        if sliver.any():
+            _, oidx = distance_transform_edt(~others, return_indices=True)
+            onear = out[..., 1:].argmax(axis=2)[oidx[0], oidx[1]] + 1
+            for z in range(1, zone_stack.shape[2]):
+                take = sliver & (onear == z)
+                out[..., z] = np.where(take, 1.0, out[..., z])
+                out[..., 0] = np.where(take, 0.0, out[..., 0])
+
     total = out.sum(axis=2, keepdims=True)
     out = np.divide(out, np.maximum(total, 1e-6)) * matte[..., None]
     return out
