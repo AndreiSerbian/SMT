@@ -121,9 +121,9 @@ def clean_bag():
     web = base / 'web'
     src = read(web / 'source.png', 'RGB')
     masks = np.dstack([
-        read(base / 'masks/mask_main.png', 'L')[..., 0],
-        read(base / 'masks/mask_side.png', 'L')[..., 0],
-        read(base / 'masks/mask_handles.png', 'L')[..., 0],
+        read(base / 'masks/mask_main.png', 'L'),
+        read(base / 'masks/mask_side.png', 'L'),
+        read(base / 'masks/mask_handles.png', 'L'),
     ])
     mix = read(web / 'mix.png', 'RGB')
 
