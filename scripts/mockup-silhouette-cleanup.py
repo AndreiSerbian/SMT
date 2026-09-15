@@ -178,7 +178,7 @@ def clean_bag():
     # SIDE owns the complete photographed left plane, including its narrow
     # folded frame. This fixed patch removes the remaining MAIN-coloured strip.
     side_patch = soft_polygon(masks.shape[:2],
-                              [(28, 217), (115, 284), (135, 688), (62, 617)],
+                              [(28, 217), (115, 284), (139, 708), (55, 626)],
                               feather=.65)
     masks[..., 1] = np.maximum(masks[..., 1], side_patch)
     masks[..., 0] *= 1 - side_patch
