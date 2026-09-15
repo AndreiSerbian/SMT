@@ -89,6 +89,12 @@ def main():
     photo = read(WEB / 'source.png', 'RGB')
     lum = photo @ LUMA
 
+    # the outer silhouette rim next to the SIDE panel belongs to SIDE, otherwise
+    # a 1px MAIN-coloured line appears along the left contour
+    rim = silhouette & ~binary_erosion(silhouette, iterations=2)
+    side = side | (rim & binary_dilation(side, iterations=3))
+    main_z = silhouette & ~binary_erosion(side, iterations=1)
+
     sil_a = aa_edge(silhouette, lum)
     side_a = aa_edge(side, lum)
     main_a = np.clip(aa_edge(main_z, lum) - side_a, 0, 1)
