@@ -6,7 +6,6 @@ public/mockups/bag_box/default/photo_closed_45/web/.
   python3 scripts/bag-box-export-web-maps.py
 """
 from pathlib import Path
-import runpy
 import sys
 
 import numpy as np
@@ -62,10 +61,6 @@ def main():
     Image.fromarray(np.dstack([u8(d['alpha']), u8(d['slots']), u8((slot_light - .16) / .12)])).save(OUT / 'mix.png')
     Image.fromarray(u8((d['detail'] / .11 + 1) / 2)).save(OUT / 'detail.png')
     Image.fromarray(u8(d['src'])).save(OUT / 'source.png')
-    # Reapply reviewed local ownership fixes after every export so rebuilding
-    # cannot restore MAIN strips around SIDE or the omitted handle bridge.
-    cleanup = runpy.run_path(str(Path(__file__).resolve().parent / 'mockup-silhouette-cleanup.py'))
-    cleanup['clean_bag']()
     print('written to', OUT)
 
 
