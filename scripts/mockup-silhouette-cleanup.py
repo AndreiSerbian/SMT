@@ -126,7 +126,7 @@ def clean_bow():
     # Assign only this fixed, source-specific left-plane polygon to SIDE. The
     # one-pixel feather follows the photographed edge and keeps antialiasing.
     side_patch = soft_polygon(stack.shape[:2],
-                              [(51, 247), (219, 398), (225, 514), (76, 438)],
+                              [(51, 247), (219, 398), (225, 613), (72, 438)],
                               feather=.65)
     side_patch *= src[..., 3]
     stack[..., 1] = np.maximum(stack[..., 1], side_patch)
@@ -175,6 +175,13 @@ def clean_bag():
                                 feather=.75)
     masks[..., 2] = np.maximum(masks[..., 2], handle_patch)
     masks[..., 0] *= 1 - handle_patch
+    # SIDE owns the complete photographed left plane, including its narrow
+    # folded frame. This fixed patch removes the remaining MAIN-coloured strip.
+    side_patch = soft_polygon(masks.shape[:2],
+                              [(28, 217), (115, 284), (135, 688), (62, 617)],
+                              feather=.65)
+    masks[..., 1] = np.maximum(masks[..., 1], side_patch)
+    masks[..., 0] *= 1 - side_patch
     mix = read(web / 'mix.png', 'RGB')
 
     matte = silhouette_from_masks(masks, src)
