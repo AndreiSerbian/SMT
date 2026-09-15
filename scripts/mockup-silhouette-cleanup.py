@@ -23,7 +23,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 from scipy.ndimage import (binary_dilation, binary_erosion, binary_fill_holes,
-                           distance_transform_edt, label)
+                           distance_transform_edt, gaussian_filter, label)
 
 ROOT = Path(__file__).resolve().parents[1]
 MOCK = ROOT / 'public/mockups'
@@ -36,6 +36,15 @@ def read(path, mode='RGBA'):
 
 def u8(a):
     return np.rint(np.clip(a, 0, 1) * 255).astype(np.uint8)
+
+
+def soft_polygon(shape, points, feather=1.0):
+    """Small hand-authored correction with a photographic anti-aliased edge."""
+    canvas = Image.new('L', (shape[1], shape[0]), 0)
+    from PIL import ImageDraw
+    ImageDraw.Draw(canvas).polygon(points, fill=255)
+    patch = np.asarray(canvas, dtype=np.float32) / 255
+    return gaussian_filter(patch, feather) if feather else patch
 
 
 def largest_component(mask):
@@ -112,6 +121,17 @@ def clean_bow():
     zone = read(base / 'zone_map.png')
     stack = zone[..., :3].copy()
 
+    # The left SIDE mask originally covered only the inset panel. The narrow
+    # photographed frame around that panel was consequently painted MAIN red.
+    # Assign only this fixed, source-specific left-plane polygon to SIDE. The
+    # one-pixel feather follows the photographed edge and keeps antialiasing.
+    side_patch = soft_polygon(stack.shape[:2],
+                              [(51, 247), (219, 398), (225, 514), (76, 438)],
+                              feather=.65)
+    side_patch *= src[..., 3]
+    stack[..., 1] = np.maximum(stack[..., 1], side_patch)
+    stack[..., 0] *= 1 - side_patch
+
     photo = src[..., 3]
     matte = np.minimum(np.clip(photo, 0, 1), silhouette_from_masks(stack, src))
     matte = np.where(largest_component(matte > 0.02), matte, 0.0)
@@ -145,6 +165,16 @@ def clean_bag():
         read(base / 'masks/mask_side.png', 'L'),
         read(base / 'masks/mask_handles.png', 'L'),
     ])
+
+    # The short upper bridge is part of the rear fabric handle, not the box
+    # top. It was omitted by the original HANDLES mask, leaving a bright MAIN
+    # trapezoid inside black handles. This patch is deliberately restricted to
+    # the user-marked bridge and does not expand the outer handle silhouette.
+    handle_patch = soft_polygon(masks.shape[:2],
+                                [(314, 148), (407, 132), (421, 162), (330, 181)],
+                                feather=.75)
+    masks[..., 2] = np.maximum(masks[..., 2], handle_patch)
+    masks[..., 0] *= 1 - handle_patch
     mix = read(web / 'mix.png', 'RGB')
 
     matte = silhouette_from_masks(masks, src)
