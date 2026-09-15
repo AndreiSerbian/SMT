@@ -1,5 +1,5 @@
 {
-  "version": "1.1.1-20260916",
+  "version": "1.1.2-20260916b",
   "models": [
     {
       "id": "magnet_box",
@@ -12,9 +12,9 @@
           "type": "photo_magnet_maps",
           "zones": ["main", "side"],
           "maps": {
-            "tone_main": "/mockups/magnet_box/default/photo_closed_45/web/tone_main.png?v=20260916",
-            "tone_side": "/mockups/magnet_box/default/photo_closed_45/web/tone_side.png?v=20260916",
-            "mix": "/mockups/magnet_box/default/photo_closed_45/web/mix.png?v=20260916"
+            "tone_main": "/mockups/magnet_box/default/photo_closed_45/web/tone_main.png?v=20260916b",
+            "tone_side": "/mockups/magnet_box/default/photo_closed_45/web/tone_side.png?v=20260916b",
+            "mix": "/mockups/magnet_box/default/photo_closed_45/web/mix.png?v=20260916b"
           }
         },
         "open_45": { "asset": null, "status": "planned" }
@@ -37,11 +37,11 @@
         "photo_closed_45": {
           "status": "ready",
           "type": "photo_masks",
-          "source": "/mockups/bow_box/default/photo_closed_45/source.png?v=20260916",
-          "zone_map": "/mockups/bow_box/default/photo_closed_45/zone_map.png?v=20260916",
-          "shading": "/mockups/bow_box/default/photo_closed_45/shading.png?v=20260916",
-          "bow_shading": "/mockups/bow_box/default/photo_closed_45/bow_shading.png?v=20260916",
-          "bow_highlights": "/mockups/bow_box/default/photo_closed_45/bow_highlights.png?v=20260916",
+          "source": "/mockups/bow_box/default/photo_closed_45/source.png?v=20260916b",
+          "zone_map": "/mockups/bow_box/default/photo_closed_45/zone_map.png?v=20260916b",
+          "shading": "/mockups/bow_box/default/photo_closed_45/shading.png?v=20260916b",
+          "bow_shading": "/mockups/bow_box/default/photo_closed_45/bow_shading.png?v=20260916b",
+          "bow_highlights": "/mockups/bow_box/default/photo_closed_45/bow_highlights.png?v=20260916b",
           "zones": ["main", "side", "bow"]
         }
       },
@@ -65,12 +65,12 @@
           "type": "photo_bag_maps",
           "zones": ["main", "side", "handles"],
           "maps": {
-            "source": "/mockups/bag_box/default/photo_closed_45/web/source.png?v=20260916",
-            "form": "/mockups/bag_box/default/photo_closed_45/web/form.png?v=20260916",
-            "aux": "/mockups/bag_box/default/photo_closed_45/web/aux.png?v=20260916",
-            "weights": "/mockups/bag_box/default/photo_closed_45/web/weights.png?v=20260916",
-            "mix": "/mockups/bag_box/default/photo_closed_45/web/mix.png?v=20260916",
-            "detail": "/mockups/bag_box/default/photo_closed_45/web/detail.png?v=20260916"
+            "source": "/mockups/bag_box/default/photo_closed_45/web/source.png?v=20260916b",
+            "form": "/mockups/bag_box/default/photo_closed_45/web/form.png?v=20260916b",
+            "aux": "/mockups/bag_box/default/photo_closed_45/web/aux.png?v=20260916b",
+            "weights": "/mockups/bag_box/default/photo_closed_45/web/weights.png?v=20260916b",
+            "mix": "/mockups/bag_box/default/photo_closed_45/web/mix.png?v=20260916b",
+            "detail": "/mockups/bag_box/default/photo_closed_45/web/detail.png?v=20260916b"
           }
         }
       },
