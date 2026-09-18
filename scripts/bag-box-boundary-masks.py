@@ -60,6 +60,27 @@ def aa_edge(mask, photo_lum, width=1.0):
     return np.clip(out, 0, 1)
 
 
+def fix_upper_far_side_seam(side, silhouette):
+    """Move only the upper far SIDE edge onto the photographed MAIN/SIDE seam.
+
+    These pixel coordinates follow the dark fold in the approved 800x800
+    source.  The patch fills only the narrow strip between the former boundary
+    and this seam; every other SIDE edge remains byte-for-byte unchanged.
+    """
+    seam_points = np.array([
+        (35, 220), (45, 226), (55, 232), (65, 239), (75, 247),
+        (85, 255), (95, 263), (105, 272), (115, 280),
+    ], dtype=np.int32)
+    xs = np.arange(seam_points[0, 0], seam_points[-1, 0] + 1)
+    ys = np.rint(np.interp(xs, seam_points[:, 0], seam_points[:, 1])).astype(int)
+    patched = side.copy()
+    for x, y in zip(xs, ys):
+        current = np.flatnonzero(side[:, x])
+        if current.size:
+            patched[y:current[0] + 1, x] = silhouette[y:current[0] + 1, x]
+    return patched
+
+
 def main():
     ref = np.asarray(Image.open(REF).convert('RGB')).astype(int)
     r, g, b = ref[..., 0], ref[..., 1], ref[..., 2]
@@ -84,6 +105,7 @@ def main():
 
     silhouette = fill_outline(pink)
     side = fill_outline(orange) & silhouette
+    side = fix_upper_far_side_seam(side, silhouette)
     main_z = silhouette & ~binary_erosion(side, iterations=1)
 
     photo = read(WEB / 'source.png', 'RGB')
