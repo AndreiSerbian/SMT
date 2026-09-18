@@ -68,8 +68,8 @@ def fix_upper_far_side_seam(side, silhouette):
     and this seam; every other SIDE edge remains byte-for-byte unchanged.
     """
     seam_points = np.array([
-        (35, 220), (45, 226), (55, 232), (65, 239), (75, 247),
-        (85, 255), (95, 263), (105, 272), (115, 280),
+        (40, 232), (45, 236), (55, 243), (65, 251), (75, 258),
+        (85, 265), (95, 272), (105, 280), (115, 287),
     ], dtype=np.int32)
     xs = np.arange(seam_points[0, 0], seam_points[-1, 0] + 1)
     ys = np.rint(np.interp(xs, seam_points[:, 0], seam_points[:, 1])).astype(int)
@@ -77,6 +77,7 @@ def fix_upper_far_side_seam(side, silhouette):
     for x, y in zip(xs, ys):
         current = np.flatnonzero(side[:, x])
         if current.size:
+            patched[:y, x] = False
             patched[y:current[0] + 1, x] = silhouette[y:current[0] + 1, x]
     return patched
 
