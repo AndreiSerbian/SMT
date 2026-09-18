@@ -24,7 +24,7 @@ ROOT = Path(__file__).resolve().parents[1]
 BASE = ROOT / 'public/mockups/bag_box/default/photo_closed_45'
 WEB = BASE / 'web'
 MASKS = BASE / 'masks'
-REF = Path('/mnt/user-uploads/Дизайн_без_названия.png')
+REF = Path('/mnt/user-uploads/Дизайн_без_названия_1.png')
 LUMA = np.array([0.2126, 0.7152, 0.0722], np.float32)
 
 
@@ -112,10 +112,9 @@ def main():
     photo = read(WEB / 'source.png', 'RGB')
     lum = photo @ LUMA
 
-    # the outer silhouette rim next to the SIDE panel belongs to SIDE, otherwise
-    # a 1px MAIN-coloured line appears along the left contour
-    rim = silhouette & ~binary_erosion(silhouette, iterations=2)
-    side = side | (rim & binary_dilation(side, iterations=3))
+    # Keep the photographed outer rim owned by MAIN.  SIDE already follows the
+    # orange inner-panel guide; extending it to the silhouette paints the far
+    # vertical/sloped contour with the SIDE colour.
     main_z = silhouette & ~binary_erosion(side, iterations=1)
 
     sil_a = aa_edge(silhouette, lum)
