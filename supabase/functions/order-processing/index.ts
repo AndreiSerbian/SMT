@@ -48,9 +48,19 @@ function generateOrderConfirmationEmail(order: any) {
         designInfo += `<br><small><a href="${item.production_pdf_url}">📄 Скачать PDF макет</a></small>`;
       }
     }
+    const c = item.customization;
+    let maskInfo = '';
+    if (c) {
+      const parts: string[] = [];
+      if (c.main?.nameRu) parts.push(`Основной: ${c.main.nameRu}`);
+      if (c.side?.nameRu) parts.push(`Боковушка: ${c.side.nameRu}`);
+      if (c.accent?.nameRu) parts.push(`${c.accent.type === 'handles' ? 'Ручки' : 'Бант'}: ${c.accent.nameRu}`);
+      if (parts.length) maskInfo += `<br><small>${parts.join(' · ')}</small>`;
+      maskInfo += `<br><small>${c.surchargePct > 0 ? `Кастомизация: +${c.surchargePct}%` : 'Доплата за кастомизацию: нет'}</small>`;
+    }
     return `
     <tr>
-      <td style="padding: 10px; border: 1px solid #ddd;">${item.name}${designInfo}</td>
+      <td style="padding: 10px; border: 1px solid #ddd;">${item.name}${maskInfo}${designInfo}</td>
       <td style="padding: 10px; border: 1px solid #ddd;">${item.artikul || 'Н/Д'}</td>
       <td style="padding: 10px; border: 1px solid #ddd;">${item.quantity}</td>
       <td style="padding: 10px; border: 1px solid #ddd;">${item.price} ₽</td>
@@ -80,9 +90,10 @@ function generateOrderConfirmationEmail(order: any) {
     </head>
     <body>
       <div class="container">
-        <h1>Подтверждение заказа №${id}</h1>
+        <h1>Ваш заказ №${id} принят</h1>
         <p>Здравствуйте, ${name}!</p>
-        <p>Спасибо за ваш заказ. Пожалуйста, проверьте детали заказа ниже:</p>
+        <p>Спасибо за ваш заказ — мы его получили. Пожалуйста, проверьте детали ниже:</p>
+        ${order.price_adjusted ? `<p style="color:#b45309;"><strong>Цена была обновлена перед оформлением заказа.</strong> Итоговая сумма: ${total} ₽</p>` : ''}
         
         <table>
           <thead>
@@ -113,7 +124,7 @@ function generateOrderConfirmationEmail(order: any) {
           </tfoot>
         </table>
         
-        <p><strong>Важно!</strong> Пожалуйста, подтвердите ваш заказ, нажав на кнопку ниже:</p>
+        <p><strong>Важно!</strong> Пожалуйста, подтвердите заказ со своей стороны, нажав на кнопку ниже:</p>
         <p style="text-align: center; margin: 30px 0;">
           <a href="${confirmationUrl}" class="button" style="display: inline-block; background-color: #4CAF50; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-size: 16px;">ПОДТВЕРДИТЬ ЗАКАЗ</a>
         </p>
@@ -123,6 +134,7 @@ function generateOrderConfirmationEmail(order: any) {
           <a href="${confirmationUrl}" style="color: #4CAF50; word-break: break-all;">${confirmationUrl}</a>
         </p>
         
+        <p>Менеджер свяжется с вами для подтверждения деталей и итоговой стоимости.</p>
         <p>Если у вас возникли вопросы по заказу, пожалуйста, свяжитесь с нами.</p>
         <p>С уважением,<br>Команда поддержки Gift Box Shop</p>
       </div>
@@ -276,18 +288,186 @@ function parseAdminEmails(): string[] {
   )];
 }
 
+// ===== Серверный авторитетный расчёт цен =====
+// Правила идентичны js/services/pricingService.js:
+//  +10% один раз за платную кастомизацию корпуса (MAIN и/или SIDE),
+//  лестница скидок 20k→2%, 30k→3%, 40k→4%, 50k→5%,
+//  округление: надбавка Math.round, скидка Math.floor.
+const SURCHARGE_PCT = 10;
+const DISCOUNT_TIERS = [
+  { min: 50000, pct: 5 },
+  { min: 40000, pct: 4 },
+  { min: 30000, pct: 3 },
+  { min: 20000, pct: 2 },
+];
+const MIN_ORDER_AMOUNT = parseInt(Deno.env.get("MIN_ORDER_AMOUNT") || "10000", 10);
+
+function serverSurchargePct(customization: any): number {
+  if (!customization) return 0;
+  const paid = Boolean(customization?.main?.changed || customization?.side?.changed);
+  return paid ? SURCHARGE_PCT : 0;
+}
+
+function serverDiscountPct(subtotal: number): number {
+  const tier = DISCOUNT_TIERS.find((t) => subtotal >= t.min);
+  return tier ? tier.pct : 0;
+}
+
+/** Пересчитывает заказ по данным БД. Клиентские цифры не используются. */
+async function recalculateOrder(orderData: any) {
+  const items = orderData.cart_items || [];
+  const ids = [...new Set(items.map((i: any) => i.id).filter(Boolean))];
+
+  const { data: products, error: prodError } = await supabase
+    .from('products')
+    .select('id, artikul, name, price_rub')
+    .in('id', ids);
+  if (prodError) console.error('Server pricing: products lookup failed', prodError);
+
+  const { data: overrides, error: priceError } = await supabase
+    .from('product_prices')
+    .select('product_id, price_rub')
+    .in('product_id', ids);
+  if (priceError) console.error('Server pricing: product_prices lookup failed', priceError);
+
+  const overrideMap = new Map((overrides || []).map((p: any) => [p.product_id, Number(p.price_rub)]));
+
+  // Канонические цвета из БД: снимок клиента не считается достоверным.
+  const { data: colors } = await supabase
+    .from('colors')
+    .select('id, name, russian_name, hex_code');
+  const colorById = new Map((colors || []).map((c: any) => [c.id, c]));
+  const colorByHex = new Map((colors || []).map((c: any) => [String(c.hex_code).toLowerCase(), c]));
+
+  const resolveZone = (zone: any) => {
+    if (!zone) return zone;
+    const canonical = (zone.colorId && colorById.get(zone.colorId))
+      || (zone.hex && colorByHex.get(String(zone.hex).toLowerCase()));
+    if (!canonical) return { ...zone };
+    return {
+      ...zone,
+      colorId: canonical.id,
+      hex: canonical.hex_code,
+      nameRu: canonical.russian_name || canonical.name,
+      nameEn: canonical.name,
+    };
+  };
+
+  const priced = items.map((item: any) => {
+    const product = (products || []).find((p: any) => p.id === item.id) || null;
+    const baseUnitPrice = product
+      ? Number(overrideMap.get(product.id) ?? product.price_rub ?? 0)
+      : 0;
+
+    let customization = item.customization || null;
+    if (customization) {
+      customization = {
+        ...customization,
+        main: resolveZone(customization.main),
+        side: resolveZone(customization.side),
+        accent: resolveZone(customization.accent),
+      };
+      customization.surchargePct = serverSurchargePct(customization);
+      customization.paidBoxCustomization = customization.surchargePct > 0;
+    }
+
+    const surchargePct = serverSurchargePct(customization);
+    const quantity = Math.max(0, parseInt(item.quantity, 10) || 0);
+    const unitPriceBeforeDiscount = Math.round(baseUnitPrice * (1 + surchargePct / 100));
+
+    return {
+      item,
+      product,
+      customization,
+      quantity,
+      baseUnitPrice,
+      surchargePct,
+      unitPriceBeforeDiscount,
+      lineSubtotal: unitPriceBeforeDiscount * quantity,
+    };
+  });
+
+  const subtotal = priced.reduce((s: number, l: any) => s + l.lineSubtotal, 0);
+  const discountPct = serverDiscountPct(subtotal);
+  const discount = Math.floor((subtotal * discountPct) / 100);
+  const total = subtotal - discount;
+
+  const cart_items = priced.map((l: any) => {
+    const out: any = {
+      ...l.item,
+      name: l.product?.name || l.item.name,
+      artikul: l.product?.artikul || l.item.artikul,
+      quantity: l.quantity,
+      price: l.unitPriceBeforeDiscount,
+      pricing: {
+        baseUnitPrice: l.baseUnitPrice,
+        surchargePct: l.surchargePct,
+        unitPriceBeforeDiscount: l.unitPriceBeforeDiscount,
+        cartDiscountPct: discountPct,
+        finalUnitPrice: Math.round(l.unitPriceBeforeDiscount * (1 - discountPct / 100)),
+        quantity: l.quantity,
+        lineTotal: l.lineSubtotal,
+        source: 'server',
+      },
+    };
+    if (l.customization) out.customization = l.customization;
+    return out;
+  });
+
+  const clientSubtotal = Number(orderData.subtotal) || 0;
+  const clientTotal = Number(orderData.total) || 0;
+  const priceAdjusted = clientSubtotal !== subtotal || clientTotal !== total;
+
+  return {
+    cart_items,
+    subtotal,
+    discount,
+    discountPct,
+    total,
+    priceAdjusted,
+    clientSubmittedTotal: clientTotal,
+    serverCalculatedTotal: total,
+  };
+}
+
+const ZONE_TITLES: Record<string, string> = {
+  bow: 'Бант',
+  handles: 'Ручки',
+};
+
+/** Строки конфигурации для менеджера. Для обычных позиций — пусто. */
+function customizationLines(item: any): string[] {
+  const c = item?.customization;
+  if (!c) return [];
+  const lines: string[] = [];
+  if (c.main?.nameRu) lines.push(`Основной цвет: ${c.main.nameRu}`);
+  if (c.side?.nameRu) lines.push(`Боковушка: ${c.side.nameRu}`);
+  if (c.accent?.nameRu) lines.push(`${ZONE_TITLES[c.accent.type] || 'Акцент'}: ${c.accent.nameRu}`);
+  const p = item.pricing || {};
+  if (p.baseUnitPrice != null) lines.push(`Базовая цена: ${p.baseUnitPrice} ₽`);
+  lines.push(c.surchargePct > 0 ? `Кастомизация: +${c.surchargePct}%` : 'Кастомизация: без доплаты');
+  if (p.cartDiscountPct) lines.push(`Скидка: ${p.cartDiscountPct}%`);
+  return lines;
+}
+
 function generateAdminNewOrderHtml(order: any): string {
+
   const orderNumber = order.order_number || order.id;
   const cartItemsHtml = (order.cart_items || []).map((item: any) => {
     const lineTotal = (item.price || 0) * (item.quantity || 0);
+    const cfg = customizationLines(item);
+    const cfgHtml = cfg.length
+      ? `<div style="font-size:12px;color:#555;margin-top:4px;">${cfg.join('<br>')}</div>`
+      : '';
     return `<tr>
-      <td style="padding:8px;border:1px solid #ddd;">${item.name || 'Н/Д'}</td>
+      <td style="padding:8px;border:1px solid #ddd;">${item.name || 'Н/Д'}${cfgHtml}</td>
       <td style="padding:8px;border:1px solid #ddd;">${item.artikul || 'Н/Д'}</td>
       <td style="padding:8px;border:1px solid #ddd;">${item.quantity || 0}</td>
       <td style="padding:8px;border:1px solid #ddd;">${item.price || 0} ₽</td>
       <td style="padding:8px;border:1px solid #ddd;">${lineTotal} ₽</td>
     </tr>`;
   }).join('');
+
 
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Новый заказ</title></head><body style="font-family:Arial,sans-serif;color:#333;">
 <div style="max-width:600px;margin:0 auto;padding:20px;">
@@ -307,6 +487,8 @@ function generateAdminNewOrderHtml(order: any): string {
     <tbody>${cartItemsHtml}</tbody>
   </table>
   <p style="margin-top:15px;"><strong>Подытог:</strong> ${order.subtotal || 0} ₽<br><strong>Скидка:</strong> ${order.discount || 0} ₽<br><strong>Итого:</strong> ${order.total || 0} ₽</p>
+  ${order.price_adjusted ? `<p style="color:#b45309;"><strong>⚠ Цена пересчитана сервером.</strong> Клиент видел: ${order.client_submitted_total || 0} ₽</p>` : ''}
+
   <p><strong>Оплата:</strong> ${order.payment === 'cash' ? 'Наличными' : 'Перевод'}<br><strong>Доставка:</strong> ${order.delivery === 'delivery' ? 'Курьер' : 'Самовывоз'}</p>
   ${order.comment ? `<p><strong>Комментарий:</strong> ${order.comment}</p>` : ''}
 </div></body></html>`;
@@ -316,8 +498,11 @@ function generateAdminNewOrderText(order: any): string {
   const orderNumber = order.order_number || order.id;
   const items = (order.cart_items || []).map((item: any) => {
     const lineTotal = (item.price || 0) * (item.quantity || 0);
-    return `- ${item.name || 'Н/Д'} (Арт. ${item.artikul || 'Н/Д'}) x${item.quantity || 0} = ${lineTotal} ₽`;
+    const cfg = customizationLines(item);
+    const cfgText = cfg.length ? `\n    ${cfg.join('\n    ')}` : '';
+    return `- ${item.name || 'Н/Д'} (Арт. ${item.artikul || 'Н/Д'}) x${item.quantity || 0} = ${lineTotal} ₽${cfgText}`;
   }).join('\n');
+
 
   return `Новый заказ #${orderNumber}
 Дата: ${order.created_at ? new Date(order.created_at).toLocaleString('ru-RU') : new Date().toLocaleString('ru-RU')}
@@ -333,6 +518,7 @@ ${items}
 Подытог: ${order.subtotal || 0} ₽
 Скидка: ${order.discount || 0} ₽
 Итого: ${order.total || 0} ₽
+${order.price_adjusted ? `⚠ Цена пересчитана сервером. Клиент видел: ${order.client_submitted_total || 0} ₽` : ''}
 Оплата: ${order.payment === 'cash' ? 'Наличными' : 'Перевод'}
 Доставка: ${order.delivery === 'delivery' ? 'Курьер' : 'Самовывоз'}
 ${order.comment ? `Комментарий: ${order.comment}` : ''}`;
@@ -479,9 +665,27 @@ serve(async (req) => {
         console.error("cart_items is not an array:", orderData.cart_items);
         throw new Error("cart_items must be an array");
       }
-      
+
+      // === АВТОРИТЕТНЫЙ СЕРВЕРНЫЙ РАСЧЁТ ЦЕН ===
+      // Присланные клиентом price/subtotal/discount/total/surchargePct игнорируются.
+      const recalculated = await recalculateOrder(orderData);
+      orderData.cart_items = recalculated.cart_items;
+      orderData.subtotal = recalculated.subtotal;
+      orderData.discount = recalculated.discount;
+      orderData.total = recalculated.total;
+
+      if (recalculated.total < MIN_ORDER_AMOUNT) {
+        return new Response(JSON.stringify({
+          success: false,
+          error: `Минимальная сумма заказа — ${MIN_ORDER_AMOUNT} ₽. После проверки цен сумма составила ${recalculated.total} ₽. Пожалуйста, скорректируйте корзину.`,
+          serverCalculatedTotal: recalculated.total,
+          minOrderAmount: MIN_ORDER_AMOUNT,
+        }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
       orderData.delivery = normalizeDeliveryValue(orderData.delivery);
       console.log("Normalized delivery value:", orderData.delivery);
+
 
       // === B2B CLIENT MANAGEMENT ===
       const normalizedEmail = orderData.email.toLowerCase().trim();
@@ -601,13 +805,21 @@ serve(async (req) => {
       }
       
       console.log("Заказ создан успешно, начинаем отправку уведомлений...");
-      
+
+      // Пометка для менеджера, если серверная цена разошлась с показанной клиенту
+      order.price_adjusted = recalculated.priceAdjusted;
+      order.client_submitted_total = recalculated.clientSubmittedTotal;
+
       // Формируем детальный список товаров для Telegram
       const cartItemsDetails = order.cart_items.map((item: any) => {
         const itemTotal = item.price * item.quantity;
         let line = `- ${item.name} (${item.color || 'Н/Д'}) Арт. ${item.artikul || 'Н/Д'} × ${item.quantity} = ${itemTotal} ₽`;
         if (item.design_id) {
           line += ` 🎨`;
+        }
+        const cfg = customizationLines(item);
+        if (cfg.length) {
+          line += '\n    ' + cfg.join('\n    ');
         }
         return line;
       }).join('\n');
@@ -626,9 +838,11 @@ ${cartItemsDetails}
 💰 *Подытог:* ${order.subtotal} ₽
 🏷️ *Скидка:* ${order.discount || 0} ₽
 💵 *Итого:* ${order.total} ₽
+${order.price_adjusted ? `⚠ *Цена пересчитана сервером.* Клиент видел: ${order.client_submitted_total || 0} ₽` : ''}
 💳 *Оплата:* ${order.payment === 'cash' ? 'Наличными' : 'Перевод'}
 🚚 *Доставка:* ${order.delivery === 'delivery' ? 'Курьер' : 'Самовывоз'}
 ${order.comment ? `📝 *Комментарий:* ${order.comment}` : ''}
+
       `;
       
       const notificationPromises = [];
@@ -676,7 +890,10 @@ ${order.comment ? `📝 *Комментарий:* ${order.comment}` : ''}
       return new Response(
         JSON.stringify({ 
           success: true, 
-          message: "Заказ успешно создан и обработан",
+          message: "Заказ принят",
+          priceAdjusted: recalculated.priceAdjusted,
+          clientSubmittedTotal: recalculated.clientSubmittedTotal,
+          serverCalculatedTotal: recalculated.serverCalculatedTotal,
           order 
         }),
         { 

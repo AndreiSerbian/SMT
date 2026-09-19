@@ -3,6 +3,8 @@ import { resolveImageUrl } from '../services/mediaResolver.js';
 import { createPhotoRenderer } from '../services/mockupPhotoRenderer.js';
 import { createBagRenderer } from '../services/bagPhotoRenderer.js';
 import { createMagnetRenderer } from '../services/magnetPhotoRenderer.js';
+import { cartService } from '../services/cartService.js';
+import { surchargePctFor, unitPriceWithSurcharge } from '../services/pricingService.js';
 
 
 /**
@@ -82,13 +84,19 @@ const MockupPreviewModal = {
 
     const baseHex = product.color_hex || (palette[0] && palette[0].hex) || '#FFFFFF';
     const baseId = String(baseHex).toLowerCase();
-    const pick = (id) => palette.find(c => c.id === id) || { id: baseId, name: product.color || 'Текущий цвет', hex: baseHex };
+    const pick = (id) => palette.find(c => c.id === id) || {
+      id: baseId, key: baseId, colorId: null,
+      name: product.color || 'Текущий цвет',
+      nameRu: product.color || 'Текущий цвет',
+      nameEn: product.color || '',
+      hex: baseHex
+    };
 
-    const zones = Array.isArray(view.zones) && view.zones.length ? view.zones : ['main', 'side', 'bow'];
-    const accentZone = zones[zones.length - 1];
+    const { zones, baseline, mockupType } = mockupService.getBaselineConfig(product, model, view);
+    // Стартовое состояние = заводская конфигурация товара: ничего ещё не изменено.
     const state = {};
-    zones.forEach(z => { state[z] = pick(baseId); });
-    state[accentZone] = palette.find(c => c.id !== baseId) || pick(baseId);
+    zones.forEach(z => { state[z] = pick(baseline[z] || baseId); });
+
     const isBag = view.type === 'photo_bag_maps';
     const isMagnet = view.type === 'photo_magnet_maps';
     const title = isBag ? 'Коробка-сумка — предпросмотр'
@@ -96,7 +104,6 @@ const MockupPreviewModal = {
       : 'Коробка с лентой — предпросмотр';
 
     const basePrice = Number(product.price_rub || product.price || 0);
-    const estimated = mockupService.estimatePrice(basePrice, model);
 
     this._closeExisting();
     const overlay = document.createElement('div');
@@ -130,8 +137,14 @@ const MockupPreviewModal = {
               </div>
             `).join('')}
             <div class="mpm-price-block">
-              <p class="mpm-price">Предварительная цена: ₽${estimated} · Финальная стоимость подтверждается менеджером</p>
+              <p class="mpm-price" id="mpm-price"></p>
+              <p class="mpm-surcharge" id="mpm-surcharge"></p>
             </div>
+            <div class="mpm-qty-row">
+              <label class="mpm-control-label" for="mpm-qty">Количество</label>
+              <input id="mpm-qty" class="mpm-qty-input" type="number" min="1" value="1">
+            </div>
+            <button type="button" class="mpm-add-to-cart" id="mpm-add-to-cart">Добавить в корзину</button>
             <p class="mpm-disclaimer">Это предварительный предпросмотр. Реальный результат зависит от материалов и подтверждается менеджером при оформлении.</p>
           </div>
         </div>
@@ -147,6 +160,27 @@ const MockupPreviewModal = {
     const renderer = isBag ? createBagRenderer(view)
       : isMagnet ? createMagnetRenderer(view)
       : createPhotoRenderer(view);
+
+    const buildCustomization = () => this._buildCustomization({
+      product, mockupType, zones, baseline, state, baseId
+    });
+
+    const updatePrice = () => {
+      const customization = buildCustomization();
+      const unit = unitPriceWithSurcharge(basePrice, customization.surchargePct);
+      const priceEl = overlay.querySelector('#mpm-price');
+      const surchargeEl = overlay.querySelector('#mpm-surcharge');
+      if (priceEl) {
+        priceEl.textContent = `Цена за шт.: ₽${unit} · Финальная стоимость подтверждается менеджером`;
+      }
+      if (surchargeEl) {
+        surchargeEl.textContent = customization.surchargePct > 0
+          ? `Кастомизация коробки: +${customization.surchargePct}%`
+          : 'Доплата за кастомизацию: нет';
+      }
+      return customization;
+    };
+
     const paint = () => {
       const colors = {};
       zones.forEach(z => { colors[z] = state[z].hex; });
@@ -158,6 +192,7 @@ const MockupPreviewModal = {
         if (el) el.textContent = state[z].name;
       });
       this._updatePhotoContrast(state);
+      updatePrice();
     };
 
     zones.forEach(zone => {
@@ -186,6 +221,31 @@ const MockupPreviewModal = {
       });
     });
 
+    const addBtn = overlay.querySelector('#mpm-add-to-cart');
+    if (addBtn) {
+      addBtn.addEventListener('click', async () => {
+        const qtyInput = overlay.querySelector('#mpm-qty');
+        const qty = Math.max(1, parseInt(qtyInput && qtyInput.value, 10) || 1);
+        const customization = buildCustomization();
+        addBtn.disabled = true;
+        try {
+          await cartService.addLine({
+            id: product.id || product.artikul,
+            quantity: qty,
+            customization,
+          });
+          addBtn.textContent = 'Добавлено в корзину ✓';
+          setTimeout(() => this.close(), 900);
+        } catch (err) {
+          console.error('[mockupPreview] add to cart failed', err);
+          addBtn.disabled = false;
+          addBtn.textContent = 'Не удалось добавить — повторите';
+        }
+      });
+    }
+
+    updatePrice();
+
     try {
       await renderer.load();
       paint();
@@ -197,6 +257,47 @@ const MockupPreviewModal = {
       }
     }
   },
+
+  /**
+   * Бизнес-конфигурация для корзины/заказа.
+   * `changed` = отличие от заводской конфигурации товара, а не факт клика.
+   * Растровые данные не сохраняются.
+   */
+  _buildCustomization({ product, mockupType, zones, baseline, state, baseId }) {
+    const snap = (zone) => {
+      const c = state[zone];
+      if (!c) return null;
+      const base = baseline[zone] || baseId;
+      return {
+        colorId: c.colorId || null,
+        hex: c.hex,
+        nameRu: c.nameRu || c.name || '',
+        nameEn: c.nameEn || '',
+        changed: String(c.hex || '').toLowerCase() !== String(base || '').toLowerCase(),
+      };
+    };
+
+    const accentZone = zones.find(z => z === 'bow' || z === 'handles') || null;
+    const main = zones.includes('main') ? snap('main') : null;
+    const side = zones.includes('side') ? snap('side') : null;
+    const accent = accentZone
+      ? { type: accentZone, ...snap(accentZone) }
+      : null;
+
+    const customization = {
+      schemaVersion: 1,
+      mockupType: mockupType || null,
+      productArtikul: product.artikul || product.id || null,
+      main,
+      side,
+      accent,
+      paidBoxCustomization: Boolean((main && main.changed) || (side && side.changed)),
+      surchargePct: 0,
+    };
+    customization.surchargePct = surchargePctFor(customization);
+    return customization;
+  },
+
 
   _zoneLabel(zone) {
     return zone === 'main' ? 'Основной цвет корпуса'

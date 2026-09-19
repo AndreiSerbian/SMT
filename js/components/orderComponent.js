@@ -37,8 +37,9 @@ const OrderComponent = {
     const products = await productsService.getActiveProducts();
     const cart = cartService.getCart();
 
-    // Check minimum order value
-    const subtotal = await cartService.getCartTotal();
+    // Единый расчёт цен (надбавка за кастомизацию + лестница скидок)
+    const priced = await cartService.getPricedCart();
+    const subtotal = priced.subtotal;
 
     if (subtotal < env.minOrderAmount) {
       alert(`Минимальная сумма заказа — ${env.minOrderAmount}₽. Пожалуйста, добавьте ещё товары.`);
@@ -46,20 +47,9 @@ const OrderComponent = {
       return;
     }
 
-    // Calculate discount
-    let discountRate = 0;
-    if (subtotal >= 50000) {
-      discountRate = 5;
-    } else if (subtotal >= 40000) {
-      discountRate = 4;
-    } else if (subtotal >= 30000) {
-      discountRate = 3;
-    } else if (subtotal >= 20000) {
-      discountRate = 2;
-    }
-
-    const discount = Math.floor((subtotal * discountRate) / 100);
-    const total = subtotal - discount;
+    const discountRate = priced.discountPct;
+    const discount = priced.discount;
+    const total = priced.total;
 
     // Calculate total weight
     const totalWeightGrams = cart.reduce((total, item) => {
@@ -75,60 +65,71 @@ const OrderComponent = {
       return `${weightInGrams} г`;
     };
 
+    const configLines = (line) => {
+      const rows = cartService.describeCustomization(line.customization);
+      if (!rows.length) return "";
+      const surcharge = line.surchargePct > 0
+        ? `<div class="text-xs text-blue-700">Кастомизация: +${line.surchargePct}%</div>`
+        : `<div class="text-xs text-gray-500">Доплата за кастомизацию: нет</div>`;
+      return `
+        <div class="text-xs text-gray-600 mt-1">
+          ${rows.map(([label, value]) => `<div>${label}: ${value}</div>`).join("")}
+        </div>
+        ${surcharge}
+      `;
+    };
+
     // Generate cart rows for desktop table
-    const cartRows = cart
-      .map((item) => {
-        const product = products.find((p) => p.id === item.id);
-        if (!product) return "";
-        const actualPrice = product.price;
-        if (!actualPrice) return "";
-        const itemSum = actualPrice * item.quantity;
-        const itemWeightGrams = product.weight * item.quantity;
+    const cartRows = priced.lines
+      .map((line) => {
+        const product = line.product;
+        if (!product || !line.baseUnitPrice) return "";
+        const itemWeightGrams = product.weight * line.quantity;
         return `
         <tr>
           <td class="border-b p-2">
             <div>${product.name} (${product.color})</div>
+            ${configLines(line)}
             <div class="text-sm text-gray-600">Вес: ${formatWeight(itemWeightGrams)}</div>
           </td>
-          <td class="border-b p-2">${item.quantity}</td>
-          <td class="border-b p-2">₽${actualPrice}</td>
-          <td class="border-b p-2">₽${itemSum}</td>
+          <td class="border-b p-2">${line.quantity}</td>
+          <td class="border-b p-2">₽${line.unitPriceBeforeDiscount}</td>
+          <td class="border-b p-2">₽${line.lineSubtotal}</td>
         </tr>
       `;
       })
       .join("");
 
     // Generate cart cards for mobile
-    const cartCards = cart
-      .map((item) => {
-        const product = products.find((p) => p.id === item.id);
-        if (!product) return "";
-        const actualPrice = product.price;
-        if (!actualPrice) return "";
-        const itemSum = actualPrice * item.quantity;
-        const itemWeightGrams = product.weight * item.quantity;
+    const cartCards = priced.lines
+      .map((line) => {
+        const product = line.product;
+        if (!product || !line.baseUnitPrice) return "";
+        const itemWeightGrams = product.weight * line.quantity;
         return `
         <div class="border-b pb-4 mb-4 last:border-b-0">
           <div class="font-semibold mb-2">${product.name} (${product.color})</div>
+          ${configLines(line)}
           <div class="text-sm text-gray-600 mb-2">Вес: ${formatWeight(itemWeightGrams)}</div>
           <div class="grid grid-cols-3 gap-2 text-sm">
             <div>
               <div class="text-gray-600">Кол-во</div>
-              <div class="font-semibold">${item.quantity}</div>
+              <div class="font-semibold">${line.quantity}</div>
             </div>
             <div>
               <div class="text-gray-600">Цена</div>
-              <div class="font-semibold">₽${actualPrice}</div>
+              <div class="font-semibold">₽${line.unitPriceBeforeDiscount}</div>
             </div>
             <div>
               <div class="text-gray-600">Сумма</div>
-              <div class="font-semibold">₽${itemSum}</div>
+              <div class="font-semibold">₽${line.lineSubtotal}</div>
             </div>
           </div>
         </div>
       `;
       })
       .join("");
+
 
     container.innerHTML = `
       <nav class="bg-white shadow-md relative">
@@ -478,26 +479,29 @@ const OrderComponent = {
     const paymentValue = form.payment.value;
     const deliveryValue = form.delivery.value;
 
-    // Загружаем товары с ценами для формирования заказа
-    const products = await productsService.getActiveProducts();
-    const cart = cartService.getCart();
+    // Единый расчёт цен: надбавка за кастомизацию, затем скидка по сумме корзины
+    const priced = await cartService.getPricedCart();
 
-    // Преобразуем корзину, добавляя информацию о товарах
-    const cartItems = cart
-      .map((item) => {
-        const product = products.find((p) => p.id === item.id);
+    // Преобразуем корзину, добавляя информацию о товарах и снимок цены
+    const cartItems = priced.lines
+      .map((line) => {
+        const item = line.item;
+        const product = line.product;
         if (!product) {
           console.error("Продукт не найден:", item.id);
           return null;
         }
         const cartItem = {
           id: item.id,
-          quantity: item.quantity,
+          lineKey: item.lineKey,
+          quantity: line.quantity,
           name: product.name,
           artikul: product.artikul,
           color: product.color,
-          price: product.price || 0,
+          price: line.unitPriceBeforeDiscount,
+          pricing: line.pricing,
         };
+        if (item.customization) cartItem.customization = item.customization;
         // Preserve design/customization fields if present
         if (item.design_id) cartItem.design_id = item.design_id;
         if (item.production_pdf_url) cartItem.production_pdf_url = item.production_pdf_url;
@@ -509,21 +513,9 @@ const OrderComponent = {
       .filter((item) => item !== null);
 
     // Calculate order totals
-    const subtotal = await cartService.getCartTotal();
-
-    let discountRate = 0;
-    if (subtotal >= 50000) {
-      discountRate = 5;
-    } else if (subtotal >= 40000) {
-      discountRate = 4;
-    } else if (subtotal >= 30000) {
-      discountRate = 3;
-    } else if (subtotal >= 20000) {
-      discountRate = 2;
-    }
-
-    const discount = Math.floor((subtotal * discountRate) / 100);
-    const total = subtotal - discount;
+    const subtotal = priced.subtotal;
+    const discount = priced.discount;
+    const total = priced.total;
 
     const subscribe = form.subscribe ? form.subscribe.checked : true;
 
@@ -541,6 +533,7 @@ const OrderComponent = {
       total: total,
       subscribe: subscribe,
     };
+
 
     // Показываем индикатор загрузки
     const submitButton = form.querySelector('button[type="submit"]');
@@ -566,8 +559,14 @@ const OrderComponent = {
     })
       .then((response) => {
         if (!response.ok) {
-          // Если ответ не OK, получаем текст ошибки
+          // Сервер может вернуть понятное объяснение (например, пересчёт суммы)
           return response.text().then((text) => {
+            try {
+              const parsed = JSON.parse(text);
+              if (parsed && parsed.error) throw new Error(parsed.error);
+            } catch (e) {
+              if (e instanceof Error && e.message && !/^Unexpected/.test(e.message)) throw e;
+            }
             throw new Error(`HTTP ошибка ${response.status}: ${text}`);
           });
         }
@@ -578,6 +577,12 @@ const OrderComponent = {
         if (data.success) {
           // Очистка корзины
           cartService.clearCart();
+
+          if (data.priceAdjusted) {
+            alert(
+              `Цена была обновлена перед оформлением заказа. Итоговая сумма: ${data.serverCalculatedTotal} ₽`
+            );
+          }
 
           // Показываем сообщение о подтверждении
           container.querySelector("#orderStatus").classList.remove("hidden");

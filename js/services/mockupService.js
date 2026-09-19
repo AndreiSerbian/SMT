@@ -59,18 +59,50 @@ function getPhotoView(model, view = 'photo_closed_45') {
 
 
 /**
- * Палитра из существующего каталога. Нормализуем к { id, name, hex }.
- * id = hex-ключ цвета (стабилен и уникален в каталоге).
+ * Палитра из существующего каталога.
+ * UI продолжает работать по hex-ключу (`id` / `key`), а корзина и заказ
+ * сохраняют канонический `colorId` (uuid из таблицы colors) и снапшот названий.
  */
 async function getPalette() {
   if (_paletteCache) return _paletteCache;
   const colors = await productsService.getActiveColors();
-  _paletteCache = (colors || []).map(c => ({
-    id: String(c.hex_code || '').toLowerCase(),
-    name: c.russian_name || c.name || c.hex_code,
-    hex: c.hex_code
-  })).filter(c => c.hex);
+  _paletteCache = (colors || []).map(c => {
+    const key = String(c.hex_code || '').toLowerCase();
+    return {
+      id: key,            // legacy UI key (hex)
+      key,
+      colorId: c.id ?? null,
+      hex: c.hex_code,
+      name: c.russian_name || c.name || c.hex_code, // legacy UI label
+      nameRu: c.russian_name || c.name || c.hex_code,
+      nameEn: c.name || c.russian_name || c.hex_code,
+    };
+  }).filter(c => c.hex);
   return _paletteCache;
+}
+
+/** Тип мокапа для бизнес-конфигурации (совпадает с id модели). */
+function mockupTypeForModel(model) {
+  const id = model && model.id;
+  if (id === 'bow_box') return 'ribbon_box';
+  if (id === 'bag_box') return 'bag_box';
+  if (id === 'magnet_box') return 'magnetic_box';
+  return null;
+}
+
+/**
+ * Базовая (заводская) конфигурация товара для сравнения `changed`.
+ * Базовый цвет товара — единственное, что реально известно из данных каталога,
+ * поэтому он является базой для всех зон мокапа.
+ */
+function getBaselineConfig(product, model, view) {
+  const zones = (view && Array.isArray(view.zones) && view.zones.length)
+    ? view.zones
+    : ['main', 'side'];
+  const baseHex = String(product?.color_hex || '').toLowerCase() || null;
+  const baseline = {};
+  zones.forEach(z => { baseline[z] = baseHex; });
+  return { zones, baseline, mockupType: mockupTypeForModel(model) };
 }
 
 /**
@@ -103,7 +135,9 @@ export const mockupService = {
   getPhotoView,
   getPalette,
   validateTwoColor,
-  estimatePrice
+  estimatePrice,
+  mockupTypeForModel,
+  getBaselineConfig
 };
 
 

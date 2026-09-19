@@ -100,7 +100,7 @@ const out = products.map(p => {
 const snapshot = {
   generatedAt: new Date().toISOString(),
   categories: categories.map(c => ({ id: c.id, slug: c.slug, name: c.name, sort_order: c.sort_order })),
-  colors: colors.map(c => ({ hex_code: c.hex_code, name: c.name, russian_name: c.russian_name })),
+  colors: colors.map(c => ({ id: c.id, hex_code: c.hex_code, name: c.name, russian_name: c.russian_name })),
   products: out,
 };
 

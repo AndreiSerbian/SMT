@@ -34,96 +34,115 @@
   ],
   "colors": [
     {
+      "id": "c617be06-81cb-4949-8b9e-26819800d9a2",
       "hex_code": "#E2A703",
       "name": "Rose Gold",
       "russian_name": "Розовое золото"
     },
     {
+      "id": "b1e87b31-2a36-48e3-911f-ea514f71c6f8",
       "hex_code": "#FFB6C1",
       "name": "Rose",
       "russian_name": "Розовая"
     },
     {
+      "id": "b13b6fa5-947a-4595-83d2-fa430d4a3f59",
       "hex_code": "#0ABAB5",
       "name": "Tiffany",
       "russian_name": "Тиффани"
     },
     {
+      "id": "0f405c84-3938-412e-b8e1-774b42727bed",
       "hex_code": "#1a1a1a",
       "name": "Black",
       "russian_name": "Черная"
     },
     {
+      "id": "1698d15f-be17-4243-808b-84cb36611369",
       "hex_code": "#FFFFFF",
       "name": "White",
       "russian_name": "Белая"
     },
     {
+      "id": "876be850-dd7e-4c7e-8bc6-a683d0ad6eee",
       "hex_code": "#FF0000",
       "name": "Red",
       "russian_name": "Красная"
     },
     {
+      "id": "d73267b4-f8d6-48e8-9576-aaa16682333a",
       "hex_code": "#FFA500",
       "name": "Orange",
       "russian_name": "Оранжевая"
     },
     {
+      "id": "8be934d6-281e-4373-8d5c-3c16af8d2b14",
       "hex_code": "#FFD700",
       "name": "Gold",
       "russian_name": "Золотая"
     },
     {
+      "id": "a39491a1-1616-4d35-bd85-74200a555a3a",
       "hex_code": "#B0E0E6",
       "name": "Ice Blue",
       "russian_name": "Голубой лед"
     },
     {
+      "id": "e28268d1-8d47-4935-9457-d5ad4b888ca2",
       "hex_code": "#F3E5AB",
       "name": "Vanilla",
       "russian_name": "Ванильная"
     },
     {
+      "id": "524926d1-a833-407a-b6c7-9d5437556169",
       "hex_code": "#003d7a",
       "name": "Blue Velvet",
       "russian_name": "Синий бархат"
     },
     {
+      "id": "85f1ba87-7e68-4d9f-8689-f305ad651e0c",
       "hex_code": "#B08BB8",
       "name": "Lavender",
       "russian_name": "Лавандовая"
     },
     {
+      "id": "881fe85a-adb3-47c4-9964-1bf8404b40e6",
       "hex_code": "#F4C2C2",
       "name": "Peach",
       "russian_name": "Персиковая"
     },
     {
+      "id": "f4068387-67b7-47a4-ae16-7de1839df1f1",
       "hex_code": "#2c2c2c",
       "name": "Black Moire",
       "russian_name": "Черный муар"
     },
     {
+      "id": "9e7240f2-25fa-440c-b517-d196cdf5e45c",
       "hex_code": "#F8F8FF",
       "name": "White Diamond",
       "russian_name": "Белый бриллиант"
     },
     {
+      "id": "5bd097cf-ef0e-48cb-aacc-b743f1437d25",
       "hex_code": "#C0C0C0",
       "name": "Silver",
       "russian_name": "Серебряная"
     },
     {
+      "id": "0b2a9c53-5073-4fbc-b2f8-67424178aeaa",
       "hex_code": "#DDA0DD",
       "name": "Lilac",
       "russian_name": "Сиреневая"
     },
     {
+      "id": "78b25e8a-cb8a-47b5-a2f7-433d81faf2d2",
       "hex_code": "#F50559",
       "name": "Crimson",
       "russian_name": "Малина"
     },
     {
+      "id": "01e9becf-2528-4186-849d-4b21853103af",
       "hex_code": "#acba2c",
       "name": "olive",
       "russian_name": "Оливковая"

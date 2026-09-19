@@ -24,10 +24,10 @@ const TELEGRAM_CHAT_ID = Deno.env.get("TELEGRAM_CHAT_ID") || "";
  * @param isAlreadyConfirmed - Был ли заказ уже подтверждён
  */
 function generateConfirmationHTML(orderNumber: string, isAlreadyConfirmed: boolean = false) {
-  const title = isAlreadyConfirmed ? "Заказ уже подтверждён" : "Заказ подтверждён";
+  const title = isAlreadyConfirmed ? "Заказ уже подтверждён вами" : "Спасибо, заказ подтверждён вами";
   const message = isAlreadyConfirmed 
     ? `Заказ №${orderNumber} уже был подтверждён ранее`
-    : `Спасибо! Заказ №${orderNumber} успешно подтверждён`;
+    : `Спасибо! Заказ №${orderNumber} подтверждён с вашей стороны. Менеджер свяжется с вами для согласования деталей и итоговой стоимости.`;
   
   return `
 <!DOCTYPE html>
