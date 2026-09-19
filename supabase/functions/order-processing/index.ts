@@ -793,13 +793,21 @@ serve(async (req) => {
       }
       
       console.log("Заказ создан успешно, начинаем отправку уведомлений...");
-      
+
+      // Пометка для менеджера, если серверная цена разошлась с показанной клиенту
+      order.price_adjusted = recalculated.priceAdjusted;
+      order.client_submitted_total = recalculated.clientSubmittedTotal;
+
       // Формируем детальный список товаров для Telegram
       const cartItemsDetails = order.cart_items.map((item: any) => {
         const itemTotal = item.price * item.quantity;
         let line = `- ${item.name} (${item.color || 'Н/Д'}) Арт. ${item.artikul || 'Н/Д'} × ${item.quantity} = ${itemTotal} ₽`;
         if (item.design_id) {
           line += ` 🎨`;
+        }
+        const cfg = customizationLines(item);
+        if (cfg.length) {
+          line += '\n    ' + cfg.join('\n    ');
         }
         return line;
       }).join('\n');
@@ -818,9 +826,11 @@ ${cartItemsDetails}
 💰 *Подытог:* ${order.subtotal} ₽
 🏷️ *Скидка:* ${order.discount || 0} ₽
 💵 *Итого:* ${order.total} ₽
+${order.price_adjusted ? `⚠ *Цена пересчитана сервером.* Клиент видел: ${order.client_submitted_total || 0} ₽` : ''}
 💳 *Оплата:* ${order.payment === 'cash' ? 'Наличными' : 'Перевод'}
 🚚 *Доставка:* ${order.delivery === 'delivery' ? 'Курьер' : 'Самовывоз'}
 ${order.comment ? `📝 *Комментарий:* ${order.comment}` : ''}
+
       `;
       
       const notificationPromises = [];
