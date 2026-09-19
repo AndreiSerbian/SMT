@@ -80,9 +80,10 @@ function generateOrderConfirmationEmail(order: any) {
     </head>
     <body>
       <div class="container">
-        <h1>Подтверждение заказа №${id}</h1>
+        <h1>Ваш заказ №${id} принят</h1>
         <p>Здравствуйте, ${name}!</p>
-        <p>Спасибо за ваш заказ. Пожалуйста, проверьте детали заказа ниже:</p>
+        <p>Спасибо за ваш заказ — мы его получили. Пожалуйста, проверьте детали ниже:</p>
+        ${order.price_adjusted ? `<p style="color:#b45309;"><strong>Цена была обновлена перед оформлением заказа.</strong> Итоговая сумма: ${total} ₽</p>` : ''}
         
         <table>
           <thead>
@@ -113,7 +114,7 @@ function generateOrderConfirmationEmail(order: any) {
           </tfoot>
         </table>
         
-        <p><strong>Важно!</strong> Пожалуйста, подтвердите ваш заказ, нажав на кнопку ниже:</p>
+        <p><strong>Важно!</strong> Пожалуйста, подтвердите заказ со своей стороны, нажав на кнопку ниже:</p>
         <p style="text-align: center; margin: 30px 0;">
           <a href="${confirmationUrl}" class="button" style="display: inline-block; background-color: #4CAF50; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-size: 16px;">ПОДТВЕРДИТЬ ЗАКАЗ</a>
         </p>
@@ -123,6 +124,7 @@ function generateOrderConfirmationEmail(order: any) {
           <a href="${confirmationUrl}" style="color: #4CAF50; word-break: break-all;">${confirmationUrl}</a>
         </p>
         
+        <p>Менеджер свяжется с вами для подтверждения деталей и итоговой стоимости.</p>
         <p>Если у вас возникли вопросы по заказу, пожалуйста, свяжитесь с нами.</p>
         <p>С уважением,<br>Команда поддержки Gift Box Shop</p>
       </div>
