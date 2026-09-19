@@ -506,6 +506,7 @@ ${items}
 Подытог: ${order.subtotal || 0} ₽
 Скидка: ${order.discount || 0} ₽
 Итого: ${order.total || 0} ₽
+${order.price_adjusted ? `⚠ Цена пересчитана сервером. Клиент видел: ${order.client_submitted_total || 0} ₽` : ''}
 Оплата: ${order.payment === 'cash' ? 'Наличными' : 'Перевод'}
 Доставка: ${order.delivery === 'delivery' ? 'Курьер' : 'Самовывоз'}
 ${order.comment ? `Комментарий: ${order.comment}` : ''}`;
