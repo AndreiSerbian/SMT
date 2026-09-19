@@ -276,18 +276,186 @@ function parseAdminEmails(): string[] {
   )];
 }
 
+// ===== Серверный авторитетный расчёт цен =====
+// Правила идентичны js/services/pricingService.js:
+//  +10% один раз за платную кастомизацию корпуса (MAIN и/или SIDE),
+//  лестница скидок 20k→2%, 30k→3%, 40k→4%, 50k→5%,
+//  округление: надбавка Math.round, скидка Math.floor.
+const SURCHARGE_PCT = 10;
+const DISCOUNT_TIERS = [
+  { min: 50000, pct: 5 },
+  { min: 40000, pct: 4 },
+  { min: 30000, pct: 3 },
+  { min: 20000, pct: 2 },
+];
+const MIN_ORDER_AMOUNT = parseInt(Deno.env.get("MIN_ORDER_AMOUNT") || "10000", 10);
+
+function serverSurchargePct(customization: any): number {
+  if (!customization) return 0;
+  const paid = Boolean(customization?.main?.changed || customization?.side?.changed);
+  return paid ? SURCHARGE_PCT : 0;
+}
+
+function serverDiscountPct(subtotal: number): number {
+  const tier = DISCOUNT_TIERS.find((t) => subtotal >= t.min);
+  return tier ? tier.pct : 0;
+}
+
+/** Пересчитывает заказ по данным БД. Клиентские цифры не используются. */
+async function recalculateOrder(orderData: any) {
+  const items = orderData.cart_items || [];
+  const ids = [...new Set(items.map((i: any) => i.id).filter(Boolean))];
+
+  const { data: products, error: prodError } = await supabase
+    .from('products')
+    .select('id, artikul, name, price_rub')
+    .in('id', ids);
+  if (prodError) console.error('Server pricing: products lookup failed', prodError);
+
+  const { data: overrides, error: priceError } = await supabase
+    .from('product_prices')
+    .select('product_id, price_rub')
+    .in('product_id', ids);
+  if (priceError) console.error('Server pricing: product_prices lookup failed', priceError);
+
+  const overrideMap = new Map((overrides || []).map((p: any) => [p.product_id, Number(p.price_rub)]));
+
+  // Канонические цвета из БД: снимок клиента не считается достоверным.
+  const { data: colors } = await supabase
+    .from('colors')
+    .select('id, name, russian_name, hex_code');
+  const colorById = new Map((colors || []).map((c: any) => [c.id, c]));
+  const colorByHex = new Map((colors || []).map((c: any) => [String(c.hex_code).toLowerCase(), c]));
+
+  const resolveZone = (zone: any) => {
+    if (!zone) return zone;
+    const canonical = (zone.colorId && colorById.get(zone.colorId))
+      || (zone.hex && colorByHex.get(String(zone.hex).toLowerCase()));
+    if (!canonical) return { ...zone };
+    return {
+      ...zone,
+      colorId: canonical.id,
+      hex: canonical.hex_code,
+      nameRu: canonical.russian_name || canonical.name,
+      nameEn: canonical.name,
+    };
+  };
+
+  const priced = items.map((item: any) => {
+    const product = (products || []).find((p: any) => p.id === item.id) || null;
+    const baseUnitPrice = product
+      ? Number(overrideMap.get(product.id) ?? product.price_rub ?? 0)
+      : 0;
+
+    let customization = item.customization || null;
+    if (customization) {
+      customization = {
+        ...customization,
+        main: resolveZone(customization.main),
+        side: resolveZone(customization.side),
+        accent: resolveZone(customization.accent),
+      };
+      customization.surchargePct = serverSurchargePct(customization);
+      customization.paidBoxCustomization = customization.surchargePct > 0;
+    }
+
+    const surchargePct = serverSurchargePct(customization);
+    const quantity = Math.max(0, parseInt(item.quantity, 10) || 0);
+    const unitPriceBeforeDiscount = Math.round(baseUnitPrice * (1 + surchargePct / 100));
+
+    return {
+      item,
+      product,
+      customization,
+      quantity,
+      baseUnitPrice,
+      surchargePct,
+      unitPriceBeforeDiscount,
+      lineSubtotal: unitPriceBeforeDiscount * quantity,
+    };
+  });
+
+  const subtotal = priced.reduce((s: number, l: any) => s + l.lineSubtotal, 0);
+  const discountPct = serverDiscountPct(subtotal);
+  const discount = Math.floor((subtotal * discountPct) / 100);
+  const total = subtotal - discount;
+
+  const cart_items = priced.map((l: any) => {
+    const out: any = {
+      ...l.item,
+      name: l.product?.name || l.item.name,
+      artikul: l.product?.artikul || l.item.artikul,
+      quantity: l.quantity,
+      price: l.unitPriceBeforeDiscount,
+      pricing: {
+        baseUnitPrice: l.baseUnitPrice,
+        surchargePct: l.surchargePct,
+        unitPriceBeforeDiscount: l.unitPriceBeforeDiscount,
+        cartDiscountPct: discountPct,
+        finalUnitPrice: Math.round(l.unitPriceBeforeDiscount * (1 - discountPct / 100)),
+        quantity: l.quantity,
+        lineTotal: l.lineSubtotal,
+        source: 'server',
+      },
+    };
+    if (l.customization) out.customization = l.customization;
+    return out;
+  });
+
+  const clientSubtotal = Number(orderData.subtotal) || 0;
+  const clientTotal = Number(orderData.total) || 0;
+  const priceAdjusted = clientSubtotal !== subtotal || clientTotal !== total;
+
+  return {
+    cart_items,
+    subtotal,
+    discount,
+    discountPct,
+    total,
+    priceAdjusted,
+    clientSubmittedTotal: clientTotal,
+    serverCalculatedTotal: total,
+  };
+}
+
+const ZONE_TITLES: Record<string, string> = {
+  bow: 'Бант',
+  handles: 'Ручки',
+};
+
+/** Строки конфигурации для менеджера. Для обычных позиций — пусто. */
+function customizationLines(item: any): string[] {
+  const c = item?.customization;
+  if (!c) return [];
+  const lines: string[] = [];
+  if (c.main?.nameRu) lines.push(`Основной цвет: ${c.main.nameRu}`);
+  if (c.side?.nameRu) lines.push(`Боковушка: ${c.side.nameRu}`);
+  if (c.accent?.nameRu) lines.push(`${ZONE_TITLES[c.accent.type] || 'Акцент'}: ${c.accent.nameRu}`);
+  const p = item.pricing || {};
+  if (p.baseUnitPrice != null) lines.push(`Базовая цена: ${p.baseUnitPrice} ₽`);
+  lines.push(c.surchargePct > 0 ? `Кастомизация: +${c.surchargePct}%` : 'Кастомизация: без доплаты');
+  if (p.cartDiscountPct) lines.push(`Скидка: ${p.cartDiscountPct}%`);
+  return lines;
+}
+
 function generateAdminNewOrderHtml(order: any): string {
+
   const orderNumber = order.order_number || order.id;
   const cartItemsHtml = (order.cart_items || []).map((item: any) => {
     const lineTotal = (item.price || 0) * (item.quantity || 0);
+    const cfg = customizationLines(item);
+    const cfgHtml = cfg.length
+      ? `<div style="font-size:12px;color:#555;margin-top:4px;">${cfg.join('<br>')}</div>`
+      : '';
     return `<tr>
-      <td style="padding:8px;border:1px solid #ddd;">${item.name || 'Н/Д'}</td>
+      <td style="padding:8px;border:1px solid #ddd;">${item.name || 'Н/Д'}${cfgHtml}</td>
       <td style="padding:8px;border:1px solid #ddd;">${item.artikul || 'Н/Д'}</td>
       <td style="padding:8px;border:1px solid #ddd;">${item.quantity || 0}</td>
       <td style="padding:8px;border:1px solid #ddd;">${item.price || 0} ₽</td>
       <td style="padding:8px;border:1px solid #ddd;">${lineTotal} ₽</td>
     </tr>`;
   }).join('');
+
 
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Новый заказ</title></head><body style="font-family:Arial,sans-serif;color:#333;">
 <div style="max-width:600px;margin:0 auto;padding:20px;">

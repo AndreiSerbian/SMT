@@ -197,6 +197,7 @@ export class ProductsService {
     try {
       const snap = await loadLocalCatalogSnapshot();
       const colors = (snap.colors || []).map((c, i) => ({
+        id: c.id ?? null,
         hex_code: c.hex_code, name: c.name, russian_name: c.russian_name,
         is_active: true, sort_order: i,
       }));
