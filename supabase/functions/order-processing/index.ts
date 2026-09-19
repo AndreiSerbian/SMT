@@ -48,9 +48,19 @@ function generateOrderConfirmationEmail(order: any) {
         designInfo += `<br><small><a href="${item.production_pdf_url}">📄 Скачать PDF макет</a></small>`;
       }
     }
+    const c = item.customization;
+    let maskInfo = '';
+    if (c) {
+      const parts: string[] = [];
+      if (c.main?.nameRu) parts.push(`Основной: ${c.main.nameRu}`);
+      if (c.side?.nameRu) parts.push(`Боковушка: ${c.side.nameRu}`);
+      if (c.accent?.nameRu) parts.push(`${c.accent.type === 'handles' ? 'Ручки' : 'Бант'}: ${c.accent.nameRu}`);
+      if (parts.length) maskInfo += `<br><small>${parts.join(' · ')}</small>`;
+      maskInfo += `<br><small>${c.surchargePct > 0 ? `Кастомизация: +${c.surchargePct}%` : 'Доплата за кастомизацию: нет'}</small>`;
+    }
     return `
     <tr>
-      <td style="padding: 10px; border: 1px solid #ddd;">${item.name}${designInfo}</td>
+      <td style="padding: 10px; border: 1px solid #ddd;">${item.name}${maskInfo}${designInfo}</td>
       <td style="padding: 10px; border: 1px solid #ddd;">${item.artikul || 'Н/Д'}</td>
       <td style="padding: 10px; border: 1px solid #ddd;">${item.quantity}</td>
       <td style="padding: 10px; border: 1px solid #ddd;">${item.price} ₽</td>
