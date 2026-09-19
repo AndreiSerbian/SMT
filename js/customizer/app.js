@@ -212,21 +212,21 @@ async function handleAddToCart({ qty, print_type }) {
     // Add to cart using the same 'cart' key as cartService
     const cart = JSON.parse(localStorage.getItem('cart') || '[]');
     
-    // Check if product already in cart (without design) and update, or add new entry
-    const existingIndex = cart.findIndex(item => item.id === product.artikul && !item.design_id);
-    
+    // Позиции с макетом печати живут отдельной строкой: обычный товар и товар
+    // с макетом не объединяются, разные макеты тоже остаются раздельными.
+    const lineKey = `design:${product.artikul}:${designId}`;
+    const existingIndex = cart.findIndex(item => (item.lineKey || '') === lineKey);
+
     if (existingIndex >= 0) {
-      // Update existing item with design info
       cart[existingIndex].quantity += qty;
-      cart[existingIndex].design_id = designId;
       cart[existingIndex].preview_urls = previewUrls;
       cart[existingIndex].production_pdf_url = pdfUrl;
       cart[existingIndex].customized_sides = customizedSides;
       cart[existingIndex].options = { print_type };
     } else {
-      // Add new custom design item
       cart.push({
         id: product.artikul,
+        lineKey,
         quantity: qty,
         design_id: designId,
         preview_urls: previewUrls,
