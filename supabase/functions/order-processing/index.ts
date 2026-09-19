@@ -486,8 +486,11 @@ function generateAdminNewOrderText(order: any): string {
   const orderNumber = order.order_number || order.id;
   const items = (order.cart_items || []).map((item: any) => {
     const lineTotal = (item.price || 0) * (item.quantity || 0);
-    return `- ${item.name || 'Н/Д'} (Арт. ${item.artikul || 'Н/Д'}) x${item.quantity || 0} = ${lineTotal} ₽`;
+    const cfg = customizationLines(item);
+    const cfgText = cfg.length ? `\n    ${cfg.join('\n    ')}` : '';
+    return `- ${item.name || 'Н/Д'} (Арт. ${item.artikul || 'Н/Д'}) x${item.quantity || 0} = ${lineTotal} ₽${cfgText}`;
   }).join('\n');
+
 
   return `Новый заказ #${orderNumber}
 Дата: ${order.created_at ? new Date(order.created_at).toLocaleString('ru-RU') : new Date().toLocaleString('ru-RU')}
