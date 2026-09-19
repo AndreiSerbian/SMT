@@ -890,7 +890,10 @@ ${order.comment ? `📝 *Комментарий:* ${order.comment}` : ''}
       return new Response(
         JSON.stringify({ 
           success: true, 
-          message: "Заказ успешно создан и обработан",
+          message: "Заказ принят",
+          priceAdjusted: recalculated.priceAdjusted,
+          clientSubmittedTotal: recalculated.clientSubmittedTotal,
+          serverCalculatedTotal: recalculated.serverCalculatedTotal,
           order 
         }),
         { 
