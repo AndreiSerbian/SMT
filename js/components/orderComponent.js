@@ -559,8 +559,14 @@ const OrderComponent = {
     })
       .then((response) => {
         if (!response.ok) {
-          // Если ответ не OK, получаем текст ошибки
+          // Сервер может вернуть понятное объяснение (например, пересчёт суммы)
           return response.text().then((text) => {
+            try {
+              const parsed = JSON.parse(text);
+              if (parsed && parsed.error) throw new Error(parsed.error);
+            } catch (e) {
+              if (e instanceof Error && e.message && !/^Unexpected/.test(e.message)) throw e;
+            }
             throw new Error(`HTTP ошибка ${response.status}: ${text}`);
           });
         }
@@ -571,6 +577,12 @@ const OrderComponent = {
         if (data.success) {
           // Очистка корзины
           cartService.clearCart();
+
+          if (data.priceAdjusted) {
+            alert(
+              `Цена была обновлена перед оформлением заказа. Итоговая сумма: ${data.serverCalculatedTotal} ₽`
+            );
+          }
 
           // Показываем сообщение о подтверждении
           container.querySelector("#orderStatus").classList.remove("hidden");
