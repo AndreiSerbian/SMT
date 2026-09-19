@@ -475,6 +475,8 @@ function generateAdminNewOrderHtml(order: any): string {
     <tbody>${cartItemsHtml}</tbody>
   </table>
   <p style="margin-top:15px;"><strong>Подытог:</strong> ${order.subtotal || 0} ₽<br><strong>Скидка:</strong> ${order.discount || 0} ₽<br><strong>Итого:</strong> ${order.total || 0} ₽</p>
+  ${order.price_adjusted ? `<p style="color:#b45309;"><strong>⚠ Цена пересчитана сервером.</strong> Клиент видел: ${order.client_submitted_total || 0} ₽</p>` : ''}
+
   <p><strong>Оплата:</strong> ${order.payment === 'cash' ? 'Наличными' : 'Перевод'}<br><strong>Доставка:</strong> ${order.delivery === 'delivery' ? 'Курьер' : 'Самовывоз'}</p>
   ${order.comment ? `<p><strong>Комментарий:</strong> ${order.comment}</p>` : ''}
 </div></body></html>`;
