@@ -653,9 +653,27 @@ serve(async (req) => {
         console.error("cart_items is not an array:", orderData.cart_items);
         throw new Error("cart_items must be an array");
       }
-      
+
+      // === АВТОРИТЕТНЫЙ СЕРВЕРНЫЙ РАСЧЁТ ЦЕН ===
+      // Присланные клиентом price/subtotal/discount/total/surchargePct игнорируются.
+      const recalculated = await recalculateOrder(orderData);
+      orderData.cart_items = recalculated.cart_items;
+      orderData.subtotal = recalculated.subtotal;
+      orderData.discount = recalculated.discount;
+      orderData.total = recalculated.total;
+
+      if (recalculated.total < MIN_ORDER_AMOUNT) {
+        return new Response(JSON.stringify({
+          success: false,
+          error: `Минимальная сумма заказа — ${MIN_ORDER_AMOUNT} ₽. После проверки цен сумма составила ${recalculated.total} ₽. Пожалуйста, скорректируйте корзину.`,
+          serverCalculatedTotal: recalculated.total,
+          minOrderAmount: MIN_ORDER_AMOUNT,
+        }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
       orderData.delivery = normalizeDeliveryValue(orderData.delivery);
       console.log("Normalized delivery value:", orderData.delivery);
+
 
       // === B2B CLIENT MANAGEMENT ===
       const normalizedEmail = orderData.email.toLowerCase().trim();
