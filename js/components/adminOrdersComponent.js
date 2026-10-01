@@ -380,15 +380,7 @@ export class AdminOrdersComponent {
             <div>
               <h4 class="font-semibold mb-2">Товары</h4>
               <div class="space-y-2">
-                ${(Array.isArray(order.cart_items) ? order.cart_items : []).map(item => `
-                  <div class="flex justify-between items-center bg-slate-50 rounded-lg p-3">
-                    <div>
-                      <p class="font-medium">${item.name}</p>
-                      <p class="text-sm text-slate-600">${item.quantity} шт.</p>
-                    </div>
-                    <p class="font-semibold">₽${(item.price * item.quantity).toFixed(2)}</p>
-                  </div>
-                `).join('')}
+                ${(Array.isArray(order.cart_items) ? order.cart_items : []).map(item => this.renderItem(item)).join('')}
               </div>
             </div>
 
@@ -485,6 +477,78 @@ export class AdminOrdersComponent {
         : 'Ошибка обновления статуса: ' + (error?.message || 'неизвестная ошибка'));
     }
 
+  }
+
+  esc(v) {
+    return String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  rub(n) {
+    return `${Math.round(Number(n) || 0).toLocaleString('ru-RU')} ₽`;
+  }
+
+  /** Read-only отрисовка позиции заказа; цены берутся из сохранённого pricing. */
+  renderItem(item) {
+    const qty = Number(item.quantity) || 0;
+    const p = item.pricing && typeof item.pricing === 'object' ? item.pricing : null;
+    const c = item.customization && typeof item.customization === 'object' ? item.customization : null;
+    const lineSum = p && p.lineTotal != null ? Number(p.lineTotal) : (Number(item.price) || 0) * qty;
+    const art = item.artikul || item.id;
+
+    if (!c) {
+      return `
+        <div class="bg-slate-50 rounded-lg p-3 flex justify-between items-start gap-3">
+          <div class="min-w-0">
+            <p class="font-medium break-words">${this.esc(item.name)}</p>
+            ${art ? `<p class="text-xs text-slate-500">Арт. ${this.esc(art)}</p>` : ''}
+            <p class="text-sm text-slate-600">${qty} шт.</p>
+          </div>
+          <p class="font-semibold whitespace-nowrap shrink-0">${this.rub(lineSum)}</p>
+        </div>`;
+    }
+
+    const pct = Number(c.surchargePct ?? p?.surchargePct) || 0;
+    const badge = pct > 0 ? `Кастомизация +${pct}%` : 'Кастомизация · без доплаты';
+    const accentLabel = c.accent?.type === 'bow' ? 'Бант' : c.accent?.type === 'handles' ? 'Ручки' : null;
+    const zones = [
+      ['Основной цвет', c.main],
+      ['Боковушка', c.side],
+      accentLabel && c.mockupType !== 'magnetic_box' ? [accentLabel, c.accent] : null,
+    ].filter(z => z && z[1] && (z[1].nameRu || z[1].nameEn || z[1].hex));
+    const colorRow = ([label, z]) => {
+      const name = z.nameRu || z.nameEn || z.hex;
+      const hex = /^#[0-9a-f]{3,8}$/i.test(z.hex || '') ? z.hex : null;
+      return `<div class="flex items-center gap-2 text-sm min-w-0">
+        <span class="text-slate-600 shrink-0">${label}:</span>
+        ${hex ? `<span class="inline-block w-3 h-3 rounded-full border border-slate-300 shrink-0" style="background:${hex}"></span>` : ''}
+        <span class="font-medium break-words min-w-0">${this.esc(name)}</span>
+      </div>`;
+    };
+    const priceRows = [];
+    if (p) {
+      if (p.baseUnitPrice != null) priceRows.push(['Базовая цена', `${this.rub(p.baseUnitPrice)} / шт.`]);
+      if (pct > 0 && p.unitPriceBeforeDiscount != null) priceRows.push(['Цена с кастомизацией', `${this.rub(p.unitPriceBeforeDiscount)} / шт.`]);
+      priceRows.push(['Сумма позиции до скидки', this.rub(lineSum)]);
+      if (Number(p.cartDiscountPct) > 0) priceRows.push(['Скидка заказа', `${Number(p.cartDiscountPct)}%`]);
+    }
+
+    return `
+      <div class="bg-slate-50 rounded-lg p-3 space-y-2">
+        <div class="flex justify-between items-start gap-3">
+          <div class="min-w-0">
+            <p class="font-medium break-words">${this.esc(item.name)}</p>
+            ${art ? `<p class="text-xs text-slate-500">Арт. ${this.esc(art)} · ${qty} шт.</p>` : `<p class="text-xs text-slate-500">${qty} шт.</p>`}
+          </div>
+          <p class="font-semibold whitespace-nowrap shrink-0">${this.rub(lineSum)}</p>
+        </div>
+        <div class="rounded-md border border-blue-200 bg-blue-50 p-2 space-y-1">
+          <span class="inline-block px-2 py-0.5 rounded-full bg-blue-600 text-white text-xs font-semibold">${badge}</span>
+          ${zones.map(colorRow).join('')}
+        </div>
+        ${priceRows.length ? `<div class="text-xs text-slate-600 space-y-0.5">
+          ${priceRows.map(([k, v]) => `<div class="flex justify-between gap-2"><span>${k}</span><span class="whitespace-nowrap">${v}</span></div>`).join('')}
+        </div>` : ''}
+      </div>`;
   }
 
   closeModal() {
