@@ -302,10 +302,32 @@ const DISCOUNT_TIERS = [
 ];
 const MIN_ORDER_AMOUNT = parseInt(Deno.env.get("MIN_ORDER_AMOUNT") || "10000", 10);
 
-function serverSurchargePct(customization: any): number {
-  if (!customization) return 0;
-  const paid = Boolean(customization?.main?.changed || customization?.side?.changed);
-  return paid ? SURCHARGE_PCT : 0;
+/**
+ * Категории, для которых доступна фото-кастомизация, и допустимый акцент.
+ * Зеркало `product_mapping` из public/data/mockups.json (единственный источник
+ * для фронта); при изменении mapping обновлять оба места.
+ */
+const CUSTOMIZABLE_CATEGORIES: Record<string, { mockupType: string; accent: 'bow' | 'handles' | null }> = {
+  'full-cover-small': { mockupType: 'magnetic_box', accent: null },
+  'bow-box-small': { mockupType: 'ribbon_box', accent: 'bow' },
+  'bow-box-medium': { mockupType: 'ribbon_box', accent: 'bow' },
+  'bow-box-big': { mockupType: 'ribbon_box', accent: 'bow' },
+  'handle-box-small': { mockupType: 'bag_box', accent: 'handles' },
+};
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+class OrderValidationError extends Error {
+  code: string;
+  constructor(code: string, message: string) {
+    super(message);
+    this.code = code;
+  }
+}
+
+/** Надбавка только по серверному сравнению с baseline. Клиентские флаги игнорируются. */
+function serverSurchargePct(mainChanged: boolean, sideChanged: boolean): number {
+  return (mainChanged || sideChanged) ? SURCHARGE_PCT : 0;
 }
 
 function serverDiscountPct(subtotal: number): number {
@@ -320,7 +342,7 @@ async function recalculateOrder(orderData: any) {
 
   const { data: products, error: prodError } = await supabase
     .from('products')
-    .select('id, artikul, name, price_rub')
+    .select('id, artikul, name, price_rub, color_hex, categories(slug)')
     .in('id', ids);
   if (prodError) console.error('Server pricing: products lookup failed', prodError);
 
@@ -339,39 +361,93 @@ async function recalculateOrder(orderData: any) {
   const colorById = new Map((colors || []).map((c: any) => [c.id, c]));
   const colorByHex = new Map((colors || []).map((c: any) => [String(c.hex_code).toLowerCase(), c]));
 
-  const resolveZone = (zone: any) => {
-    if (!zone) return zone;
-    const canonical = (zone.colorId && colorById.get(zone.colorId))
-      || (zone.hex && colorByHex.get(String(zone.hex).toLowerCase()));
-    if (!canonical) return { ...zone };
-    return {
-      ...zone,
-      colorId: canonical.id,
-      hex: canonical.hex_code,
-      nameRu: canonical.russian_name || canonical.name,
-      nameEn: canonical.name,
-    };
-  };
+  const productById = new Map((products || []).map((p: any) => [p.id, p]));
+  const toCanonical = (c: any) => ({
+    colorId: c.id,
+    hex: c.hex_code,
+    nameRu: c.russian_name || c.name,
+    nameEn: c.name,
+  });
 
-  const priced = items.map((item: any) => {
-    const product = (products || []).find((p: any) => p.id === item.id) || null;
-    const baseUnitPrice = product
-      ? Number(overrideMap.get(product.id) ?? product.price_rub ?? 0)
-      : 0;
-
-    let customization = item.customization || null;
-    if (customization) {
-      customization = {
-        ...customization,
-        main: resolveZone(customization.main),
-        side: resolveZone(customization.side),
-        accent: resolveZone(customization.accent),
-      };
-      customization.surchargePct = serverSurchargePct(customization);
-      customization.paidBoxCustomization = customization.surchargePct > 0;
+  const priced = items.map((item: any, index: number) => {
+    const product = productById.get(item.id) || null;
+    if (!product) {
+      console.warn('Order validation: unknown product', { index, productId: String(item.id ?? '').slice(0, 40) });
+      throw new OrderValidationError('INVALID_PRODUCT', 'Один из товаров в корзине больше недоступен. Обновите корзину и попробуйте снова.');
+    }
+    const rawPrice = overrideMap.has(product.id) ? overrideMap.get(product.id) : Number(product.price_rub);
+    const baseUnitPrice = Number(rawPrice);
+    if (!Number.isFinite(baseUnitPrice) || baseUnitPrice <= 0) {
+      console.warn('Order validation: no price', { productId: product.id });
+      throw new OrderValidationError('INVALID_PRICE', 'Не удалось получить цену товара. Обновите корзину и попробуйте снова.');
     }
 
-    const surchargePct = serverSurchargePct(customization);
+    let customization = item.customization || null;
+    let surchargePct = 0;
+    if (customization) {
+      const slug = product.categories?.slug || null;
+      const rule = slug ? CUSTOMIZABLE_CATEGORIES[slug] : undefined;
+      if (!rule) {
+        console.warn('Order validation: customization not allowed', { productId: product.id, slug });
+        throw new OrderValidationError('INVALID_CUSTOMIZATION', 'Для этого товара кастомизация недоступна. Обновите корзину.');
+      }
+
+      // Baseline: каталожный цвет товара (products.color_hex) для корпуса (MAIN и SIDE).
+      const baselineHex = String(product.color_hex || '').toLowerCase();
+      const baselineColor = colorByHex.get(baselineHex) || null;
+
+      const resolve = (zone: any, name: string) => {
+        if (!zone) return null;
+        const id = zone.colorId;
+        const canonical = (typeof id === 'string' && UUID_RE.test(id)) ? colorById.get(id) : null;
+        if (!canonical) {
+          console.warn('Order validation: invalid color', { productId: product.id, zone: name });
+          throw new OrderValidationError('INVALID_COLOR', 'Выбранный цвет недоступен. Откройте настройку коробки и выберите цвет заново.');
+        }
+        return canonical;
+      };
+
+      const mainC = resolve(customization.main, 'main');
+      const sideC = resolve(customization.side, 'side');
+      if (!mainC || !sideC) {
+        throw new OrderValidationError('INVALID_CUSTOMIZATION', 'Конфигурация коробки неполная. Откройте настройку коробки заново.');
+      }
+      let accentC: any = null;
+      if (customization.accent) {
+        if (!rule.accent || customization.accent.type !== rule.accent) {
+          console.warn('Order validation: wrong accent type', { productId: product.id });
+          throw new OrderValidationError('INVALID_CUSTOMIZATION', 'Конфигурация коробки не подходит к товару. Откройте настройку заново.');
+        }
+        accentC = resolve(customization.accent, 'accent');
+      }
+
+      const isChanged = (c: any) => baselineColor
+        ? c.id !== baselineColor.id
+        : String(c.hex_code).toLowerCase() !== baselineHex;
+      const mainChanged = isChanged(mainC);
+      const sideChanged = isChanged(sideC);
+      surchargePct = serverSurchargePct(mainChanged, sideChanged);
+
+      customization = {
+        schemaVersion: 1,
+        mockupType: rule.mockupType,
+        productArtikul: product.artikul || product.id,
+        main: { ...toCanonical(mainC), changed: mainChanged },
+        side: { ...toCanonical(sideC), changed: sideChanged },
+        accent: accentC
+          ? { type: rule.accent, ...toCanonical(accentC), changed: null }
+          : null,
+        baseline: {
+          colorId: baselineColor?.id || null,
+          hex: product.color_hex || null,
+          source: 'products.color_hex',
+        },
+        paidBoxCustomization: surchargePct > 0,
+        surchargePct,
+        validatedBy: 'server',
+      };
+    }
+
     const quantity = Math.max(0, parseInt(item.quantity, 10) || 0);
     const unitPriceBeforeDiscount = Math.round(baseUnitPrice * (1 + surchargePct / 100));
 
@@ -668,7 +744,19 @@ serve(async (req) => {
 
       // === АВТОРИТЕТНЫЙ СЕРВЕРНЫЙ РАСЧЁТ ЦЕН ===
       // Присланные клиентом price/subtotal/discount/total/surchargePct игнорируются.
-      const recalculated = await recalculateOrder(orderData);
+      let recalculated;
+      try {
+        recalculated = await recalculateOrder(orderData);
+      } catch (validationError) {
+        if (validationError instanceof OrderValidationError) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: validationError.message,
+            code: validationError.code,
+          }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        throw validationError;
+      }
       orderData.cart_items = recalculated.cart_items;
       orderData.subtotal = recalculated.subtotal;
       orderData.discount = recalculated.discount;
