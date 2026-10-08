@@ -346,13 +346,6 @@ async function recalculateOrder(orderData: any) {
     .in('id', ids);
   if (prodError) console.error('Server pricing: products lookup failed', prodError);
 
-  const { data: overrides, error: priceError } = await supabase
-    .from('product_prices')
-    .select('product_id, price_rub')
-    .in('product_id', ids);
-  if (priceError) console.error('Server pricing: product_prices lookup failed', priceError);
-
-  const overrideMap = new Map((overrides || []).map((p: any) => [p.product_id, Number(p.price_rub)]));
 
   // Канонические цвета из БД: снимок клиента не считается достоверным.
   const { data: colors } = await supabase
@@ -375,8 +368,7 @@ async function recalculateOrder(orderData: any) {
       console.warn('Order validation: unknown product', { index, productId: String(item.id ?? '').slice(0, 40) });
       throw new OrderValidationError('INVALID_PRODUCT', 'Один из товаров в корзине больше недоступен. Обновите корзину и попробуйте снова.');
     }
-    const rawPrice = overrideMap.has(product.id) ? overrideMap.get(product.id) : Number(product.price_rub);
-    const baseUnitPrice = Number(rawPrice);
+    const baseUnitPrice = Number(product.price_rub);
     if (!Number.isFinite(baseUnitPrice) || baseUnitPrice <= 0) {
       console.warn('Order validation: no price', { productId: product.id });
       throw new OrderValidationError('INVALID_PRICE', 'Не удалось получить цену товара. Обновите корзину и попробуйте снова.');
