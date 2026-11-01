@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-10T10:03:55.520Z",
+  "generatedAt": "2026-11-01T00:19:52.252Z",
   "categories": [
     {
       "id": "1819e393-a1b5-4217-aca2-980325874675",
@@ -844,38 +844,6 @@
       ]
     },
     {
-      "id": "0657",
-      "artikul": "0657",
-      "name": "Подарочная коробка с бантом на магнитах Большая SIlver",
-      "category_id": "55ded904-9f38-442c-8e65-2b20a29183b2",
-      "category_slug": "bow-box-big",
-      "category": "bow-box-big",
-      "size": "big",
-      "sizeType": "большая",
-      "color_hex": "#C0C0C0",
-      "color": "Серебряная",
-      "price_rub": 470,
-      "price": 470,
-      "id_wb": "526376975",
-      "dimensions": {
-        "width": 24,
-        "height": 10,
-        "length": 30
-      },
-      "weight": 410,
-      "photo": [
-        "/images/big with bow/silver/slide1.webp",
-        "/images/big with bow/silver/slide2.webp"
-      ],
-      "photos": [
-        "/images/big with bow/silver/slide1.webp",
-        "/images/big with bow/silver/slide2.webp"
-      ],
-      "videos": [
-        "/videos/Video 1.mp4"
-      ]
-    },
-    {
       "id": "0595",
       "artikul": "0595",
       "name": "Подарочная коробка с бантом на магнитах Малая Orange",
@@ -886,8 +854,8 @@
       "sizeType": "малая",
       "color_hex": "#FFA500",
       "color": "Оранжевая",
-      "price_rub": 290,
-      "price": 290,
+      "price_rub": 310,
+      "price": 310,
       "id_wb": "215916522",
       "dimensions": {
         "width": 17,
@@ -918,8 +886,8 @@
       "sizeType": "малая",
       "color_hex": "#FF0000",
       "color": "Красная",
-      "price_rub": 290,
-      "price": 290,
+      "price_rub": 310,
+      "price": 310,
       "id_wb": "215916516",
       "dimensions": {
         "width": 17,
@@ -937,6 +905,38 @@
       ],
       "videos": [
         "/videos/Video 0.mp4"
+      ]
+    },
+    {
+      "id": "0657",
+      "artikul": "0657",
+      "name": "Подарочная коробка с бантом на магнитах Большая SIlver",
+      "category_id": "55ded904-9f38-442c-8e65-2b20a29183b2",
+      "category_slug": "bow-box-big",
+      "category": "bow-box-big",
+      "size": "big",
+      "sizeType": "большая",
+      "color_hex": "#C0C0C0",
+      "color": "Серебряная",
+      "price_rub": 470,
+      "price": 470,
+      "id_wb": "526376975",
+      "dimensions": {
+        "width": 24,
+        "height": 10,
+        "length": 30
+      },
+      "weight": 410,
+      "photo": [
+        "/images/big with bow/silver/slide1.webp",
+        "/images/big with bow/silver/slide2.webp"
+      ],
+      "photos": [
+        "/images/big with bow/silver/slide1.webp",
+        "/images/big with bow/silver/slide2.webp"
+      ],
+      "videos": [
+        "/videos/Video 1.mp4"
       ]
     },
     {
@@ -986,8 +986,8 @@
       "sizeType": "средняя",
       "color_hex": "#FFA500",
       "color": "Оранжевая",
-      "price_rub": 370,
-      "price": 370,
+      "price_rub": 380,
+      "price": 380,
       "id_wb": "243456462",
       "dimensions": {
         "width": 19,
@@ -1002,6 +1002,70 @@
       "photos": [
         "/images/medium with bow/orange/slide1.webp",
         "/images/medium with bow/orange/slide2.webp"
+      ],
+      "videos": [
+        "/videos/Video 0.mp4"
+      ]
+    },
+    {
+      "id": "0604",
+      "artikul": "0604",
+      "name": "Подарочная коробка с бантом на магнитах Средняя Red",
+      "category_id": "6a412db0-8733-46c0-89ef-7b0e0cd17bb3",
+      "category_slug": "bow-box-medium",
+      "category": "bow-box-medium",
+      "size": "medium",
+      "sizeType": "средняя",
+      "color_hex": "#FF0000",
+      "color": "Красная",
+      "price_rub": 380,
+      "price": 380,
+      "id_wb": "243456194",
+      "dimensions": {
+        "width": 19,
+        "height": 8,
+        "length": 26
+      },
+      "weight": 250,
+      "photo": [
+        "/images/medium with bow/red/slide1.webp",
+        "/images/medium with bow/red/slide2.webp"
+      ],
+      "photos": [
+        "/images/medium with bow/red/slide1.webp",
+        "/images/medium with bow/red/slide2.webp"
+      ],
+      "videos": [
+        "/videos/Video 0.mp4"
+      ]
+    },
+    {
+      "id": "0601",
+      "artikul": "0601",
+      "name": "Подарочная коробка с бантом на магнитах Средняя Tiffany",
+      "category_id": "6a412db0-8733-46c0-89ef-7b0e0cd17bb3",
+      "category_slug": "bow-box-medium",
+      "category": "bow-box-medium",
+      "size": "medium",
+      "sizeType": "средняя",
+      "color_hex": "#0ABAB5",
+      "color": "Тиффани",
+      "price_rub": 380,
+      "price": 380,
+      "id_wb": "243454714",
+      "dimensions": {
+        "width": 19,
+        "height": 8,
+        "length": 26
+      },
+      "weight": 250,
+      "photo": [
+        "/images/medium with bow/tiffany/slide1.webp",
+        "/images/medium with bow/tiffany/slide2.webp"
+      ],
+      "photos": [
+        "/images/medium with bow/tiffany/slide1.webp",
+        "/images/medium with bow/tiffany/slide2.webp"
       ],
       "videos": [
         "/videos/Video 0.mp4"
@@ -1144,70 +1208,6 @@
       ]
     },
     {
-      "id": "0604",
-      "artikul": "0604",
-      "name": "Подарочная коробка с бантом на магнитах Средняя Red",
-      "category_id": "6a412db0-8733-46c0-89ef-7b0e0cd17bb3",
-      "category_slug": "bow-box-medium",
-      "category": "bow-box-medium",
-      "size": "medium",
-      "sizeType": "средняя",
-      "color_hex": "#FF0000",
-      "color": "Красная",
-      "price_rub": 370,
-      "price": 370,
-      "id_wb": "243456194",
-      "dimensions": {
-        "width": 19,
-        "height": 8,
-        "length": 26
-      },
-      "weight": 250,
-      "photo": [
-        "/images/medium with bow/red/slide1.webp",
-        "/images/medium with bow/red/slide2.webp"
-      ],
-      "photos": [
-        "/images/medium with bow/red/slide1.webp",
-        "/images/medium with bow/red/slide2.webp"
-      ],
-      "videos": [
-        "/videos/Video 0.mp4"
-      ]
-    },
-    {
-      "id": "0601",
-      "artikul": "0601",
-      "name": "Подарочная коробка с бантом на магнитах Средняя Tiffany",
-      "category_id": "6a412db0-8733-46c0-89ef-7b0e0cd17bb3",
-      "category_slug": "bow-box-medium",
-      "category": "bow-box-medium",
-      "size": "medium",
-      "sizeType": "средняя",
-      "color_hex": "#0ABAB5",
-      "color": "Тиффани",
-      "price_rub": 370,
-      "price": 370,
-      "id_wb": "243454714",
-      "dimensions": {
-        "width": 19,
-        "height": 8,
-        "length": 26
-      },
-      "weight": 250,
-      "photo": [
-        "/images/medium with bow/tiffany/slide1.webp",
-        "/images/medium with bow/tiffany/slide2.webp"
-      ],
-      "photos": [
-        "/images/medium with bow/tiffany/slide1.webp",
-        "/images/medium with bow/tiffany/slide2.webp"
-      ],
-      "videos": [
-        "/videos/Video 0.mp4"
-      ]
-    },
-    {
       "id": "0650",
       "artikul": "0650",
       "name": "Подарочная коробка с бантом на магнитах Большая Peach",
@@ -1344,42 +1344,6 @@
       "videos": []
     },
     {
-      "id": "0593",
-      "artikul": "0593",
-      "name": "Подарочная коробка с бантом на магнитах Малая White",
-      "category_id": "1819e393-a1b5-4217-aca2-980325874675",
-      "category_slug": "bow-box-small",
-      "category": "bow-box-small",
-      "size": "small",
-      "sizeType": "малая",
-      "color_hex": "#FFFFFF",
-      "color": "Белая",
-      "price_rub": 290,
-      "price": 290,
-      "id_wb": "215916130",
-      "dimensions": {
-        "width": 17,
-        "height": 7,
-        "length": 23
-      },
-      "weight": 195,
-      "photo": [
-        "/images/small with bow/white/slide1.webp",
-        "/images/small with bow/white/slide2.webp",
-        "/images/small with bow/white/slide3.webp",
-        "/images/small with bow/white/slide4.webp"
-      ],
-      "photos": [
-        "/images/small with bow/white/slide1.webp",
-        "/images/small with bow/white/slide2.webp",
-        "/images/small with bow/white/slide3.webp",
-        "/images/small with bow/white/slide4.webp"
-      ],
-      "videos": [
-        "/videos/Video 0.mp4"
-      ]
-    },
-    {
       "id": "0596",
       "artikul": "0596",
       "name": "Подарочная коробка с бантом на магнитах Малая Ice Blue",
@@ -1413,6 +1377,42 @@
       ],
       "videos": [
         "/videos/Video 2.mp4"
+      ]
+    },
+    {
+      "id": "0593",
+      "artikul": "0593",
+      "name": "Подарочная коробка с бантом на магнитах Малая White",
+      "category_id": "1819e393-a1b5-4217-aca2-980325874675",
+      "category_slug": "bow-box-small",
+      "category": "bow-box-small",
+      "size": "small",
+      "sizeType": "малая",
+      "color_hex": "#FFFFFF",
+      "color": "Белая",
+      "price_rub": 310,
+      "price": 310,
+      "id_wb": "215916130",
+      "dimensions": {
+        "width": 17,
+        "height": 7,
+        "length": 23
+      },
+      "weight": 195,
+      "photo": [
+        "/images/small with bow/white/slide1.webp",
+        "/images/small with bow/white/slide2.webp",
+        "/images/small with bow/white/slide3.webp",
+        "/images/small with bow/white/slide4.webp"
+      ],
+      "photos": [
+        "/images/small with bow/white/slide1.webp",
+        "/images/small with bow/white/slide2.webp",
+        "/images/small with bow/white/slide3.webp",
+        "/images/small with bow/white/slide4.webp"
+      ],
+      "videos": [
+        "/videos/Video 0.mp4"
       ]
     },
     {
@@ -1552,42 +1552,6 @@
       ]
     },
     {
-      "id": "0602",
-      "artikul": "0602",
-      "name": "Подарочная коробка с бантом на магнитах Средняя Black",
-      "category_id": "6a412db0-8733-46c0-89ef-7b0e0cd17bb3",
-      "category_slug": "bow-box-medium",
-      "category": "bow-box-medium",
-      "size": "medium",
-      "sizeType": "средняя",
-      "color_hex": "#1A1A1A",
-      "color": "Черная",
-      "price_rub": 370,
-      "price": 370,
-      "id_wb": "243455326",
-      "dimensions": {
-        "width": 19,
-        "height": 8,
-        "length": 26
-      },
-      "weight": 250,
-      "photo": [
-        "/images/medium with bow/black/slide1.webp",
-        "/images/medium with bow/black/slide2.webp",
-        "/images/medium with bow/black/slide3.webp",
-        "/images/medium with bow/black/slide4.webp"
-      ],
-      "photos": [
-        "/images/medium with bow/black/slide1.webp",
-        "/images/medium with bow/black/slide2.webp",
-        "/images/medium with bow/black/slide3.webp",
-        "/images/medium with bow/black/slide4.webp"
-      ],
-      "videos": [
-        "/videos/Video 0.mp4"
-      ]
-    },
-    {
       "id": "0622",
       "artikul": "0622",
       "name": "Подарочная коробка с ручками на магнитах Black",
@@ -1617,42 +1581,6 @@
       ],
       "videos": [
         "/videos/Video 3.mp4"
-      ]
-    },
-    {
-      "id": "0609",
-      "artikul": "0609",
-      "name": "Подарочная коробка с бантом на магнитах Средняя Lavender",
-      "category_id": "6a412db0-8733-46c0-89ef-7b0e0cd17bb3",
-      "category_slug": "bow-box-medium",
-      "category": "bow-box-medium",
-      "size": "medium",
-      "sizeType": "средняя",
-      "color_hex": "#B08BB8",
-      "color": "Лавандовая",
-      "price_rub": 370,
-      "price": 370,
-      "id_wb": "274190807",
-      "dimensions": {
-        "width": 19,
-        "height": 8,
-        "length": 26
-      },
-      "weight": 250,
-      "photo": [
-        "/images/medium with bow/lavender/slide1.webp",
-        "/images/medium with bow/lavender/slide2.webp",
-        "/images/medium with bow/lavender/slide3.webp",
-        "/images/medium with bow/lavender/slide4.webp"
-      ],
-      "photos": [
-        "/images/medium with bow/lavender/slide1.webp",
-        "/images/medium with bow/lavender/slide2.webp",
-        "/images/medium with bow/lavender/slide3.webp",
-        "/images/medium with bow/lavender/slide4.webp"
-      ],
-      "videos": [
-        "/videos/Video 0.mp4"
       ]
     },
     {
@@ -1752,6 +1680,42 @@
       ]
     },
     {
+      "id": "0602",
+      "artikul": "0602",
+      "name": "Подарочная коробка с бантом на магнитах Средняя Black",
+      "category_id": "6a412db0-8733-46c0-89ef-7b0e0cd17bb3",
+      "category_slug": "bow-box-medium",
+      "category": "bow-box-medium",
+      "size": "medium",
+      "sizeType": "средняя",
+      "color_hex": "#1A1A1A",
+      "color": "Черная",
+      "price_rub": 380,
+      "price": 380,
+      "id_wb": "243455326",
+      "dimensions": {
+        "width": 19,
+        "height": 8,
+        "length": 26
+      },
+      "weight": 250,
+      "photo": [
+        "/images/medium with bow/black/slide1.webp",
+        "/images/medium with bow/black/slide2.webp",
+        "/images/medium with bow/black/slide3.webp",
+        "/images/medium with bow/black/slide4.webp"
+      ],
+      "photos": [
+        "/images/medium with bow/black/slide1.webp",
+        "/images/medium with bow/black/slide2.webp",
+        "/images/medium with bow/black/slide3.webp",
+        "/images/medium with bow/black/slide4.webp"
+      ],
+      "videos": [
+        "/videos/Video 0.mp4"
+      ]
+    },
+    {
       "id": "0652",
       "artikul": "0652",
       "name": "Подарочная коробка с бантом на магнитах Большая Black moire",
@@ -1788,32 +1752,36 @@
       ]
     },
     {
-      "id": "0590",
-      "artikul": "0590",
-      "name": "Подарочная коробка с бантом на магнитах Малая Rose",
-      "category_id": "1819e393-a1b5-4217-aca2-980325874675",
-      "category_slug": "bow-box-small",
-      "category": "bow-box-small",
-      "size": "small",
-      "sizeType": "малая",
-      "color_hex": "#FFB6C1",
-      "color": "Розовая",
-      "price_rub": 290,
-      "price": 290,
-      "id_wb": "215908492",
+      "id": "0609",
+      "artikul": "0609",
+      "name": "Подарочная коробка с бантом на магнитах Средняя Lavender",
+      "category_id": "6a412db0-8733-46c0-89ef-7b0e0cd17bb3",
+      "category_slug": "bow-box-medium",
+      "category": "bow-box-medium",
+      "size": "medium",
+      "sizeType": "средняя",
+      "color_hex": "#B08BB8",
+      "color": "Лавандовая",
+      "price_rub": 380,
+      "price": 380,
+      "id_wb": "274190807",
       "dimensions": {
-        "width": 17,
-        "height": 7,
-        "length": 23
+        "width": 19,
+        "height": 8,
+        "length": 26
       },
-      "weight": 195,
+      "weight": 250,
       "photo": [
-        "/images/small with bow/pink/slide1.webp",
-        "/images/small with bow/pink/slide2.webp"
+        "/images/medium with bow/lavender/slide1.webp",
+        "/images/medium with bow/lavender/slide2.webp",
+        "/images/medium with bow/lavender/slide3.webp",
+        "/images/medium with bow/lavender/slide4.webp"
       ],
       "photos": [
-        "/images/small with bow/pink/slide1.webp",
-        "/images/small with bow/pink/slide2.webp"
+        "/images/medium with bow/lavender/slide1.webp",
+        "/images/medium with bow/lavender/slide2.webp",
+        "/images/medium with bow/lavender/slide3.webp",
+        "/images/medium with bow/lavender/slide4.webp"
       ],
       "videos": [
         "/videos/Video 0.mp4"
@@ -1856,6 +1824,38 @@
       ]
     },
     {
+      "id": "0590",
+      "artikul": "0590",
+      "name": "Подарочная коробка с бантом на магнитах Малая Rose",
+      "category_id": "1819e393-a1b5-4217-aca2-980325874675",
+      "category_slug": "bow-box-small",
+      "category": "bow-box-small",
+      "size": "small",
+      "sizeType": "малая",
+      "color_hex": "#FFB6C1",
+      "color": "Розовая",
+      "price_rub": 310,
+      "price": 310,
+      "id_wb": "215908492",
+      "dimensions": {
+        "width": 17,
+        "height": 7,
+        "length": 23
+      },
+      "weight": 195,
+      "photo": [
+        "/images/small with bow/pink/slide1.webp",
+        "/images/small with bow/pink/slide2.webp"
+      ],
+      "photos": [
+        "/images/small with bow/pink/slide1.webp",
+        "/images/small with bow/pink/slide2.webp"
+      ],
+      "videos": [
+        "/videos/Video 0.mp4"
+      ]
+    },
+    {
       "id": "0591",
       "artikul": "0591",
       "name": "Подарочная коробка с бантом на магнитах Малая Tiffany",
@@ -1866,8 +1866,8 @@
       "sizeType": "малая",
       "color_hex": "#0ABAB5",
       "color": "Тиффани",
-      "price_rub": 290,
-      "price": 290,
+      "price_rub": 310,
+      "price": 310,
       "id_wb": "215915227",
       "dimensions": {
         "width": 17,
@@ -1882,110 +1882,6 @@
       "photos": [
         "/images/small with bow/tiffany/slide1.webp",
         "/images/small with bow/tiffany/slide2.webp"
-      ],
-      "videos": [
-        "/videos/Video 0.mp4"
-      ]
-    },
-    {
-      "id": "0592",
-      "artikul": "0592",
-      "name": "Подарочная коробка с бантом на магнитах Малая Black",
-      "category_id": "1819e393-a1b5-4217-aca2-980325874675",
-      "category_slug": "bow-box-small",
-      "category": "bow-box-small",
-      "size": "small",
-      "sizeType": "малая",
-      "color_hex": "#1A1A1A",
-      "color": "Черная",
-      "price_rub": 290,
-      "price": 290,
-      "id_wb": "215916129",
-      "dimensions": {
-        "width": 17,
-        "height": 7,
-        "length": 23
-      },
-      "weight": 195,
-      "photo": [
-        "/images/small with bow/black/slide1.webp",
-        "/images/small with bow/black/slide2.webp",
-        "/images/small with bow/black/slide3.webp",
-        "/images/small with bow/black/slide4.webp"
-      ],
-      "photos": [
-        "/images/small with bow/black/slide1.webp",
-        "/images/small with bow/black/slide2.webp",
-        "/images/small with bow/black/slide3.webp",
-        "/images/small with bow/black/slide4.webp"
-      ],
-      "videos": [
-        "/videos/Video 0.mp4"
-      ]
-    },
-    {
-      "id": "0600",
-      "artikul": "0600",
-      "name": "Подарочная коробка с бантом на магнитах Средняя Rose",
-      "category_id": "6a412db0-8733-46c0-89ef-7b0e0cd17bb3",
-      "category_slug": "bow-box-medium",
-      "category": "bow-box-medium",
-      "size": "medium",
-      "sizeType": "средняя",
-      "color_hex": "#FFB6C1",
-      "color": "Розовая",
-      "price_rub": 370,
-      "price": 370,
-      "id_wb": "243453967",
-      "dimensions": {
-        "width": 19,
-        "height": 8,
-        "length": 26
-      },
-      "weight": 250,
-      "photo": [
-        "/images/medium with bow/pink/slide1.webp",
-        "/images/medium with bow/pink/slide2.webp"
-      ],
-      "photos": [
-        "/images/medium with bow/pink/slide1.webp",
-        "/images/medium with bow/pink/slide2.webp"
-      ],
-      "videos": [
-        "/videos/Video 1.mp4"
-      ]
-    },
-    {
-      "id": "0603",
-      "artikul": "0603",
-      "name": "Подарочная коробка с бантом на магнитах Средняя White",
-      "category_id": "6a412db0-8733-46c0-89ef-7b0e0cd17bb3",
-      "category_slug": "bow-box-medium",
-      "category": "bow-box-medium",
-      "size": "medium",
-      "sizeType": "средняя",
-      "color_hex": "#FFFFFF",
-      "color": "Белая",
-      "price_rub": 370,
-      "price": 370,
-      "id_wb": "243455885",
-      "dimensions": {
-        "width": 19,
-        "height": 8,
-        "length": 26
-      },
-      "weight": 250,
-      "photo": [
-        "/images/medium with bow/white/slide1.webp",
-        "/images/medium with bow/white/slide2.webp",
-        "/images/medium with bow/white/slide3.webp",
-        "/images/medium with bow/white/slide4.webp"
-      ],
-      "photos": [
-        "/images/medium with bow/white/slide1.webp",
-        "/images/medium with bow/white/slide2.webp",
-        "/images/medium with bow/white/slide3.webp",
-        "/images/medium with bow/white/slide4.webp"
       ],
       "videos": [
         "/videos/Video 0.mp4"
@@ -2024,6 +1920,42 @@
       ]
     },
     {
+      "id": "0592",
+      "artikul": "0592",
+      "name": "Подарочная коробка с бантом на магнитах Малая Black",
+      "category_id": "1819e393-a1b5-4217-aca2-980325874675",
+      "category_slug": "bow-box-small",
+      "category": "bow-box-small",
+      "size": "small",
+      "sizeType": "малая",
+      "color_hex": "#1A1A1A",
+      "color": "Черная",
+      "price_rub": 310,
+      "price": 310,
+      "id_wb": "215916129",
+      "dimensions": {
+        "width": 17,
+        "height": 7,
+        "length": 23
+      },
+      "weight": 195,
+      "photo": [
+        "/images/small with bow/black/slide1.webp",
+        "/images/small with bow/black/slide2.webp",
+        "/images/small with bow/black/slide3.webp",
+        "/images/small with bow/black/slide4.webp"
+      ],
+      "photos": [
+        "/images/small with bow/black/slide1.webp",
+        "/images/small with bow/black/slide2.webp",
+        "/images/small with bow/black/slide3.webp",
+        "/images/small with bow/black/slide4.webp"
+      ],
+      "videos": [
+        "/videos/Video 0.mp4"
+      ]
+    },
+    {
       "id": "0646",
       "artikul": "0646",
       "name": "Подарочная коробка с бантом на магнитах Средняя Dark Blue",
@@ -2058,7 +1990,75 @@
       "videos": [
         "/videos/Video 1.mp4"
       ]
+    },
+    {
+      "id": "0600",
+      "artikul": "0600",
+      "name": "Подарочная коробка с бантом на магнитах Средняя Rose",
+      "category_id": "6a412db0-8733-46c0-89ef-7b0e0cd17bb3",
+      "category_slug": "bow-box-medium",
+      "category": "bow-box-medium",
+      "size": "medium",
+      "sizeType": "средняя",
+      "color_hex": "#FFB6C1",
+      "color": "Розовая",
+      "price_rub": 380,
+      "price": 380,
+      "id_wb": "243453967",
+      "dimensions": {
+        "width": 19,
+        "height": 8,
+        "length": 26
+      },
+      "weight": 250,
+      "photo": [
+        "/images/medium with bow/pink/slide1.webp",
+        "/images/medium with bow/pink/slide2.webp"
+      ],
+      "photos": [
+        "/images/medium with bow/pink/slide1.webp",
+        "/images/medium with bow/pink/slide2.webp"
+      ],
+      "videos": [
+        "/videos/Video 1.mp4"
+      ]
+    },
+    {
+      "id": "0603",
+      "artikul": "0603",
+      "name": "Подарочная коробка с бантом на магнитах Средняя White",
+      "category_id": "6a412db0-8733-46c0-89ef-7b0e0cd17bb3",
+      "category_slug": "bow-box-medium",
+      "category": "bow-box-medium",
+      "size": "medium",
+      "sizeType": "средняя",
+      "color_hex": "#FFFFFF",
+      "color": "Белая",
+      "price_rub": 380,
+      "price": 380,
+      "id_wb": "243455885",
+      "dimensions": {
+        "width": 19,
+        "height": 8,
+        "length": 26
+      },
+      "weight": 250,
+      "photo": [
+        "/images/medium with bow/white/slide1.webp",
+        "/images/medium with bow/white/slide2.webp",
+        "/images/medium with bow/white/slide3.webp",
+        "/images/medium with bow/white/slide4.webp"
+      ],
+      "photos": [
+        "/images/medium with bow/white/slide1.webp",
+        "/images/medium with bow/white/slide2.webp",
+        "/images/medium with bow/white/slide3.webp",
+        "/images/medium with bow/white/slide4.webp"
+      ],
+      "videos": [
+        "/videos/Video 0.mp4"
+      ]
     }
   ],
-  "version": "27c00555"
+  "version": "ef4d14cd"
 }
