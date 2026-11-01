@@ -125,6 +125,27 @@ export type Database = {
         }
         Relationships: []
       }
+      checkout_requests: {
+        Row: {
+          created_at: string
+          order_id: string | null
+          request_hash: string
+          request_id: string
+        }
+        Insert: {
+          created_at?: string
+          order_id?: string | null
+          request_hash: string
+          request_id: string
+        }
+        Update: {
+          created_at?: string
+          order_id?: string | null
+          request_hash?: string
+          request_id?: string
+        }
+        Relationships: []
+      }
       colors: {
         Row: {
           created_at: string | null

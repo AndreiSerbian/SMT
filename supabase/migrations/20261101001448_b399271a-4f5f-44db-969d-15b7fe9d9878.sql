@@ -1,0 +1,4 @@
+UPDATE public.products p SET price_rub = CASE c.slug WHEN 'bow-box-small' THEN 310 WHEN 'bow-box-medium' THEN 380 END, updated_at = now() FROM public.categories c WHERE p.category_id = c.id AND c.slug IN ('bow-box-small','bow-box-medium') AND p.price_rub IS DISTINCT FROM CASE c.slug WHEN 'bow-box-small' THEN 310 WHEN 'bow-box-medium' THEN 380 END;
+CREATE TABLE public.checkout_requests (request_id uuid PRIMARY KEY, request_hash text NOT NULL, order_id uuid, created_at timestamptz NOT NULL DEFAULT now());
+GRANT ALL ON public.checkout_requests TO service_role;
+ALTER TABLE public.checkout_requests ENABLE ROW LEVEL SECURITY;
