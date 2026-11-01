@@ -1,5 +1,6 @@
 import { supabase } from '../utils/supabase.js';
 import { validPrice, priceDifferences, patchSnapshotPrices } from '../services/priceManagement.js';
+import { loadLocalCatalogSnapshot } from '../services/catalogFallbackService.js';
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 export class AdminPricesComponent {
   async mount(container) {
@@ -94,7 +95,11 @@ export class AdminPricesComponent {
     const button = this.container.querySelector('[data-export]'); button.disabled = true;
     try {
       await this.load();
-      const snapshot = patchSnapshotPrices(await this.publishedSnapshot(), this.products);
+      let source;
+      let usedLocal = false;
+      try { source = await this.publishedSnapshot(); }
+      catch { source = await loadLocalCatalogSnapshot(); usedLocal = true; }
+      const snapshot = patchSnapshotPrices(source, this.products);
       delete snapshot.version;
       const bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(snapshot)));
       snapshot.version = Array.from(new Uint8Array(bytes), b => b.toString(16).padStart(2, '0')).join('').slice(0, 12);
@@ -104,7 +109,7 @@ export class AdminPricesComponent {
         const url = URL.createObjectURL(new Blob([JSON.stringify(content, null, 2)], { type: 'application/json' }));
         this.urls.push(url); const link = this.container.querySelector(selector); link.href = url; link.hidden = false;
       }
-      this.message('Обновление подготовлено. Загрузите каталог в папку data на TimeWeb, затем файл версии. После загрузки проверьте сайт.');
+      this.message(`${usedLocal ? 'Сайт недоступен для проверки; использован каталог этой версии приложения. ' : ''}Обновление подготовлено. Загрузите каталог в папку data на TimeWeb, затем файл версии. После загрузки проверьте сайт.`);
     } catch (error) { this.message(error.message || 'Не удалось подготовить обновление.', true); }
     finally { this.busy = false; button.disabled = false; }
   }
