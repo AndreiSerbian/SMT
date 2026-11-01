@@ -65,4 +65,4 @@
 - [ ] Проверка админки под реальной учётной записью: внешняя Supabase не предоставляет сессию для проверки.
 
 ## Release-проверка protocol v2 (2026-11-01)
-- [ ] Тесты, проверка базы, публикация order-processing, smoke, сборка, release passport
+- [x] Тесты, проверка базы, публикация order-processing, smoke, сборка, release passport
