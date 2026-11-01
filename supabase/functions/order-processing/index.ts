@@ -1,12 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.0";
 import { Resend } from "https://esm.sh/resend@3.2.0";
+import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
+import { CheckoutError, cartIdentity, cleanOrder, digest, priceIdentity, signQuote, validateItems, verifyQuote, QUOTE_TTL_MS } from './quote.ts';
 
-// Конфигурация CORS
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+const json = (body: any, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+const quoteSecret = Deno.env.get('CHECKOUT_QUOTE_SECRET') || '';
 
 // Инициализация Resend для отправки email
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
@@ -338,19 +337,21 @@ function serverDiscountPct(subtotal: number): number {
 /** Пересчитывает заказ по данным БД. Клиентские цифры не используются. */
 async function recalculateOrder(orderData: any) {
   const items = orderData.cart_items || [];
+  validateItems(items);
   const ids = [...new Set(items.map((i: any) => i.id).filter(Boolean))];
 
   const { data: products, error: prodError } = await supabase
     .from('products')
-    .select('id, artikul, name, price_rub, color_hex, categories(slug)')
+    .select('id, artikul, name, price_rub, color_hex, is_active, categories(slug)')
     .in('id', ids);
-  if (prodError) console.error('Server pricing: products lookup failed', prodError);
+  if (prodError) throw new CheckoutError('PRICING_UNAVAILABLE', 'Не удалось проверить цены. Попробуйте позже.', 503);
 
 
   // Канонические цвета из БД: снимок клиента не считается достоверным.
-  const { data: colors } = await supabase
+  const { data: colors, error: colorError } = await supabase
     .from('colors')
     .select('id, name, russian_name, hex_code');
+  if (colorError) throw new CheckoutError('PRICING_UNAVAILABLE', 'Не удалось проверить цвета. Попробуйте позже.', 503);
   const colorById = new Map((colors || []).map((c: any) => [c.id, c]));
   const colorByHex = new Map((colors || []).map((c: any) => [String(c.hex_code).toLowerCase(), c]));
 
@@ -364,7 +365,7 @@ async function recalculateOrder(orderData: any) {
 
   const priced = items.map((item: any, index: number) => {
     const product = productById.get(item.id) || null;
-    if (!product) {
+    if (!product || !product.is_active) {
       console.warn('Order validation: unknown product', { index, productId: String(item.id ?? '').slice(0, 40) });
       throw new OrderValidationError('INVALID_PRODUCT', 'Один из товаров в корзине больше недоступен. Обновите корзину и попробуйте снова.');
     }
@@ -440,7 +441,7 @@ async function recalculateOrder(orderData: any) {
       };
     }
 
-    const quantity = Math.max(0, parseInt(item.quantity, 10) || 0);
+    const quantity = item.quantity;
     const unitPriceBeforeDiscount = Math.round(baseUnitPrice * (1 + surchargePct / 100));
 
     return {
@@ -456,6 +457,7 @@ async function recalculateOrder(orderData: any) {
   });
 
   const subtotal = priced.reduce((s: number, l: any) => s + l.lineSubtotal, 0);
+  if (!Number.isSafeInteger(subtotal)) throw new CheckoutError('INVALID_AMOUNT', 'Слишком большая сумма заказа.');
   const discountPct = serverDiscountPct(subtotal);
   const discount = Math.floor((subtotal * discountPct) / 100);
   const total = subtotal - discount;
@@ -715,7 +717,30 @@ serve(async (req) => {
   if (url.pathname === "/order-processing" && req.method === "POST") {
     try {
       const requestBody = await req.json();
-      const { orderData } = requestBody;
+      const isV2 = requestBody.protocol === 2;
+      const action = isV2 ? requestBody.action : 'legacy';
+      if (isV2 && !['quote', 'create'].includes(action)) throw new CheckoutError('INVALID_ACTION', 'Неизвестное действие.');
+      const orderData = cleanOrder(requestBody.orderData, action !== 'quote');
+      const cartHash = await digest(cartIdentity(orderData.cart_items));
+      let claims: any = null;
+      let requestHash: string | null = null;
+      let reservedOrderId: string | null = null;
+      if (action === 'create') {
+        if (typeof requestBody.clientRequestId !== 'string' || !UUID_RE.test(requestBody.clientRequestId)) throw new CheckoutError('INVALID_REQUEST_ID', 'Обновите оформление заказа.');
+        claims = await verifyQuote(requestBody.quoteToken, quoteSecret, Date.now(), true);
+        if (claims.cart !== cartHash) throw new CheckoutError('CART_CHANGED', 'Корзина изменилась. Проверьте сумму заново.', 409);
+        requestHash = await digest({ cartHash, name: orderData.name, email: orderData.email.toLowerCase(), phone: orderData.phone, yandex_address: orderData.yandex_address, comment: orderData.comment, payment: orderData.payment, delivery: orderData.delivery, subscribe: orderData.subscribe });
+        const { data: existing, error: lookupError } = await supabase.from('checkout_requests').select('request_hash, order_id').eq('request_id', requestBody.clientRequestId).maybeSingle();
+        if (lookupError) throw new CheckoutError('CHECKOUT_UNAVAILABLE', 'Не удалось проверить отправку заказа. Попробуйте позже.', 503);
+        if (existing) {
+          if (existing.request_hash !== requestHash) throw new CheckoutError('REQUEST_CONFLICT', 'Предыдущая отправка ещё не завершена. Верните прежние данные заказа.', 409);
+          const { data: previous, error: previousError } = await supabase.from('orders').select('id, total, subtotal, discount, order_number').eq('id', existing.order_id).maybeSingle();
+          if (previousError) throw new CheckoutError('CHECKOUT_UNAVAILABLE', 'Не удалось проверить отправку заказа.', 503);
+          if (previous) return json({ success: true, replay: true, order: previous, serverCalculatedTotal: previous.total });
+          throw new CheckoutError('ORDER_PROCESSING', 'Заказ ещё обрабатывается. Повторите проверку через несколько секунд.', 409);
+        }
+        await verifyQuote(requestBody.quoteToken, quoteSecret);
+      }
       
       console.log("Получены данные заказа:", orderData);
       
@@ -761,6 +786,20 @@ serve(async (req) => {
           serverCalculatedTotal: recalculated.total,
           minOrderAmount: MIN_ORDER_AMOUNT,
         }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      const pricesHash = await digest(priceIdentity(recalculated));
+      const makeQuote = async () => ({ ...recalculated, quoteToken: await signQuote(cartHash, pricesHash, quoteSecret), expiresAt: new Date(Date.now() + QUOTE_TTL_MS).toISOString() });
+      if (action === 'quote') return json({ success: true, quote: await makeQuote() });
+      if (action === 'create' && claims.prices !== pricesHash) return json({ success: false, code: 'PRICE_CHANGED', error: 'Цены изменились. Подтвердите новую сумму.', quote: await makeQuote() }, 409);
+      // Old tabs may place unchanged orders, but cannot silently accept any changed line price.
+      if (action === 'legacy' && (recalculated.priceAdjusted || recalculated.cart_items.some((item: any, i: number) => Number(requestBody.orderData.cart_items[i]?.price) !== item.price))) {
+        return json({ success: false, code: 'CHECKOUT_UPDATE_REQUIRED', error: 'Цены обновились. Обновите страницу и подтвердите сумму перед оформлением.', serverCalculatedTotal: recalculated.total }, 409);
+      }
+      if (action === 'create') {
+        reservedOrderId = crypto.randomUUID();
+        const { error: reserveError } = await supabase.from('checkout_requests').insert({ request_id: requestBody.clientRequestId, request_hash: requestHash, order_id: reservedOrderId });
+        if (reserveError) throw new CheckoutError(reserveError.code === '23505' ? 'ORDER_PROCESSING' : 'CHECKOUT_UNAVAILABLE', 'Отправка уже обрабатывается или временно недоступна. Повторите проверку.', reserveError.code === '23505' ? 409 : 503);
       }
 
       orderData.delivery = normalizeDeliveryValue(orderData.delivery);
@@ -871,6 +910,7 @@ serve(async (req) => {
         .from('orders')
         .insert({
           ...orderData,
+          ...(reservedOrderId ? { id: reservedOrderId } : {}),
           client_id: clientId,
           order_status: 'created',
           created_at: new Date().toISOString(),
@@ -881,6 +921,10 @@ serve(async (req) => {
         
       if (error) {
         console.error("Error inserting order:", error);
+        // Keep reservation on an ambiguous failure: retry reads the deterministic order ID.
+        if (reservedOrderId && error.code && error.code !== '23505' && error.code !== 'PGRST000') {
+          await supabase.from('checkout_requests').delete().eq('request_id', requestBody.clientRequestId).eq('order_id', reservedOrderId);
+        }
         throw error;
       }
       
@@ -984,6 +1028,7 @@ ${order.comment ? `📝 *Комментарий:* ${order.comment}` : ''}
         }
       );
     } catch (error) {
+      if (error instanceof CheckoutError || error instanceof OrderValidationError) return json({ success: false, error: error.message, code: error.code }, error instanceof CheckoutError ? error.status : 400);
       console.error("Ошибка обработки заказа:", error);
       return new Response(
         JSON.stringify({ 
