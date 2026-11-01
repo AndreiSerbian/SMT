@@ -1,7 +1,8 @@
 # Project architecture
 
 - Preserve the existing multi-entry Vanilla JS Vite architecture; do not replace the app with a framework scaffold.
-- Checkout protocol 2 signs a cart and line-price fingerprint, rechecks authoritative products at creation, and reserves a deterministic order ID in server-only checkout_requests; this prevents silent repricing and duplicate orders on retries.
+- Checkout protocol 2 signs cart and line-price fingerprints, rechecks products at creation, and atomically writes orders plus server-only checkout_requests through restricted RPC; this prevents silent repricing, stranded reservations, and duplicate orders on retries.
+- Checkout notification work uses a persisted completion flag and lease; retries can recover interrupted dispatch, but external delivery is not guaranteed exactly once.
 - During manual TimeWeb rollout, legacy checkout may create only when every submitted line price and totals match the server; changed prices fail closed so old tabs cannot silently accept new prices.
 - Price management writes only products.price_rub under existing has_role RLS and compares the actual giftboxopt.ru snapshot; downloading an update is never reported as publishing it.
 - Price-only admin exports preserve published media and refuse changed catalog membership; use the complete catalog exporter for additions or removals.
