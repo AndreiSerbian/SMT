@@ -1,3 +1,5 @@
+import { supabase as sharedSupabase } from '../utils/supabase.js';
+
 export class ModernAdminComponent {
   constructor() {
     this.supabase = null;
@@ -70,12 +72,7 @@ export class ModernAdminComponent {
   }
 
   async initSupabase() {
-    // Динамический импорт Supabase
-    const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
-    this.supabase = createClient(
-      'https://bsndismiessofvhglzrv.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzbmRpc21pZXNzb2Z2aGdsenJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzg2ODYyNTIsImV4cCI6MjA1NDI2MjI1Mn0.4pumjrK8SV79xaegTEZaJMmi6lnp-_5uhSytvWpoZHY'
-    );
+    this.supabase = sharedSupabase;
   }
 
   addStyles() {
@@ -920,6 +917,10 @@ export class ModernAdminComponent {
 
     document.getElementById('dlgProduct').close();
     await this.loadPage(true);
+    const status = document.createElement('p');
+    status.className = 'pricing-message';
+    status.textContent = 'Товар сохранён в базе. Обновление цен на сайте не подтверждено. Откройте раздел «Цены» для проверки и подготовки публикации.';
+    document.getElementById('search')?.before(status);
   }
 
   async onDeleteProduct() {
