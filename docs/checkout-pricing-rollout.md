@@ -5,7 +5,8 @@
 - 9 small bow SKUs are 310 RUB; 13 medium bow SKUs are 380 RUB, selected via category_id.
 - New frontend requests a signed 30-minute quote, displays each line and totals, and creates only after explicit confirmation.
 - Create verifies signature and cart fingerprint, repeats database calculation, and refuses changed line prices even when totals happen to match.
-- Server-only checkout_requests reserves a deterministic order ID before B2B writes. Same request retries read that ID; pending reservations fail closed rather than generate another order. Ambiguous failures may require operator investigation.
+- Server-only create_checkout_order atomically commits the order and request receipt under a transaction lock. Same request retries read that order; an aborted transaction leaves neither receipt nor order. B2B matching still precedes this transaction.
+- Notification completion and a two-minute lease are persisted. A retry can recover interrupted dispatch after lease expiry; external providers do not provide exactly-once guarantees, and no automatic background delivery worker was added. An interrupted dispatch with no later retry still needs operator attention.
 - Legacy clients can submit only unchanged line prices/totals during manual rollout; they have no new idempotency guarantee. Changed prices return an update-page error without creating an order.
 - Admin Prices uses existing Auth/has_role RLS and bundled Supabase client. Changes invalidate prepared downloads. Export is price-only, preserving media; changed catalog membership requires full export.
 

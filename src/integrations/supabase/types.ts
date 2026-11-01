@@ -128,18 +128,24 @@ export type Database = {
       checkout_requests: {
         Row: {
           created_at: string
+          notification_lease_until: string | null
+          notifications_completed: boolean
           order_id: string | null
           request_hash: string
           request_id: string
         }
         Insert: {
           created_at?: string
+          notification_lease_until?: string | null
+          notifications_completed?: boolean
           order_id?: string | null
           request_hash: string
           request_id: string
         }
         Update: {
           created_at?: string
+          notification_lease_until?: string | null
+          notifications_completed?: boolean
           order_id?: string | null
           request_hash?: string
           request_id?: string
@@ -555,6 +561,14 @@ export type Database = {
       }
     }
     Functions: {
+      claim_checkout_notifications: {
+        Args: { p_request_id: string }
+        Returns: boolean
+      }
+      create_checkout_order: {
+        Args: { p_order: Json; p_request_hash: string; p_request_id: string }
+        Returns: Json
+      }
       generate_photo_paths: {
         Args: { color: string; size_category: string }
         Returns: string[]

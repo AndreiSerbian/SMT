@@ -724,7 +724,7 @@ serve(async (req) => {
       const cartHash = await digest(cartIdentity(orderData.cart_items));
       let claims: any = null;
       let requestHash: string | null = null;
-      let reservedOrderId: string | null = null;
+      let previousOrder: any = null;
       if (action === 'create') {
         if (typeof requestBody.clientRequestId !== 'string' || !UUID_RE.test(requestBody.clientRequestId)) throw new CheckoutError('INVALID_REQUEST_ID', 'Обновите оформление заказа.');
         claims = await verifyQuote(requestBody.quoteToken, quoteSecret, Date.now(), true);
@@ -734,12 +734,12 @@ serve(async (req) => {
         if (lookupError) throw new CheckoutError('CHECKOUT_UNAVAILABLE', 'Не удалось проверить отправку заказа. Попробуйте позже.', 503);
         if (existing) {
           if (existing.request_hash !== requestHash) throw new CheckoutError('REQUEST_CONFLICT', 'Предыдущая отправка ещё не завершена. Верните прежние данные заказа.', 409);
-          const { data: previous, error: previousError } = await supabase.from('orders').select('id, total, subtotal, discount, order_number').eq('id', existing.order_id).maybeSingle();
+          const { data: previous, error: previousError } = await supabase.from('orders').select('*').eq('id', existing.order_id).maybeSingle();
           if (previousError) throw new CheckoutError('CHECKOUT_UNAVAILABLE', 'Не удалось проверить отправку заказа.', 503);
-          if (previous) return json({ success: true, replay: true, order: previous, serverCalculatedTotal: previous.total });
-          throw new CheckoutError('ORDER_PROCESSING', 'Заказ ещё обрабатывается. Повторите проверку через несколько секунд.', 409);
+          if (previous) previousOrder = previous;
+          else throw new CheckoutError('ORDER_PROCESSING', 'Заказ ещё обрабатывается. Повторите проверку через несколько секунд.', 409);
         }
-        await verifyQuote(requestBody.quoteToken, quoteSecret);
+        if (!previousOrder) await verifyQuote(requestBody.quoteToken, quoteSecret);
       }
       
       console.log("Получены данные заказа:", orderData);
@@ -763,7 +763,7 @@ serve(async (req) => {
       // Присланные клиентом price/subtotal/discount/total/surchargePct игнорируются.
       let recalculated;
       try {
-        recalculated = await recalculateOrder(orderData);
+        recalculated = previousOrder ? { cart_items: previousOrder.cart_items, subtotal: previousOrder.subtotal, discount: previousOrder.discount, total: previousOrder.total, priceAdjusted: false, clientSubmittedTotal: previousOrder.total, serverCalculatedTotal: previousOrder.total } : await recalculateOrder(orderData);
       } catch (validationError) {
         if (validationError instanceof OrderValidationError) {
           return new Response(JSON.stringify({
@@ -791,22 +791,18 @@ serve(async (req) => {
       const pricesHash = await digest(priceIdentity(recalculated));
       const makeQuote = async () => ({ ...recalculated, quoteToken: await signQuote(cartHash, pricesHash, quoteSecret), expiresAt: new Date(Date.now() + QUOTE_TTL_MS).toISOString() });
       if (action === 'quote') return json({ success: true, quote: await makeQuote() });
-      if (action === 'create' && claims.prices !== pricesHash) return json({ success: false, code: 'PRICE_CHANGED', error: 'Цены изменились. Подтвердите новую сумму.', quote: await makeQuote() }, 409);
+      if (action === 'create' && !previousOrder && claims.prices !== pricesHash) return json({ success: false, code: 'PRICE_CHANGED', error: 'Цены изменились. Подтвердите новую сумму.', quote: await makeQuote() }, 409);
       // Old tabs may place unchanged orders, but cannot silently accept any changed line price.
       if (action === 'legacy' && (recalculated.priceAdjusted || recalculated.cart_items.some((item: any, i: number) => Number(requestBody.orderData.cart_items[i]?.price) !== item.price))) {
         return json({ success: false, code: 'CHECKOUT_UPDATE_REQUIRED', error: 'Цены обновились. Обновите страницу и подтвердите сумму перед оформлением.', serverCalculatedTotal: recalculated.total }, 409);
       }
-      if (action === 'create') {
-        reservedOrderId = crypto.randomUUID();
-        const { error: reserveError } = await supabase.from('checkout_requests').insert({ request_id: requestBody.clientRequestId, request_hash: requestHash, order_id: reservedOrderId });
-        if (reserveError) throw new CheckoutError(reserveError.code === '23505' ? 'ORDER_PROCESSING' : 'CHECKOUT_UNAVAILABLE', 'Отправка уже обрабатывается или временно недоступна. Повторите проверку.', reserveError.code === '23505' ? 409 : 503);
-      }
-
       orderData.delivery = normalizeDeliveryValue(orderData.delivery);
       console.log("Normalized delivery value:", orderData.delivery);
 
 
       // === B2B CLIENT MANAGEMENT ===
+      let clientId = previousOrder?.client_id || null;
+      if (!previousOrder) {
       const normalizedEmail = orderData.email.toLowerCase().trim();
       const normalizedPhone = orderData.phone.replace(/\D/g, '');
       
@@ -849,7 +845,7 @@ serve(async (req) => {
         }
       }
       
-      let clientId = null;
+      clientId = null;
 
       if (client) {
         clientId = client.id;
@@ -905,29 +901,26 @@ serve(async (req) => {
         }
       }
 
-      // Сохраняем заказ
-      const { data: order, error } = await supabase
-        .from('orders')
-        .insert({
-          ...orderData,
-          ...(reservedOrderId ? { id: reservedOrderId } : {}),
-          client_id: clientId,
-          order_status: 'created',
-          created_at: new Date().toISOString(),
-          subscribe: orderData.subscribe !== undefined ? orderData.subscribe : true
-        })
-        .select()
-        .single();
-        
-      if (error) {
-        console.error("Error inserting order:", error);
-        // Keep reservation on an ambiguous failure: retry reads the deterministic order ID.
-        if (reservedOrderId && error.code && error.code !== '23505' && error.code !== 'PGRST000') {
-          await supabase.from('checkout_requests').delete().eq('request_id', requestBody.clientRequestId).eq('order_id', reservedOrderId);
-        }
-        throw error;
       }
-      
+      // Atomically commit the order and request receipt; a lost response is safe to replay.
+      let order: any = previousOrder;
+      if (!order) {
+        if (action === 'create') {
+          const { data, error } = await supabase.rpc('create_checkout_order', { p_request_id: requestBody.clientRequestId, p_request_hash: requestHash, p_order: { ...orderData, client_id: clientId } });
+          if (error) throw error;
+          order = data.order;
+        } else {
+          const { data, error } = await supabase.from('orders').insert({ ...orderData, client_id: clientId, order_status: 'created', created_at: new Date().toISOString() }).select().single();
+          if (error) throw error;
+          order = data;
+        }
+      }
+      if (action === 'create') {
+        const { data: claimed, error } = await supabase.rpc('claim_checkout_notifications', { p_request_id: requestBody.clientRequestId });
+        if (error) throw error;
+        if (!claimed) return json({ success: true, replay: true, order: { id: order.id, total: order.total }, serverCalculatedTotal: order.total });
+      }
+
       console.log("Заказ создан успешно, начинаем отправку уведомлений...");
 
       // Пометка для менеджера, если серверная цена разошлась с показанной клиенту
@@ -1011,6 +1004,8 @@ ${order.comment ? `📝 *Комментарий:* ${order.comment}` : ''}
         console.warn('Design notifications failed (non-blocking):', err);
       }
       
+      if (action === 'create') await supabase.from('checkout_requests').update({ notifications_completed: true, notification_lease_until: null }).eq('request_id', requestBody.clientRequestId);
+
       return new Response(
         JSON.stringify({ 
           success: true, 
