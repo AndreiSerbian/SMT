@@ -28,7 +28,7 @@ export class AdminLayoutComponent {
       const hash = window.location.hash;
       if (hash.startsWith('#admin/')) {
         const section = hash.replace('#admin/', '');
-        if (['products', 'categories', 'colors', 'orders', 'clients', 'analytics'].includes(section)) {
+        if (['products', 'prices', 'categories', 'colors', 'orders', 'clients', 'analytics'].includes(section)) {
           this.handleSectionChange(section);
         }
       }
@@ -51,6 +51,7 @@ export class AdminLayoutComponent {
             <div class="flex items-center gap-2">
               <nav class="hidden sm:flex gap-1">
                 <a href="#admin/products" data-section="products" class="nav-link px-3 py-1.5 rounded-full">Товары</a>
+                <a href="#admin/prices" data-section="prices" class="nav-link px-3 py-1.5 rounded-full">Цены</a>
                 <a href="#admin/categories" data-section="categories" class="nav-link px-3 py-1.5 rounded-full">Категории</a>
                 <a href="#admin/colors" data-section="colors" class="nav-link px-3 py-1.5 rounded-full">Цвета</a>
                 <a href="#admin/orders" data-section="orders" class="nav-link px-3 py-1.5 rounded-full">Заказы</a>
@@ -65,6 +66,7 @@ export class AdminLayoutComponent {
           <!-- Mobile tabs -->
           <div class="sm:hidden px-4 pb-3 flex gap-2 overflow-x-auto">
             <a href="#admin/products" data-section="products" class="nav-link px-3 py-1.5 rounded-full whitespace-nowrap">Товары</a>
+            <a href="#admin/prices" data-section="prices" class="nav-link px-3 py-1.5 rounded-full whitespace-nowrap">Цены</a>
             <a href="#admin/categories" data-section="categories" class="nav-link px-3 py-1.5 rounded-full whitespace-nowrap">Категории</a>
             <a href="#admin/colors" data-section="colors" class="nav-link px-3 py-1.5 rounded-full whitespace-nowrap">Цвета</a>
             <a href="#admin/orders" data-section="orders" class="nav-link px-3 py-1.5 rounded-full whitespace-nowrap">Заказы</a>
@@ -136,6 +138,10 @@ export class AdminLayoutComponent {
       let Component;
       
       switch (section) {
+        case 'prices':
+          const pricesModule = await import('./adminPricesComponent.js');
+          Component = pricesModule.AdminPricesComponent;
+          break;
         case 'products':
           const productsModule = await import('./modernAdminComponent.js');
           Component = productsModule.ModernAdminComponent;

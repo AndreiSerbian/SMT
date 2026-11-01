@@ -1,6 +1,7 @@
 import { cartService } from "../services/cartService.js";
 import { env } from "../utils/env.js";
 import { productsService } from "../services/productsService.js";
+import { checkoutIdentity, checkoutRequest, confirmQuote } from "../services/checkoutService.js";
 
 const OrderComponent = {
   eventListeners: [],
@@ -535,84 +536,51 @@ const OrderComponent = {
     };
 
 
-    // Показываем индикатор загрузки
     const submitButton = form.querySelector('button[type="submit"]');
-    const originalButtonText = submitButton.innerHTML;
+    if (!submitButton || submitButton.disabled) return;
+    const originalButtonText = submitButton.textContent;
     submitButton.disabled = true;
-    submitButton.innerHTML = "Обработка...";
-
-    // Получаем URL API из переменной окружения
-    const apiUrl = env.supabaseUrl || "https://bsndismiessofvhglzrv.supabase.co";
-
-    console.log("Отправляем заказ на:", `${apiUrl}/functions/v1/order-processing`);
-    console.log("Данные заказа:", orderData);
-
-    // Отправляем заказ в Supabase Edge Function с улучшенной обработкой ошибок
-    fetch(`${apiUrl}/functions/v1/order-processing`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "apikey": env.supabaseAnonKey || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzbmRpc21pZXNzb2Z2aGdsenJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzg2ODYyNTIsImV4cCI6MjA1NDI2MjI1Mn0.4pumjrK8SV79xaegTEZaJMmi6lnp-_5uhSytvWpoZHY",
-        "Authorization": `Bearer ${env.supabaseAnonKey || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzbmRpc21pZXNzb2Z2aGdsenJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzg2ODYyNTIsImV4cCI6MjA1NDI2MjI1Mn0.4pumjrK8SV79xaegTEZaJMmi6lnp-_5uhSytvWpoZHY"}`,
-      },
-      body: JSON.stringify({ orderData }),
-    })
-      .then((response) => {
-        if (!response.ok) {
-          // Сервер может вернуть понятное объяснение (например, пересчёт суммы)
-          return response.text().then((text) => {
-            try {
-              const parsed = JSON.parse(text);
-              if (parsed && parsed.error) throw new Error(parsed.error);
-            } catch (e) {
-              if (e instanceof Error && e.message && !/^Unexpected/.test(e.message)) throw e;
-            }
-            throw new Error(`HTTP ошибка ${response.status}: ${text}`);
-          });
-        }
-        return response.json();
-      })
-      .then((data) => {
-        // Обработка успешного ответа
-        if (data.success) {
-          // Очистка корзины
-          cartService.clearCart();
-
-          if (data.priceAdjusted) {
-            alert(
-              `Цена была обновлена перед оформлением заказа. Итоговая сумма: ${data.serverCalculatedTotal} ₽`
-            );
-          }
-
-          // Показываем сообщение о подтверждении
-          container.querySelector("#orderStatus").classList.remove("hidden");
-
-          // Меняем текст кнопки
-          submitButton.innerHTML = "Заказ отправлен";
-
-          // Скроллим к статусу заказа
-          container.querySelector("#orderStatus").scrollIntoView({ behavior: "smooth" });
-
-          // Отключаем все поля формы
-          const formInputs = form.querySelectorAll("input, textarea, button, select");
-          formInputs.forEach((input) => {
-            input.disabled = true;
-          });
-        } else {
-          // Обработка ошибки
-          console.error("Ошибка данных:", data.error);
-          alert(`Ошибка при оформлении заказа: ${data.error}`);
-          submitButton.disabled = false;
-          submitButton.innerHTML = originalButtonText;
-        }
-      })
-      .catch((error) => {
-        // Обработка ошибки сети
-        console.error("Ошибка отправки заказа:", error);
-        alert(`Ошибка при отправке заказа: ${error.message}`);
-        submitButton.disabled = false;
-        submitButton.innerHTML = originalButtonText;
-      });
+    submitButton.textContent = "Проверяем цены...";
+    const identity = checkoutIdentity(orderData);
+    const cartAtStart = JSON.stringify(cartService.getCart());
+    let pending;
+    try { pending = JSON.parse(sessionStorage.getItem('checkout-pending') || 'null'); } catch { pending = null; }
+    if (pending && pending.identity !== identity) {
+      alert('Предыдущая отправка ещё не проверена. Верните прежние данные заказа или свяжитесь с менеджером.');
+      submitButton.disabled = false; submitButton.textContent = originalButtonText; return;
+    }
+    try {
+      let result;
+      if (pending) {
+        // Retry the identical request first; never generate a new key after an uncertain response.
+        submitButton.textContent = "Проверяем отправку...";
+        result = await checkoutRequest(pending.body);
+      } else {
+        const response = await checkoutRequest({ action: 'quote', orderData });
+        const quote = response.quote;
+        if (!await confirmQuote(quote, total)) return;
+        if (!container.isConnected || cartAtStart !== JSON.stringify(cartService.getCart())) throw new Error('Корзина изменилась. Проверьте сумму заново.');
+        const body = { action: 'create', orderData: { ...orderData, subtotal: quote.subtotal, discount: quote.discount, total: quote.total }, quoteToken: quote.quoteToken, clientRequestId: crypto.randomUUID() };
+        pending = { identity, body };
+        sessionStorage.setItem('checkout-pending', JSON.stringify(pending));
+        submitButton.textContent = "Отправляем заказ...";
+        result = await checkoutRequest(body);
+      }
+      if (result.success) {
+        sessionStorage.removeItem('checkout-pending');
+        if (cartAtStart === JSON.stringify(cartService.getCart())) await cartService.clearCart();
+        if (!container.isConnected) return;
+        container.querySelector('#orderStatus').classList.remove('hidden');
+        submitButton.textContent = 'Заказ отправлен';
+        container.querySelector('#orderStatus').scrollIntoView({ behavior: 'smooth' });
+        form.querySelectorAll('input, textarea, button, select').forEach(input => { input.disabled = true; });
+      }
+    } catch (error) {
+      if (['PRICE_CHANGED', 'QUOTE_EXPIRED', 'INVALID_QUOTE', 'CART_CHANGED', 'INVALID_PRODUCT', 'INVALID_QUANTITY', 'INVALID_CONTACT'].includes(error.code)) sessionStorage.removeItem('checkout-pending');
+      alert(error.code === 'PRICE_CHANGED' ? 'Цены изменились до отправки. Заказ не создан. Проверьте и подтвердите новую сумму.' : error.message || 'Не удалось проверить цены. Корзина сохранена. Попробуйте позже.');
+    } finally {
+      if (submitButton.textContent !== 'Заказ отправлен') { submitButton.disabled = false; submitButton.textContent = originalButtonText; }
+    }
   },
 };
 
