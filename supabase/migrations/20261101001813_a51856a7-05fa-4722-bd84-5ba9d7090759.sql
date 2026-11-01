@@ -1,0 +1,1 @@
+CREATE POLICY "Server manages checkout reservations" ON public.checkout_requests FOR ALL TO service_role USING (true) WITH CHECK (true);
