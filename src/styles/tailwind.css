@@ -3,3 +3,34 @@
 @tailwind utilities;
 
 /* Порядок CSS контролируется в js/app.js */
+
+:root {
+  --pricing-surface: #ffffff;
+  --pricing-ink: #182238;
+  --pricing-muted: #596477;
+  --pricing-border: #d5dae2;
+  --pricing-action: #173d38;
+  --pricing-on-action: #ffffff;
+  --pricing-error: #a82b39;
+  --pricing-backdrop: rgb(18 25 34 / 55%);
+  --pricing-shadow: 0 12px 40px rgb(18 25 34 / 20%);
+}
+.pricing-button { background: var(--pricing-action); color: var(--pricing-on-action); border: 1px solid var(--pricing-action); border-radius: 6px; padding: 10px 14px; font-weight: 600; cursor: pointer; }
+.pricing-button:disabled { opacity: .5; cursor: wait; }
+.pricing-button-secondary { background: var(--pricing-surface); color: var(--pricing-ink); border-color: var(--pricing-border); }
+.pricing-panel { color: var(--pricing-ink); margin-bottom: 24px; }
+.pricing-panel h2, .checkout-confirm h2 { font-size: 22px; font-weight: 700; margin-bottom: 16px; }
+.pricing-toolbar, .checkout-actions { display: flex; gap: 12px; flex-wrap: wrap; align-items: end; margin: 16px 0; }
+.pricing-toolbar label { display: grid; gap: 5px; }
+.pricing-panel input, .pricing-panel select { border: 1px solid var(--pricing-border); background: var(--pricing-surface); color: var(--pricing-ink); padding: 10px; border-radius: 6px; max-width: 100%; }
+.pricing-panel input[type=number] { width: 110px; }
+.pricing-message { color: var(--pricing-muted); margin: 10px 0; overflow-wrap: anywhere; }
+.pricing-message[data-error=true] { color: var(--pricing-error); }
+.pricing-table-wrap { overflow: auto; }
+.pricing-table { width: 100%; border-collapse: collapse; }
+.pricing-table th, .pricing-table td { border-bottom: 1px solid var(--pricing-border); padding: 10px 8px; text-align: left; }
+.checkout-confirm { background: var(--pricing-surface); color: var(--pricing-ink); width: min(600px, calc(100% - 24px)); max-height: 85dvh; overflow: auto; border: 1px solid var(--pricing-border); border-radius: 8px; padding: 24px; box-shadow: var(--pricing-shadow); }
+.checkout-confirm::backdrop { background: var(--pricing-backdrop); }
+.checkout-lines { max-height: 35dvh; overflow: auto; margin: 16px 0; }
+.checkout-lines > div { padding: 10px 0; border-bottom: 1px solid var(--pricing-border); }
+.checkout-total { font-size: 22px; font-weight: 700; margin-top: 14px; }
