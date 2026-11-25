@@ -8,3 +8,4 @@
 - Price-only admin exports preserve published media and refuse changed catalog membership; use the complete catalog exporter for additions or removals.
 - Keep all Tailwind directives and pricing semantic tokens in src/styles/tailwind.css, preserving the existing import cascade.
 - TimeWeb deployment stays manual until the owner provides an authorized publishing connection; Lovable publishing is not TimeWeb publishing.
+- Keep seasonal homepage images locally in public/images with a classic backup and versioned URL; manual TimeWeb releases must not depend on an external image CDN.

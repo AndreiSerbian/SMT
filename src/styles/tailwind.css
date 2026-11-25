@@ -5,6 +5,9 @@
 /* Порядок CSS контролируется в js/app.js */
 
 :root {
+  --hero-surface: #ffffff;
+  --hero-overlay: linear-gradient(90deg, rgb(255 255 255 / 4%) 0%, rgb(255 255 255 / 18%) 25%, rgb(255 255 255 / 78%) 44%, rgb(255 255 255 / 78%) 56%, rgb(255 255 255 / 18%) 75%, rgb(255 255 255 / 4%) 100%);
+  --hero-overlay-mobile: linear-gradient(180deg, rgb(255 255 255 / 0%) 0%, rgb(255 255 255 / 0%) 28%, rgb(255 255 255 / 82%) 49%, #ffffff 65%);
   --pricing-surface: #ffffff;
   --pricing-ink: #182238;
   --pricing-muted: #596477;
@@ -14,6 +17,13 @@
   --pricing-error: #a82b39;
   --pricing-backdrop: rgb(18 25 34 / 55%);
   --pricing-shadow: 0 12px 40px rgb(18 25 34 / 20%);
+}
+.home-hero { background: var(--hero-surface); }
+.home-hero-overlay { background: var(--hero-overlay); }
+@media (max-width: 767px) {
+  .home-hero-image { height: auto; object-fit: contain; object-position: top center; }
+  .home-hero-overlay { background: var(--hero-overlay-mobile); }
+  .home-hero-content { padding-top: 190px; padding-bottom: 48px; }
 }
 .pricing-button { background: var(--pricing-action); color: var(--pricing-on-action); border: 1px solid var(--pricing-action); border-radius: 6px; padding: 10px 14px; font-weight: 600; cursor: pointer; }
 .pricing-button:disabled { opacity: .5; cursor: wait; }

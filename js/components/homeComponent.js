@@ -157,17 +157,19 @@ const HomeComponent = {
 
 
 <!-- Hero-блок -->
-<section class="relative bg-white overflow-hidden">
+<section class="home-hero relative overflow-hidden">
   <div class="absolute inset-0">
-    <img src="/images/hero.webp"
+    <img src="/images/hero.webp?v=winter-20261125"
          alt="Подарочные коробки оптом — SMT Premium Box"
          loading="eager"
          decoding="async"
          fetchpriority="high"
-         class="w-full h-full object-cover" />
-    <div class="absolute inset-0 bg-white/60"></div>
+         width="1376"
+         height="768"
+         class="home-hero-image w-full h-full object-cover" />
+    <div class="home-hero-overlay absolute inset-0"></div>
   </div>
-  <div class="relative max-w-6xl mx-auto px-4 py-20 md:py-28">
+  <div class="home-hero-content relative max-w-6xl mx-auto px-4 py-20 md:py-28">
     <div class="text-center">
       <h1 class="text-4xl md:text-5xl font-bold text-gray-900 leading-tight">
         SMT Premium Box
