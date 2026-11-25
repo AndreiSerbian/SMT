@@ -28,7 +28,7 @@ const ContactsComponent = {
     }
     
     container.innerHTML = `
-      <nav class="bg-white shadow-md relative">
+      <nav class="site-header shadow-md relative">
         <div class="container mx-auto px-6 py-3">
           <div class="flex justify-between items-center">
             <a href="#" class="flex items-center text-xl font-bold text-gray-800">
