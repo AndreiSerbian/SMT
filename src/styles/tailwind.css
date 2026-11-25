@@ -30,7 +30,13 @@
 .site-header button:hover { color: var(--site-header-hover); }
 .site-header a:focus-visible,
 .site-header button:focus-visible { outline: 2px solid var(--site-header-foreground); outline-offset: 4px; }
-.site-header img[src="/images/logo.svg"] { filter: brightness(0) invert(1); }
+.site-header img[src="/images/logo.svg"] {
+  background: var(--site-header-foreground);
+  padding: 2px;
+  border-radius: 4px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
 .site-header .border-b { border-color: var(--site-header-border); }
 .home-hero { background: var(--hero-surface); }
 .home-hero-overlay { background: var(--hero-overlay); }
