@@ -9,3 +9,4 @@
 - Keep all Tailwind directives and pricing semantic tokens in src/styles/tailwind.css, preserving the existing import cascade.
 - TimeWeb deployment stays manual until the owner provides an authorized publishing connection; Lovable publishing is not TimeWeb publishing.
 - Keep seasonal homepage images locally in public/images with a classic backup and versioned URL; manual TimeWeb releases must not depend on an external image CDN.
+- Deny direct client order insertion and require authenticated has_role checks for legacy-price/settings writes and media deletion; preserve trusted service checkout and avoid guest-customizer restrictions without a compatible release.

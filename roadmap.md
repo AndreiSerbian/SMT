@@ -1,5 +1,10 @@
 # Эксперимент recolor коробки-сумки
 
+## Selected security fixes (2026-11-25)
+- [x] Restrict settings/legacy-price writes, direct order creation, blank contact submissions and media deletion.
+- [ ] Restrict saved-design access and media uploads/replacements: awaiting approval for guest-customizer ownership and compatible TimeWeb release.
+- [ ] Verify administrator and customer flows under real sessions: external Supabase session unavailable; no test orders authorized.
+
 ## Зимний баннер (2026-11-25)
 - [x] Установить утверждённый WebP локально и сохранить классический баннер.
 - [x] Заменить сплошной оверлей мягким центральным, адаптировать телефонный вид без изменения текста.
